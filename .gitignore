@@ -27,8 +27,4 @@ nuget.config
 # JetBrains Rider settings
 .idea/
 
-# Solution files
-*.sln.iml
-*.sln
-
 .DS_Store
