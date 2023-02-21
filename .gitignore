@@ -1,0 +1,34 @@
+# Ignore global.json files
+global.json
+
+# Build output
+bin/
+obj/
+
+# History folder
+.history
+
+# User-specific settings
+*.suo
+*.user
+# Visual Studio settings
+*.vs/
+*.vscode/
+# Generated code
+Generated_Code/
+# .NET Core/Nuget packages
+bin/
+obj/
+*.nupkg
+*.nuget.config
+nuget.config
+# Runtime store files
+*.pidb
+# JetBrains Rider settings
+.idea/
+
+# Solution files
+*.sln.iml
+*.sln
+
+.DS_Store
