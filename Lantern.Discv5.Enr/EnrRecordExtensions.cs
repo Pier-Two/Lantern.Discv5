@@ -8,13 +8,20 @@ namespace Lantern.Discv5.Enr;
 
 public static class EnrRecordExtensions
 {
-    public static EnrRecord CreateEnrRecord(string enrString)
+    public static EnrRecord FromBytes(byte[] bytes)
     {
-        if (enrString.StartsWith("enr:")) enrString = enrString[4..];
-        return CreateFromBytes(UrlBase64.Decode(enrString));
+        return CreateEnrRecord(bytes);
     }
 
-    private static EnrRecord CreateFromBytes(byte[] bytes)
+    public static EnrRecord FromString(string enrString)
+    {
+        if (enrString.StartsWith("enr:"))
+            enrString = enrString[4..];
+
+        return CreateEnrRecord(UrlBase64.Decode(enrString));
+    }
+
+    private static EnrRecord CreateEnrRecord(byte[] bytes)
     {
         var items = RlpDecoder.Decode(bytes);
         var enrRecord = new EnrRecord
@@ -25,48 +32,31 @@ public static class EnrRecordExtensions
 
         for (var i = 2; i < items.Count - 1; i++)
         {
-            var stringKey = GetEnrContentKey(items[i]);
+            var key = Encoding.ASCII.GetString(items[i]);
+            var entry = GetEnrEntry(key, items[i + 1]);
 
-            if (stringKey == null) continue;
+            if (entry == null)
+                continue;
 
-            var value = items[i + 1];
-            enrRecord.AddEntry(GenerateEnrContent(stringKey, value));
+            enrRecord.AddEntry(key, entry);
         }
 
         return enrRecord;
     }
 
-    private static string? GetEnrContentKey(byte[] data)
+    private static IEnrContentEntry? GetEnrEntry(string stringKey, byte[] value)
     {
-        var stringKey = Encoding.ASCII.GetString(data);
-
         return stringKey switch
-        {
-            EnrContentKey.Id => EnrContentKey.Id,
-            EnrContentKey.Ip => EnrContentKey.Ip,
-            EnrContentKey.Ip6 => EnrContentKey.Ip6,
-            EnrContentKey.Secp256K1 => EnrContentKey.Secp256K1,
-            EnrContentKey.Tcp => EnrContentKey.Tcp,
-            EnrContentKey.Tcp6 => EnrContentKey.Tcp6,
-            EnrContentKey.Udp => EnrContentKey.Udp,
-            EnrContentKey.Udp6 => EnrContentKey.Udp6,
-            _ => null
-        };
-    }
-
-    private static EnrContentEntry GenerateEnrContent(string key, byte[] value)
-    {
-        return key switch
         {
             EnrContentKey.Id => new EntryId(Encoding.ASCII.GetString(value)),
             EnrContentKey.Ip => new EntryIp(new IPAddress(value)),
             EnrContentKey.Ip6 => new EntryIp6(new IPAddress(value)),
             EnrContentKey.Secp256K1 => new EntrySecp256K1(value),
-            EnrContentKey.Tcp => new EntryTcp((int)Utility.ByteArrayToUInt64(value)),
-            EnrContentKey.Tcp6 => new EntryTcp6((int)Utility.ByteArrayToUInt64(value)),
-            EnrContentKey.Udp => new EntryUdp((int)Utility.ByteArrayToUInt64(value)),
-            EnrContentKey.Udp6 => new EntryUdp6((int)Utility.ByteArrayToUInt64(value)),
-            _ => throw new ArgumentOutOfRangeException(nameof(key), key, null)
+            EnrContentKey.Tcp => new EntryTcp(Utility.ByteArrayToInt32(value)),
+            EnrContentKey.Tcp6 => new EntryTcp6(Utility.ByteArrayToInt32(value)),
+            EnrContentKey.Udp => new EntryUdp(Utility.ByteArrayToInt32(value)),
+            EnrContentKey.Udp6 => new EntryUdp6(Utility.ByteArrayToInt32(value)),
+            _ => default
         };
     }
 }

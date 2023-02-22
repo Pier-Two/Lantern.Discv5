@@ -3,15 +3,18 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EntryType;
 
-public class EntryIp : EnrContentEntry<IPAddress>
+public class EntryIp : IEnrContentEntry
 {
-    public EntryIp(IPAddress address) : base(address)
+    public EntryIp(IPAddress value)
     {
+        Value = value;
     }
 
-    public override string Key => EnrContentKey.Ip;
+    public IPAddress Value { get; }
 
-    public override byte[] EncodeEntry()
+    public string Key => EnrContentKey.Ip;
+
+    public byte[] EncodeEntry()
     {
         var keyBytes = RlpExtensions.Encode(Key);
         var valueBytes = RlpExtensions.Encode(Value.GetAddressBytes());

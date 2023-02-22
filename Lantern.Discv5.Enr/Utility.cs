@@ -2,36 +2,76 @@ namespace Lantern.Discv5.Enr;
 
 public static class Utility
 {
-    public static int ByteArrayToInt32(byte[] byteArray)
+    public static int ByteArrayToInt32(byte[] bytes)
     {
-        if (byteArray == null || byteArray.Length == 0) return 0; 
-        
-        if (byteArray.Length == 4) return BitConverter.ToInt32(byteArray, 0); 
-        
-        var paddedArray = new byte[4];
-        
-        if (byteArray.Length > 4)
-            Array.Copy(byteArray, byteArray.Length - 4, paddedArray, 0, 4);
-        else
-            Array.Copy(byteArray, 0, paddedArray, 4 - byteArray.Length, byteArray.Length);
-        
-        return BitConverter.ToInt32(paddedArray, 0);
+        if (bytes == null) throw new ArgumentNullException(nameof(bytes));
+        if (bytes.Length > 4)
+            throw new ArgumentException("Input byte array must be no more than 4 bytes long.", nameof(bytes));
+
+        if (bytes.Length < 4)
+        {
+            var paddedBytes = new byte[4];
+            Buffer.BlockCopy(bytes, 0, paddedBytes, 4 - bytes.Length, bytes.Length);
+            bytes = paddedBytes;
+        }
+
+        if (IsLittleEndian(bytes)) Array.Reverse(bytes);
+
+        return BitConverter.ToInt32(bytes);
     }
 
-    public static ulong ByteArrayToUInt64(byte[] byteArray)
+    public static uint ByteArrayToUInt32(byte[] bytes)
     {
-        if (byteArray == null || byteArray.Length == 0) return 0; // return zero
-        
-        if (byteArray.Length == 8) return BitConverter.ToUInt64(byteArray, 0); // return the converted value
-        
-        var paddedArray = new byte[8];
-        
-        if (byteArray.Length > 8)
-            Array.Copy(byteArray, byteArray.Length - 8, paddedArray, 0, 8);
-        else
-            Array.Copy(byteArray, 0, paddedArray, 8 - byteArray.Length, byteArray.Length);
-        
-        return BitConverter.ToUInt64(paddedArray.Reverse().ToArray(), 0);
+        if (bytes == null) throw new ArgumentNullException(nameof(bytes));
+        if (bytes.Length > 4)
+            throw new ArgumentException("Input byte array must be no more than 4 bytes long.", nameof(bytes));
+
+        if (bytes.Length < 4)
+        {
+            var paddedBytes = new byte[4];
+            Buffer.BlockCopy(bytes, 0, paddedBytes, 4 - bytes.Length, bytes.Length);
+            bytes = paddedBytes;
+        }
+
+        if (IsLittleEndian(bytes)) Array.Reverse(bytes);
+
+        return BitConverter.ToUInt32(bytes);
+    }
+
+    public static long ByteArrayToInt64(byte[] bytes)
+    {
+        if (bytes == null) throw new ArgumentNullException(nameof(bytes));
+        if (bytes.Length > 8)
+            throw new ArgumentException("Input byte array must be no more than 8 bytes long.", nameof(bytes));
+
+        if (bytes.Length < 8)
+        {
+            var paddedBytes = new byte[8];
+            Buffer.BlockCopy(bytes, 0, paddedBytes, 8 - bytes.Length, bytes.Length);
+            bytes = paddedBytes;
+        }
+
+        if (IsLittleEndian(bytes)) Array.Reverse(bytes);
+
+        return BitConverter.ToInt64(bytes);
+    }
+
+    public static ulong ByteArrayToUInt64(byte[] bytes)
+    {
+        if (bytes == null) throw new ArgumentNullException(nameof(bytes));
+        if (bytes.Length > 8)
+            throw new ArgumentException("Input byte array must be no more than 8 bytes long.", nameof(bytes));
+
+        if (bytes.Length < 8)
+        {
+            var paddedBytes = new byte[8];
+            Buffer.BlockCopy(bytes, 0, paddedBytes, 8 - bytes.Length, bytes.Length);
+            bytes = paddedBytes;
+        }
+
+        if (IsLittleEndian(bytes)) Array.Reverse(bytes);
+
+        return BitConverter.ToUInt64(bytes);
     }
 
     public static int LengthOf(ulong value)
@@ -48,5 +88,14 @@ public static class Utility
         }
 
         return length;
+    }
+
+    private static bool IsLittleEndian(byte[] bytes)
+    {
+        if (bytes == null) throw new ArgumentNullException(nameof(bytes));
+        if (bytes.Length < 2)
+            throw new ArgumentException("Input byte array must be at least 2 bytes long.", nameof(bytes));
+
+        return BitConverter.IsLittleEndian == (bytes[0] == 0);
     }
 }

@@ -2,15 +2,18 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EntryType;
 
-public class EntrySecp256K1 : EnrContentEntry<byte[]>
+public class EntrySecp256K1 : IEnrContentEntry
 {
-    public EntrySecp256K1(byte[] value) : base(value)
+    public EntrySecp256K1(byte[] value)
     {
+        Value = value;
     }
 
-    public override string Key => EnrContentKey.Secp256K1;
+    public byte[] Value { get; }
 
-    public override byte[] EncodeEntry()
+    public string Key => EnrContentKey.Secp256K1;
+
+    public byte[] EncodeEntry()
     {
         var keyBytes = RlpExtensions.Encode(Key);
         var valueBytes = RlpExtensions.Encode(Value);

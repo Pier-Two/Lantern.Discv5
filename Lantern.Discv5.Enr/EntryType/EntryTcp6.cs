@@ -2,15 +2,18 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EntryType;
 
-public class EntryTcp6 : EnrContentEntry<int>
+public class EntryTcp6 : IEnrContentEntry
 {
-    public EntryTcp6(int value) : base(value)
+    public EntryTcp6(int value)
     {
+        Value = value;
     }
 
-    public override string Key => EnrContentKey.Tcp6;
+    public int Value { get; }
 
-    public override byte[] EncodeEntry()
+    public string Key => EnrContentKey.Tcp6;
+
+    public byte[] EncodeEntry()
     {
         var keyBytes = RlpExtensions.Encode(Key);
         var valueBytes = RlpExtensions.Encode(Value);
