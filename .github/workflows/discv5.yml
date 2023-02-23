@@ -33,7 +33,7 @@ jobs:
         dotnet-version: 6.0.x
     - name: Determine project(s) to build
       id: determine_projects
-      run: echo ::set-output name=projects_to_build::$(git diff --name-only origin/main...HEAD | grep ".csproj$" | sed 's/\(.*\)\\.*$/\1/' | uniq)
+      run: echo ::set-output name=projects_to_build::$(git diff --name-only origin/main...HEAD | grep ".cs$" | sed 's/\(.*\)\/.*$/\1/' | uniq)
     - name: Restore dependencies
       run: dotnet restore ${{ steps.determine_projects.outputs.projects_to_build }}
     - name: Build
