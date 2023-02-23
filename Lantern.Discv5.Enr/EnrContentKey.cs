@@ -1,5 +1,6 @@
 namespace Lantern.Discv5.Enr;
 
+// static class for ENR Content Key
 public static class EnrContentKey
 {
     public const string Id = "id";
