@@ -31,12 +31,15 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+    - name: Determine project(s) to build
+      id: determine_projects
+      run: echo ::set-output name=projects_to_build::$(git diff --name-only HEAD^ HEAD | grep ".csproj$" | sed 's/\(.*\)\\.*$/\1/' | uniq)
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore ${{ steps.determine_projects.outputs.projects_to_build }}
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build ${{ steps.determine_projects.outputs.projects_to_build }} --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test
 
   sonar:
     name: Build and analyze SonarCloud
