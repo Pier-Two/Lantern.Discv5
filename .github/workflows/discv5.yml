@@ -37,19 +37,27 @@ jobs:
     
     - name: Get changed files
       id: file-changes
-      uses: trilom/file-changes-action@v1.2.4
+      #uses: trilom/file-changes-action@v1.2.4
       with:
+        githubRepo: trilom/file-changes-action
         githubToken: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cat $HOME/files.json
-          cat $HOME/files_modified.json
-          cat $HOME/files_added.json
-          cat $HOME/files_removed.json
-          echo '${{ steps.file_changes.outputs.files}}'
-          echo '${{ steps.file_changes.outputs.files_modified}}'
-          echo '${{ steps.file_changes.outputs.files_added}}'
-          echo '${{ steps.file_changes.outputs.files_removed}}'
+      run: echo "cat $HOME/files.json" >> "$GITHUB_OUTPUT"
+        # cat $HOME/files.json
+        # cat $HOME/files_modified.json
+        # cat $HOME/files_added.json
+        # cat $HOME/files_removed.json
+        # echo '${{ steps.file-changes.outputs.files}}'
+        # echo '${{ steps.file_changes.outputs.files_modified}}'
+        # echo '${{ steps.file_changes.outputs.files_added}}'
+        # echo '${{ steps.file_changes.outputs.files_removed}}'
 
+    # - name: Restore Project_Enr if changed
+    #   if: contains(steps.file-changes.outputs.files_modified, 'Project_1') || contains(steps.file-changes.outputs.files_added, 'Project_1')
+    #   run: dotnet restore Project_1/Project_1.csproj
+      
+    # - name: Build Project_Rlp if changed
+    #   if: contains(steps.file-changes.outputs.files_modified, 'Project_1') || contains(steps.file-changes.outputs.files_added, 'Project_1')
+    #   run: dotnet build Project_1/Project_1.csproj --configuration Release --no-restore
   sonar:
     name: Build and analyze SonarCloud
     runs-on: windows-latest
