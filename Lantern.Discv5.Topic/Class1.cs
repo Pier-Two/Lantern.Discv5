@@ -3,3 +3,8 @@
 public class Class1
 {
 }
+
+// Test; will be deprecated
+public class ClassDummy
+{
+}
