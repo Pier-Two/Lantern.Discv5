@@ -26,20 +26,25 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      id: test
-      uses: actions/checkout@v3
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
+      - uses: actions/checkout@v2
+      - name: Get changed files
+        id: file_changes
+        uses: trilom/file-changes-action@v1.2.4
+        with:
+          output: 'plaintext'
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print changed files
+        run: echo "${{ steps.file_changes.outputs.files }}"
+    # - name: Setup .NET
+    #   uses: actions/setup-dotnet@v3
+    #   with:
+    #     dotnet-version: 6.0.x
     
-    - name: Get changed files
-      id: file-changes
-      #uses: trilom/file-changes-action@v1.2.4
-      run: |
-        echo "Token is ${{ secrets.SONAR_TOKEN }}"
+    # - name: Get changed files
+    #   id: file-changes
+    #   #uses: trilom/file-changes-action@v1.2.4
+    #   run: |
+    #     echo "Token is ${{ secrets.SONAR_TOKEN }}"
       # with:
       #   githubRepo: trilom/file-changes-action
       #   githubToken: ${{ secrets.GITHUB_TOKEN }}
