@@ -39,7 +39,7 @@ jobs:
       id: file-changes
       #uses: trilom/file-changes-action@v1.2.4
       run: |
-        echo "Token is ${{ secrets.GITHUB_TOKEN }}"
+        echo "Token is ${{ secrets.SONAR_TOKEN }}"
       # with:
       #   githubRepo: trilom/file-changes-action
       #   githubToken: ${{ secrets.GITHUB_TOKEN }}
