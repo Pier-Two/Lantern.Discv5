@@ -8,4 +8,6 @@ public struct Constant
     public const int ShortCollectionOffset = 192;
     public const int LargeCollectionOffset = 247;
     public const int MaxItemLength = 255;
+    // Test setup for pipeline. Will be deprecated
+    public const int Test = 1;
 }

@@ -26,38 +26,17 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout banch 
+        uses: actions/checkout@v2
       - name: Get changed files
-        id: file_changes
+        id: file-changes
         uses: trilom/file-changes-action@v1.2.4
         with:
-          output: 'plaintext'
+          output: 'json'
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Print changed files
-        run: echo "${{ steps.file_changes.outputs.files }}"
-    # - name: Setup .NET
-    #   uses: actions/setup-dotnet@v3
-    #   with:
-    #     dotnet-version: 6.0.x
+        run: echo "${{ steps.file-changes.outputs.files }}"
     
-    # - name: Get changed files
-    #   id: file-changes
-    #   #uses: trilom/file-changes-action@v1.2.4
-    #   run: |
-    #     echo "Token is ${{ secrets.SONAR_TOKEN }}"
-      # with:
-      #   githubRepo: trilom/file-changes-action
-      #   githubToken: ${{ secrets.GITHUB_TOKEN }}
-      #run: echo "cat $HOME/files.json" >> "$GITHUB_OUTPUT"
-        # cat $HOME/files.json
-        # cat $HOME/files_modified.json
-        # cat $HOME/files_added.json
-        # cat $HOME/files_removed.json
-        # echo '${{ steps.file-changes.outputs.files}}'
-        # echo '${{ steps.file_changes.outputs.files_modified}}'
-        # echo '${{ steps.file_changes.outputs.files_added}}'
-        # echo '${{ steps.file_changes.outputs.files_removed}}'
-
       - name: Build Project_Enr if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
         run: dotnet build Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
