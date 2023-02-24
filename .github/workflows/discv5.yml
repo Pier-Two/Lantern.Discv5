@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
+      id: test
       uses: actions/checkout@v3
 
     - name: Setup .NET
@@ -38,7 +39,7 @@ jobs:
     #   id: file-changes
     #   uses: trilom/file-changes-action@v1.2.4
     #   with:
-    #     githubToken: ${{ secrets.GITHUB_TOKEN }}
+    #       githubToken: ${{ secrets.GITHUB_TOKEN }}
     #   run: |
     #     cat $HOME/files.json
     #     cat $HOME/files_modified.json
@@ -48,24 +49,6 @@ jobs:
     #     echo '${{ steps.file_changes.outputs.files_modified}}'
     #     echo '${{ steps.file_changes.outputs.files_added}}'
     #     echo '${{ steps.file_changes.outputs.files_removed}}'
-
-
-  file-changes:
-    name: Tri check
-    runs-on: ubuntu-latest
-    steps:
-      - id: file_changes
-        uses: trilom/file-changes-action@v1.2.3
-      - name: Get changed files
-        run: |
-          cat $HOME/files.json
-          cat $HOME/files_modified.json
-          cat $HOME/files_added.json
-          cat $HOME/files_removed.json
-          echo '${{ steps.file_changes.outputs.files}}'
-          echo '${{ steps.file_changes.outputs.files_modified}}'
-          echo '${{ steps.file_changes.outputs.files_added}}'
-          echo '${{ steps.file_changes.outputs.files_removed}}'  
 
   sonar:
     name: Build and analyze SonarCloud
