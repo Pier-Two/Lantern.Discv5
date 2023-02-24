@@ -58,13 +58,13 @@ jobs:
         # echo '${{ steps.file_changes.outputs.files_added}}'
         # echo '${{ steps.file_changes.outputs.files_removed}}'
 
-    # - name: Restore Project_Enr if changed
-    #   if: contains(steps.file-changes.outputs.files_modified, 'Project_1') || contains(steps.file-changes.outputs.files_added, 'Project_1')
-    #   run: dotnet restore Project_1/Project_1.csproj
-      
-    # - name: Build Project_Rlp if changed
-    #   if: contains(steps.file-changes.outputs.files_modified, 'Project_1') || contains(steps.file-changes.outputs.files_added, 'Project_1')
-    #   run: dotnet build Project_1/Project_1.csproj --configuration Release --no-restore
+      - name: Build Project_Enr if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
+        run: dotnet build Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
+        
+      - name: Build Project_Rlp if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
+        run: dotnet build Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
   sonar:
     name: Build and analyze SonarCloud
     runs-on: windows-latest
