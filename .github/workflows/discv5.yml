@@ -7,37 +7,43 @@ on:
   push:
     branches:
       - "*"
-    paths:
-      - "Lantern.Discv5.Enr/**"
-      - "Lantern.Discv5.Rlp/**"
-      - "Lantern.Discv5.Tests/**"
-      - "Lantern.Discv5.Topic/**"
   pull_request:
     branches: 
       - "*"
-    paths:
-      - "Lantern.Discv5.Enr/**"
-      - "Lantern.Discv5.Rlp/**"
-      - "Lantern.Discv5.Tests/**"
-      - "Lantern.Discv5.Topic/**"
 
 jobs:
-  build:
+  build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-
+      
+      - name: Checkout banch 
+        uses: actions/checkout@v2
+      
+      - name: Get changed files
+        id: file-changes
+        uses: trilom/file-changes-action@v1.2.4
+        with:
+          output: 'json'
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print changed files
+        run: echo "${{ steps.file-changes.outputs.files }}"
+    
+      - name: Build Project_Enr if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
+        run: dotnet build Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
+        
+      - name: Build Project_Rlp if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
+        run: dotnet build Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
+      
+      - name: Build Project_Tests if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Tests') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Tests')
+        run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj
+      
+      - name: Build Project_Topic if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Topic') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Topic')
+        run: dotnet build Lantern.Discv5.Topic/Lantern.Discv5.Topic.csproj
   sonar:
     name: Build and analyze SonarCloud
     runs-on: windows-latest
