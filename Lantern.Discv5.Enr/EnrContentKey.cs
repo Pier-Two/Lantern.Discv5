@@ -17,6 +17,4 @@ public static class EnrContentKey
     public const string Udp = "udp";
 
     public const string Udp6 = "udp6";
-    // Test setup for pipeline. Will be deprecated
-    public const string test = "10";
 }
