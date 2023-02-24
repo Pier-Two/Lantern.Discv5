@@ -7,19 +7,9 @@ on:
   push:
     branches:
       - "*"
-    # paths:
-    #   - "Lantern.Discv5.Enr/**"
-    #   - "Lantern.Discv5.Rlp/**"
-    #   - "Lantern.Discv5.Tests/**"
-    #   - "Lantern.Discv5.Topic/**"
   pull_request:
     branches: 
       - "*"
-    # paths:
-    #   - "Lantern.Discv5.Enr/**"
-    #   - "Lantern.Discv5.Rlp/**"
-    #   - "Lantern.Discv5.Tests/**"
-    #   - "Lantern.Discv5.Topic/**"
 
 jobs:
   build-and-test:
