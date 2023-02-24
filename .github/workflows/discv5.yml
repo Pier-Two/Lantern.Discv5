@@ -22,24 +22,33 @@ on:
       - "Lantern.Discv5.Topic/**"
 
 jobs:
-  build:
+  build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
-    - name: Determine project(s) to build
-      id: determine_projects
-      run: echo ::set-output name=projects_to_build::$(git diff --name-only origin/main...HEAD | grep ".cs$" | sed 's/\(.*\)\/.*$/\1/' | uniq)
-    - name: Restore dependencies
-      run: dotnet restore ${{ steps.determine_projects.outputs.projects_to_build }}
-    - name: Build
-      run: dotnet build ${{ steps.determine_projects.outputs.projects_to_build }} --no-restore
-    - name: Test
-      run: dotnet test
+    
+    - name: Get changed files
+      id: file-changes
+      uses: trilom/file-changes-action@v1.2.4
+      with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          output: 'json'
+      run: |
+        cat $HOME/files.json
+        cat $HOME/files_modified.json
+        cat $HOME/files_added.json
+        cat $HOME/files_removed.json
+        echo '${{ steps.file_changes.outputs.files}}'
+        echo '${{ steps.file_changes.outputs.files_modified}}'
+        echo '${{ steps.file_changes.outputs.files_added}}'
+        echo '${{ steps.file_changes.outputs.files_removed}}'
 
   sonar:
     name: Build and analyze SonarCloud
