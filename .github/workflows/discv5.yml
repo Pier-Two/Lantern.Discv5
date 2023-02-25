@@ -17,8 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       
-      - name: Checkout banch 
+      - name: Checkout branch 
         uses: actions/checkout@v2
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
       
       - name: Get changed files
         id: file-changes
@@ -44,6 +47,13 @@ jobs:
       - name: Build Project_Topic if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Topic') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Topic')
         run: dotnet build Lantern.Discv5.Topic/Lantern.Discv5.Topic.csproj
+
+      - name: Test Project
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml
+      - name: Echo Test TestResults
+        run: cat TestResults.xml
+
+
   sonar:
     name: Build and analyze SonarCloud
     runs-on: windows-latest
