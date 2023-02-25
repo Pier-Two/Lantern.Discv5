@@ -19,9 +19,6 @@ jobs:
       
       - name: Checkout branch 
         uses: actions/checkout@v2
-
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
       
       - name: Get changed files
         id: file-changes
@@ -49,7 +46,11 @@ jobs:
         run: dotnet build Lantern.Discv5.Topic/Lantern.Discv5.Topic.csproj
 
       - name: Test Project
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 7.0.x
+      - name: Test
+        run: dotnet test Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml
       - name: Echo Test TestResults
         run: cat TestResults.xml
 
