@@ -55,8 +55,8 @@ jobs:
         run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj --no-restore  
       - name: Install NUnit Console runner
         run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3 
-      # - name: Checking the version of nunit3-console
-      #   run: nunit3-console --version
+      - name: Checking the version of nunit3-console
+        run: dotnet-nunit --version
       - name: Build and Run Tests
         run: nunit3-console Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
       - name: Generate code coverage report
