@@ -58,11 +58,12 @@ jobs:
       - name: Checking the version of nunit3-console
         run: dotnet-nunit --version
       - name: Run Tests
-        run: dotnet-nunit Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
-      - name: Generate code coverage report
-        run: |
-          dotnet tool install -g coverlet.console 
-          coverlet Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll --target "nunit3-console" --targetargs "Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml" --format opencover # specify the test assembly path here
+        run: dotnet-nunit Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj 
+      #   /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
+      # - name: Generate code coverage report
+      #   run: |
+      #     dotnet tool install -g coverlet.console 
+      #     coverlet Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll --target "nunit3-console" --targetargs "Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml" --format opencover # specify the test assembly path here
 
 
   sonar:
