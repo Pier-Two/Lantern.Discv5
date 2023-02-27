@@ -53,6 +53,8 @@ jobs:
         run: dotnet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
       - name: Build solution
         run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj --no-restore  
+      - name: Test using dotnet-test
+        run: dotnet test --no-build --logger "trx;LogFileName=TestResults.trx"
       - name: Install NUnit Console runner
         run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3 
       - name: Checking the version of nunit3-console
