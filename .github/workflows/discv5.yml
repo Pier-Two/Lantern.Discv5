@@ -49,10 +49,10 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 7.0.x
-      - name: Restore Dependancies
-        run: dotnet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
-      - name: Build solution
-        run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj --no-restore 
+      # - name: Restore Dependancies
+      #   run: dotnet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
+      # - name: Build solution
+      #   run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj --no-restore 
       # - name: Install NUnit Test Adapter
       #   run: dotnet add Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj package NUnit3TestAdapter 
       # - name: Test using dotnet-test
@@ -76,15 +76,16 @@ jobs:
       - name: Run tests with NUnit and generate coverage report
         working-directory: Lantern.Discv5.Tests
         run: |
-          dotnet test  --logger "trx;LogFileName=TestResults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:Exclude="[xunit.*]*" /p:ExcludeByFile="**/*.Generated.cs" --test-adapter-path:. --logger:"console;verbosity=detailed"
-          dotnet tool install --global dotnet-reportgenerator-globaltool --version 4.8.12
+          dotnet test 
+          # --logger "trx;LogFileName=TestResults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:Exclude="[xunit.*]*" /p:ExcludeByFile="**/*.Generated.cs" --test-adapter-path:. --logger:"console;verbosity=detailed"
+          # dotnet tool install --global dotnet-reportgenerator-globaltool --version 4.8.12
           # echo "reportgenerator --version"
           # dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3
           # echo "dotnet-nunit --version"
           # dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --where "cat != IntegrationTest" --result=TestResults.xml;format=nunit2 
           # --labels=All 
-          cat TestResults.xml
-          reportgenerator "-reports:TestResults.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
+          # cat TestResults.xml
+          # reportgenerator "-reports:TestResults.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
           
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
