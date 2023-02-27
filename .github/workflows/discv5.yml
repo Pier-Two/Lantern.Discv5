@@ -27,6 +27,7 @@ jobs:
           output: 'json'
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Print changed files
+        working-directory: src
         run: echo "${{ steps.file-changes.outputs.files }}"
     
       - name: Build Project_Enr if changed
@@ -37,20 +38,16 @@ jobs:
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
         run: dotnet build Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
       
-      - name: Build Project_Tests if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Tests') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Tests')
-        run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj
-      
       - name: Build Project_Topic if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Topic') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Topic')
-        run: dotnet build Lantern.Discv5.Topic/Lantern.Discv5.Topic.csproj
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.WireProtocol') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.WireProtocol')
+        run: dotnet build Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
 
       - name: Test Setup
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 7.0.x
       - name: Run tests with NUnit and generate coverage report
-        working-directory: Lantern.Discv5.Tests
+        working-directory: tests
         run: |
           dotnet test
 
