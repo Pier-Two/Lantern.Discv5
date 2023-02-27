@@ -50,7 +50,7 @@ jobs:
         with:
           dotnet-version: 7.0.x
       - name: Install NUnit Console runner
-        run: dotnet tool install --global nunit.consolerunner --version 3.16.3
+        run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3
       - name: Restore Dependancies
         run: dontet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
       - name: Build
