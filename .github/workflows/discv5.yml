@@ -27,20 +27,19 @@ jobs:
           output: 'json'
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Print changed files
-        working-directory: src
-        run: echo "${{ steps.file-changes.outputs.files }}"
+        run: echo "Files changed are ${{ steps.file-changes.outputs.files }}"
     
       - name: Build Project_Enr if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
-        run: dotnet build Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
+        run: dotnet build src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
         
       - name: Build Project_Rlp if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
-        run: dotnet build Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
+        run: dotnet build src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
       
-      - name: Build Project_Topic if changed
+      - name: Build Project_WriteProtocol if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.WireProtocol') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.WireProtocol')
-        run: dotnet build Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
+        run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
 
       - name: Test Setup
         uses: actions/setup-dotnet@v1
@@ -48,8 +47,7 @@ jobs:
           dotnet-version: 7.0.x
       - name: Run tests with NUnit and generate coverage report
         working-directory: tests
-        run: |
-          dotnet test
+        run: dotnet test
 
   sonar:
     name: Build and analyze SonarCloud
