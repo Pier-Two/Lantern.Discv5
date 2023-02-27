@@ -52,7 +52,7 @@ jobs:
       - name: Install NUnit Console runner
         run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3
       - name: Restore Dependancies
-        run: dontet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
+        run: dotnet restore Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj # specify the test project path here 
       - name: Build
         run: nunit3-console Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
       - name: Generate code coverage report
