@@ -56,7 +56,8 @@ jobs:
       - name: Install NUnit Test Adapter
         run: dotnet add Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj package NUnit3TestAdapter 
       - name: Test using dotnet-test
-        run: dotnet test Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj --no-build --logger "trx;LogFileName=TestResults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:Exclude="[xunit.*]*" /p:ExcludeByFile="**/*.Generated.cs" --test-adapter-path:. --logger:"console;verbosity=detailed"
+        run: dotnet test Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll
+        # --no-build --logger "trx;LogFileName=TestResults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:Exclude="[xunit.*]*" /p:ExcludeByFile="**/*.Generated.cs" --test-adapter-path:. --logger:"console;verbosity=detailed"
       - name: Install NUnit Console runner
         run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3 
       - name: Checking the version of nunit3-console
