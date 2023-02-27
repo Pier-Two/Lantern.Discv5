@@ -57,55 +57,75 @@ jobs:
       #   run: dotnet add Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj package NUnit3TestAdapter 
       # - name: Test using dotnet-test
       #   run: dotnet test Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --no-build --logger "trx;LogFileName=TestResults.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./TestResults/ /p:Exclude="[xunit.*]*" /p:ExcludeByFile="**/*.Generated.cs" --test-adapter-path:. --logger:"console;verbosity=detailed"
-      - name: Install NUnit Console runner
-        run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3 
-      - name: Checking the version of nunit3-console
-        run: dotnet-nunit --version
-      - name: Run Tests
-        run: dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
-      - name: Generate code coverage report
-        run: |
-          dotnet tool install -g coverlet.console 
-          coverlet Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll --target "nunit3-console" --targetargs "Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml" --format opencover # specify the test assembly path here
+      
+      # This works
+      # - name: Install NUnit Console runner
+      #   run: dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3 
+      # - name: Checking the version of nunit3-console
+      #   run: dotnet-nunit --version
+      # - name: Run Tests
+      #   run: dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml # specify the test assembly path here 
+      # - name: Read TestResults
+      #   run: cat TestResults.xml
+      # - name: Generate code coverage report
+      #   run: |
+      #     dotnet tool install -g coverlet.console 
+      #     coverlet Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --target "nunit3-console" --targetargs "Lantern.Discv5.Tests/bin/Release/netcoreapp3.1/Lantern.Discv5.Tests.dll /p:NUnitXmlOutput=true /p:NUnitXmlTestResultsFile=TestResults.xml" --format opencover
 
-
-  sonar:
-    name: Build and analyze SonarCloud
-    runs-on: windows-latest
-    steps:
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: 11
-          distribution: 'zulu' # Alternative distribution options are available.
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v3
-        with:
-          path: ~\sonar\cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache SonarCloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v3
-        with:
-          path: .\.sonar\scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
-      - name: Install SonarCloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        shell: powershell
+      # Testing new setup to generate reports    
+      - name: Run tests with NUnit and generate coverage report
         run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
-      - name: Build and analyze
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 4.8.12
+          reportgenerator --version
+          dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3
+          dotnet-nunit --version
+          dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --where "cat != IntegrationTest" --result=TestResults.xml;format=nunit2 --labels=All 
+          cat TestResults.xml
+          reportgenerator "-reports:Lantern.Discv5.Test/coverage.opencover.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
+          
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        shell: powershell
-        run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"Pier-Two_Lantern.Discv5" /o:"pier-two" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          dotnet build
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+  # sonar:
+  #   name: Build and analyze SonarCloud
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Set up JDK 11
+  #       uses: actions/setup-java@v3
+  #       with:
+  #         java-version: 11
+  #         distribution: 'zulu' # Alternative distribution options are available.
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+  #     - name: Cache SonarCloud packages
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: ~\sonar\cache
+  #         key: ${{ runner.os }}-sonar
+  #         restore-keys: ${{ runner.os }}-sonar
+  #     - name: Cache SonarCloud scanner
+  #       id: cache-sonar-scanner
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: .\.sonar\scanner
+  #         key: ${{ runner.os }}-sonar-scanner
+  #         restore-keys: ${{ runner.os }}-sonar-scanner
+  #     - name: Install SonarCloud scanner
+  #       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+  #       shell: powershell
+  #       run: |
+  #         New-Item -Path .\.sonar\scanner -ItemType Directory
+  #         dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+  #     - name: Build and analyze
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       shell: powershell
+  #       run: |
+  #         .\.sonar\scanner\dotnet-sonarscanner begin /k:"Pier-Two_Lantern.Discv5" /o:"pier-two" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+  #         dotnet build
+  #         .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
