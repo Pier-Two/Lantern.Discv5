@@ -83,8 +83,8 @@ jobs:
           # echo "dotnet-nunit --version"
           # dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --where "cat != IntegrationTest" --result=TestResults.xml;format=nunit2 
           # --labels=All 
-          # cat TestResults.xml
-          reportgenerator "-reports:test/**/coverage.opencover.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
+          cat TestResults.xml
+          reportgenerator "-reports:TestResults.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
           
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
