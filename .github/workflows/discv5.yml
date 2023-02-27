@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       
-      - name: Checkout banch 
+      - name: Checkout branch 
         uses: actions/checkout@v2
       
       - name: Get changed files
@@ -27,23 +27,27 @@ jobs:
           output: 'json'
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Print changed files
-        run: echo "${{ steps.file-changes.outputs.files }}"
+        run: echo "Files changed are ${{ steps.file-changes.outputs.files }}"
     
       - name: Build Project_Enr if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
-        run: dotnet build Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
+        run: dotnet build src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
         
       - name: Build Project_Rlp if changed
         if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
-        run: dotnet build Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
+        run: dotnet build src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
       
-      - name: Build Project_Tests if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Tests') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Tests')
-        run: dotnet build Lantern.Discv5.Tests/Lantern.Discv5.Tests.csproj
-      
-      - name: Build Project_Topic if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Topic') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Topic')
-        run: dotnet build Lantern.Discv5.Topic/Lantern.Discv5.Topic.csproj
+      - name: Build Project_WriteProtocol if changed
+        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.WireProtocol') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.WireProtocol')
+        run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
+
+      - name: Test Setup
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 7.0.x
+      - name: Run tests with NUnit and generate coverage report
+        run: dotnet test
+
   sonar:
     name: Build and analyze SonarCloud
     runs-on: windows-latest
@@ -83,4 +87,5 @@ jobs:
         run: |
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"Pier-Two_Lantern.Discv5" /o:"pier-two" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet build
+          dotnet test --no-build
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"

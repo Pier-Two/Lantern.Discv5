@@ -28,3 +28,4 @@ nuget.config
 .idea/
 
 .DS_Store
+test.yml
