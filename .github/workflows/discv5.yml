@@ -76,9 +76,9 @@ jobs:
       - name: Run tests with NUnit and generate coverage report
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool --version 4.8.12
-          reportgenerator --version
+          # echo "reportgenerator --version"
           dotnet tool install --global NUnit.ConsoleRunner.NetCore --version 3.16.3
-          dotnet-nunit --version
+          # echo "dotnet-nunit --version"
           dotnet-nunit Lantern.Discv5.Tests/bin/Debug/net7.0/Lantern.Discv5.Tests.dll --where "cat != IntegrationTest" --result=TestResults.xml;format=nunit2 --labels=All 
           cat TestResults.xml
           reportgenerator "-reports:Lantern.Discv5.Test/coverage.opencover.xml" "-targetdir:test/coveragereport" -reporttypes:"Cobertura"
