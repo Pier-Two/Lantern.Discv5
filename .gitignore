@@ -29,3 +29,4 @@ nuget.config
 
 .DS_Store
 test.yml
+sonar-project copy.properties
