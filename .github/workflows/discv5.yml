@@ -46,7 +46,7 @@ jobs:
         with:
           dotnet-version: 7.0.x
       - name: Run tests and generate cobertura coverage report 
-        run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
       - name: Generate opencover report from cobertura
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
