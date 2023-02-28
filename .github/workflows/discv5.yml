@@ -49,7 +49,7 @@ jobs:
         run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
       - name: Generate opencover report from cobertura
         run: |
-          dotnet tool install -g dotnet-reportgenerator-globaltool
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.1.18
           reportgenerator -reports:**/TestResults/**/coverage.cobertura.xml -targetdir:coverage -reporttypes:opencover
       # - name: Publish code coverage report
       #   uses: danielpalme/ReportGenerator-GitHub-Action@main
