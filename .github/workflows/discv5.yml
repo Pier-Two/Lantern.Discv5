@@ -47,11 +47,11 @@ jobs:
           dotnet-version: 7.0.x
       - name: Run tests with NUnit and generate coverage report
         run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
-      - name: Publish code coverage report
-        uses: danielpalme/ReportGenerator-GitHub-Action@main
-        with:
-          reports: 'coverage.xml'
-          targetdir: 'coveragereport'
+      # - name: Publish code coverage report
+      #   uses: danielpalme/ReportGenerator-GitHub-Action@main
+      #   with:
+      #     reports: 'coverage.xml'
+      #     targetdir: 'coveragereport'
       # - name: Run tests with Coverlet
       #   run: |
       #     dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=TestResults/
