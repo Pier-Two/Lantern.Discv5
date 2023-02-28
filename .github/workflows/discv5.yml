@@ -54,8 +54,8 @@ jobs:
       #     targetdir: 'coverage-report'
       - name: Run tests with Coverlet
         run: |
-          dotnet test ./tests/*/*.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=TestResults/
-          coverlet ./tests/**/bin/Debug/netcoreapp7.0/*.Tests.dll --target "dotnet" --targetargs "test ./tests/*/*.csproj --no-build" --format opencover
+          dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=TestResults/
+          coverlet ./tests/**/bin/Debug/netcoreapp7.0/*.Tests.dll --target "dotnet" --targetargs "test --no-build" --format opencover
       - name: Integrate with SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
         env:
