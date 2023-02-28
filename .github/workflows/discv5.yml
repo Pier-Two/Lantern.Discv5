@@ -46,7 +46,14 @@ jobs:
         with:
           dotnet-version: 7.0.x
       - name: Run tests with NUnit and generate coverage report
-        run: dotnet test --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+        run: dotnet test --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:TestResultsDirectory=$HOME/TestResults
+      - name: Check if TestResults directory exists
+        run: |
+          if [ -d $HOME/TestResults ]; then
+            echo "TestResults directory exists"
+          else
+            echo "TestResults directory does not exist"
+          fi
       # - name: Publish code coverage report
       #   uses: danielpalme/ReportGenerator-GitHub-Action@main
       #   with:
