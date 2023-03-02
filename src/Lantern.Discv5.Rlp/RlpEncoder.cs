@@ -7,14 +7,24 @@ public static class RlpEncoder
 {
     public static byte[] EncodeInteger(int value)
     {
-        return Encode(ToBigEndianBytes(value), false);
+        return Encode(Helpers.ToBigEndianBytes(value), false);
     }
     
     public static byte[] EncodeUlong(ulong value)
     {
-        return Encode(ToBigEndianBytes(value), false);
+        return Encode(Helpers.ToBigEndianBytes(value), false);
     }
 
+    public static byte[] EncodeHexString(string value)
+    {
+        if (Convert.FromHexString(value)[0] == Constant.ZeroByte)
+        {
+            return new byte[] {0};
+        }
+        
+        return Encode(Convert.FromHexString(value), false);
+    }
+    
     public static byte[] EncodeString(string value, Encoding encoding)
     {
         if (!Equals(encoding, Encoding.UTF8) && !Equals(encoding, Encoding.ASCII))
@@ -95,38 +105,16 @@ public static class RlpEncoder
         if (length < Constant.SizeThreshold)
         {
             var shortPrefix = new[] { (byte)(shortOffset + length) };
-            return Concat(shortPrefix, array);
+            return Helpers.Concat(shortPrefix, array);
         }
         
         var lengthBytes = EncodeLength(length);
         var lengthValue = (byte)(largeOffset + lengthBytes.Length);
-        var prefix = Concat( new[] { lengthValue }, lengthBytes);
+        var prefix = Helpers.Concat( new[] { lengthValue }, lengthBytes);
         
-        return Concat(prefix, array);
+        return Helpers.Concat(prefix, array);
     }
-
-    private static byte[] ToBigEndianBytes(int val)
-    {
-        var bytes = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(bytes, val);
-        return bytes.AsSpan().TrimStart((byte)0).ToArray();
-    }
-
-    private static byte[] ToBigEndianBytes(ulong val)
-    {
-        var bytes = new byte[8];
-        BinaryPrimitives.WriteUInt64BigEndian(bytes, val);
-        return bytes.AsSpan().TrimStart((byte)0).ToArray();
-    }
-
-    private static byte[] Concat(byte[] a, byte[] b)
-    {
-        using var ms = new MemoryStream();
-        ms.Write(a, 0, a.Length);
-        ms.Write(b, 0, b.Length);
-        return ms.ToArray();
-    }
-
+    
     private static byte[] EncodeLength(int length)
     {
         if (length < 0) 

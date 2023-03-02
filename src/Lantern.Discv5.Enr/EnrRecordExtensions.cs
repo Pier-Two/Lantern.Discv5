@@ -8,23 +8,18 @@ namespace Lantern.Discv5.Enr;
 
 public static class EnrRecordExtensions
 {
-    public static byte[] EnrStringToBytes(string[] enrs)
+    public static string EnrBytesToString(byte[] enr) => UrlBase64.Encode(enr);
+
+    public static EnrRecord[] EnrStringsToBytes(string[] enrs)
     {
-        using var stream = new MemoryStream();
-        
-        foreach(var enr in enrs)
+        var records = new EnrRecord[enrs.Length];
+
+        for (var i = 0; i < records.Length; i++)
         {
-            var enrString = enr;
-            
-            if (enrString.StartsWith("enr:"))
-            {
-                enrString = enrString[4..];
-            }
-            
-            stream.Write(UrlBase64.Decode(enrString));
+            records[i] = FromString(enrs[i]);
         }
         
-        return stream.ToArray();
+        return records;
     }
     
     public static EnrRecord FromBytes(byte[] bytes)
@@ -42,7 +37,8 @@ public static class EnrRecordExtensions
 
     private static EnrRecord CreateEnrRecord(byte[] bytes)
     {
-        var items = RlpDecoder.Decode(bytes);
+        var items = RlpDecoderTest.Decode(bytes);
+
         var enrRecord = new EnrRecord
         {
             Signature = items[0],
@@ -67,6 +63,9 @@ public static class EnrRecordExtensions
     {
         return stringKey switch
         {
+            EnrContentKey.Attnets => new EntryAttnets(value),
+            EnrContentKey.Eth2 => new EntryEth2(value),
+            EnrContentKey.Syncnets => new EntrySyncnets(Convert.ToHexString(value)),
             EnrContentKey.Id => new EntryId(Encoding.ASCII.GetString(value)),
             EnrContentKey.Ip => new EntryIp(new IPAddress(value)),
             EnrContentKey.Ip6 => new EntryIp6(new IPAddress(value)),

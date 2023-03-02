@@ -20,7 +20,8 @@ public class EnrRecord
 
     public void AddEntry<T>(string key, T value) where T : class, IEnrContentEntry
     {
-        if (_entries.ContainsKey(key)) SequenceNumber++;
+        if (_entries.ContainsKey(key)) 
+            SequenceNumber++;
 
         _entries[key] = value;
     }
@@ -54,9 +55,10 @@ public class EnrRecord
     {
         var encodedContent = new List<byte[]>();
 
-        foreach (var (_, contentEntry) in _entries.OrderBy(e => e.Key)) 
+        foreach (var (key, contentEntry) in _entries.OrderBy(e => e.Key))
+        {
             encodedContent.Add(contentEntry.EncodeEntry());
-
+        }
         return encodedContent.SelectMany(b => b).ToArray();
     }
 }

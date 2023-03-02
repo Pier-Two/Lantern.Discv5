@@ -24,6 +24,27 @@ public static class RlpExtensions
 
         return BitConverter.ToInt32(bytes);
     }
+    
+    public static long ByteArrayToInt64(byte[] bytes)
+    {
+        if (bytes == null) 
+            throw new ArgumentNullException(nameof(bytes));
+    
+        if (bytes.Length > 8)
+            throw new ArgumentException("Input byte array must be no more than 8 bytes long.", nameof(bytes));
+
+        if (bytes.Length < 8)
+        {
+            var paddedBytes = new byte[8];
+            Buffer.BlockCopy(bytes, 0, paddedBytes, 8 - bytes.Length, bytes.Length);
+            bytes = paddedBytes;
+        }
+
+        if (IsLittleEndian(bytes)) Array.Reverse(bytes);
+
+        return BitConverter.ToInt64(bytes);
+    }
+
 
     public static ulong ByteArrayToUInt64(byte[] bytes)
     {

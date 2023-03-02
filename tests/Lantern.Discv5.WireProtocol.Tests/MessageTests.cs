@@ -1,4 +1,6 @@
 using System.Net;
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Table;
 using NUnit.Framework;
@@ -94,13 +96,31 @@ public class MessageTests
     {
         var firstEnrString = "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
         var secondEnrString = "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enrs = new[] { firstEnrString, secondEnrString };
+        var enr = EnrRecordExtensions.FromString(firstEnrString);
+        Assert.AreEqual(firstEnrString, enr.ToString());
+        var enrs = new[] { EnrRecordExtensions.FromString(firstEnrString), EnrRecordExtensions.FromString(secondEnrString) };
         var nodesMessage = new Nodes(2, enrs);
         var encodedMessage = nodesMessage.EncodeMessage();
         var expectedPrefix = new[] { 4, 249, 1, 81, 136 };
+        var expectedSuffix = new[] { 249, 1, 68, 248, 132, 184, 64, 112, 152, 173, 134, 91, 0, 165, 130, 5, 25, 64, 203, 156, 243, 104, 54, 87, 36, 17, 164, 114, 120, 120, 48, 119, 1, 21, 153, 237, 92, 209, 107, 118, 242, 99, 95, 78, 35, 71, 56, 243, 8, 19, 168, 158, 185, 19, 126, 62, 61, 245, 38, 110, 58, 31, 17, 223, 114, 236, 241, 20, 92, 203, 156, 1, 130, 105, 100, 130, 118, 52, 130, 105, 112, 132, 127, 0, 0, 1, 137, 115, 101, 99, 112, 50, 53, 54, 107, 49, 161, 3, 202, 99, 76, 174, 13, 73, 172, 180, 1, 216, 164, 198, 182, 254, 140, 85, 183, 13, 17, 91, 244, 0, 118, 156, 193, 64, 15, 50, 88, 205, 49, 56, 131, 117, 100, 112, 130, 118, 95, 248, 188, 184, 64, 228, 180, 210, 27, 207, 13, 215, 68, 112, 42, 112, 3, 87, 12, 202, 69, 141, 116, 149, 10, 231, 64, 35, 109, 24, 27, 45, 159, 69, 44, 252, 129, 107, 191, 34, 208, 220, 44, 65, 146, 210, 87, 174, 222, 150, 146, 84, 239, 82, 245, 62, 223, 114, 169, 89, 132, 212, 46, 151, 121, 34, 62, 45, 95, 1, 135, 97, 116, 116, 110, 101, 116, 115, 136, 0, 0, 0, 0, 0, 0, 0, 0, 132, 101, 116, 104, 50, 144, 238, 40, 215, 179, 0, 0, 0, 114, 70, 5, 0, 0, 0, 0, 0, 0, 130, 105, 100, 130, 118, 52, 130, 105, 112, 132, 64, 225, 78, 1, 137, 115, 101, 99, 112, 50, 53, 54, 107, 49, 161, 2, 32, 49, 67, 5, 188, 145, 165, 175, 199, 72, 213, 49, 16, 203, 226, 187, 242, 237, 147, 36, 77, 171, 90, 246, 161, 246, 113, 170, 45, 0, 132, 26, 136, 115, 121, 110, 99, 110, 101, 116, 115, 0, 131, 116, 99, 112, 130, 35, 40, 131, 117, 100, 112, 130, 35, 40  };
         Assert.AreEqual(341, encodedMessage.Length);
         Assert.AreEqual(expectedPrefix, new ArraySegment<byte>(encodedMessage, 0, 5));
+        Assert.AreEqual(expectedSuffix, new ArraySegment<byte>(encodedMessage, 14, 327));
+    }
+    
+    [Test]
+    public void Test_Nodes_ShouldDecodeCorrectly()
+    {
+        var firstEnrString = "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
+        var secondEnrString = "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
+        var enrs = new[] { EnrRecordExtensions.FromString(firstEnrString), EnrRecordExtensions.FromString(secondEnrString) };
+        var nodesMessage = new Nodes(2, enrs);
+        var decodedMessage = Nodes.DecodeMessage(nodesMessage.EncodeMessage());
         
+        //Assert.AreEqual(decodedMessage.RequestId, nodesMessage.RequestId);
+        //Assert.AreEqual(decodedMessage.Total, nodesMessage.Total);
+        //Assert.AreEqual(decodedMessage.Enrs, nodesMessage.Enrs);
+
     }
     
     

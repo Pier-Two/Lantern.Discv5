@@ -7,15 +7,15 @@ public class Nodes : Message
 {
     public int Total { get; }
     
-    public string[] Enrs { get; }
+    public EnrRecord[] Enrs { get; }
     
-    public Nodes(int total, string[] enrs) : base(MessageTypes.Nodes)
+    public Nodes(int total, EnrRecord[] enrs) : base(MessageTypes.Nodes)
     {
         Total = total;
         Enrs = enrs;
     }
     
-    public Nodes(byte[] requestId, int total, string[] enrs) : base(MessageTypes.Nodes)
+    public Nodes(byte[] requestId, int total, EnrRecord[] enrs) : base(MessageTypes.Nodes)
     {
         RequestId = requestId;
         Total = total;
@@ -27,25 +27,30 @@ public class Nodes : Message
         var messageId = new [] { MessageType };
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
         var encodedTotal = RlpEncoder.EncodeInteger(Total);
-        var encodedEnrs =  RlpEncoder.EncodeCollectionOfBytes(EnrRecordExtensions.EnrStringToBytes(Enrs));
+
+        using var stream = new MemoryStream();
+        
+        foreach (var enr in Enrs)
+        {
+            stream.Write(enr.EncodeEnrRecord());
+        }
+        
+        var encodedEnrs =  RlpEncoder.EncodeCollectionOfBytes(stream.ToArray());
         var encodedItems = RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedTotal, encodedEnrs));
         return Helpers.JoinMultipleByteArrays(messageId, encodedItems);
     }
-    
-    
 
-    /*
     public static Nodes DecodeMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
-        var total = RlpExtensions.ByteArrayToInt32(decodedMessage[1]);
-        var enrs = new EnrRecord[decodedMessage.Count - 2];
+        var rawMessage = message[1..];
 
-        for (var i = 2; i < decodedMessage.Count; i++)
-        {
-            enrs[i - 2] = EnrRecordExtensions.FromBytes(decodedMessage[i]);
-        }
-        
-        return new Nodes(total, enrs);
-    }*/
+
+        return null;
+    }
+    
+
+
+
 }
+
+

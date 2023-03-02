@@ -39,6 +39,5 @@ public class FindNode : Message
         {
             RequestId = decodedMessage[0]
         };
-
     }
 }

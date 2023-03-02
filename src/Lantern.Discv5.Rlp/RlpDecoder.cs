@@ -2,97 +2,109 @@ namespace Lantern.Discv5.Rlp;
 
 public static class RlpDecoder
 {
-    public static IList<byte[]> Decode(ReadOnlySpan<byte> input)
+    public static List<byte[]> Decode(byte[] encodedData, int maxItems = int.MaxValue)
     {
-        var message = new RlpMessage(input);
+        var result = new List<object>();
 
-        while (message.Remainder.Offset < input.Length) Decode(message);
-
-        return message.Data;
-    }
-
-    private static void Decode(RlpMessage msg)
-    {
-        var firstByte = Convert.ToInt16(msg.Remainder.Array![msg.Remainder.Offset]);
-
-        switch (firstByte)
+        var index = 0;
+        while (index < encodedData.Length && result.Count < maxItems)
         {
-            case <= Constant.ShortItemOffset - 1:
-                DecodeSingleByte(msg);
-                break;
-            case <= Constant.LargeItemOffset:
-                DecodeString(msg);
-                break;
-            case <= Constant.ShortCollectionOffset - 1:
-                DecodeShortCollection(msg);
-                break;
-            case <= Constant.LargeCollectionOffset:
-                DecodeCollection(msg);
-                break;
-            case > Constant.MaxItemLength:
-                throw new ArgumentOutOfRangeException(nameof(msg), "msg is too long");
-            default:
-                DecodeLongCollection(msg);
-                break;
+            var currentByte = encodedData[index];
+            switch (currentByte)
+            {
+                case < 0x80:
+                    result.Add(DecodeSingleByte(encodedData, index));
+                    index++;
+                    break;
+                case < 0xb8:
+                {
+                    var length = currentByte - 0x80;
+                    result.Add(DecodeString(encodedData, index, length));
+                    index += 1 + length;
+                    break;
+                }
+                case < 0xc0:
+                {
+                    var lengthBytes = currentByte - 0xb7;
+                    var length = DecodeLength(encodedData, index + 1, lengthBytes);
+                    result.Add(DecodeString(encodedData, index + lengthBytes + 1, length));
+                    index += lengthBytes + length + 1;
+                    break;
+                }
+                case < 0xf8:
+                {
+                    var length = currentByte - 0xc0;
+                    result.Add(DecodeList(encodedData, index + 1, length));
+                    index += 1 + length;
+                    break;
+                }
+                default:
+                {
+                    var lengthBytes = currentByte - 0xf7;
+                    var length = DecodeLength(encodedData, index + 1, lengthBytes);
+                    result.Add(DecodeList(encodedData, index + lengthBytes + 1, length));
+                    index += lengthBytes + length + 1;
+                    break;
+                }
+            }
         }
+
+        var finalResult = Flatten(result)
+            .Take(maxItems)
+            .ToList();
+        
+        return finalResult;
     }
 
-    private static void DecodeSingleByte(RlpMessage msg)
+    private static byte[] DecodeSingleByte(byte[] encodedData, int index)
     {
-        msg.Data.Add(new[] { msg.Remainder.Array![msg.Remainder.Offset] });
-        msg.Remainder = msg.Remainder[1..];
+        return new [] { encodedData[index] };
     }
 
-    private static void DecodeString(RlpMessage msg)
+    private static byte[] DecodeString(byte[] encodedData, int index, int length)
     {
-        var itemLength =
-            Math.Abs(Constant.ShortItemOffset - Convert.ToInt16(msg.Remainder.Array![msg.Remainder.Offset]));
-        var data = GetArraySegment(msg.Remainder, 1, itemLength);
-        msg.Data.Add(data.ToArray());
-        msg.Remainder = msg.Remainder[(data.Count + 1)..];
+        return encodedData.SubArray(index + 1, length);
     }
 
-    private static void DecodeShortCollection(RlpMessage msg)
+    private static List<byte[]> DecodeList(byte[] encodedData, int index, int length)
     {
-        var listLength =
-            Math.Abs(Constant.LargeItemOffset - Convert.ToInt16(msg.Remainder.Array![msg.Remainder.Offset]));
-        var itemLength = Convert.ToInt16(msg.Remainder.Array[msg.Remainder.Offset + 1]);
-        var data = GetArraySegment(msg.Remainder, listLength + 1, itemLength);
-        msg.Data.Add(data.ToArray());
-        msg.Remainder = msg.Remainder[(data.Offset + data.Count)..];
+        var sublistData = encodedData.SubArray(index, length);
+        return Decode(sublistData);
     }
 
-    private static void DecodeCollection(RlpMessage msg)
+    private static int DecodeLength(byte[] encodedData, int index, int lengthBytes)
     {
-        var itemLength = Math.Abs(Constant.ShortCollectionOffset -
-                                  Convert.ToInt16(msg.Remainder.Array![msg.Remainder.Offset]));
-        var data = GetArraySegment(msg.Remainder, 1, itemLength).ToArray();
-
-        while (msg.Remainder.Offset < msg.Remainder.Array!.Length)
+        var length = 0;
+        for (var i = 0; i < lengthBytes; i++)
         {
-            var decoded = Decode(data);
-            msg.Data.AddRange(decoded);
-            msg.Remainder = msg.Remainder[msg.Remainder.Count..];
+            length = (length << 8) + encodedData[index + i];
         }
+        return length;
     }
 
-    private static void DecodeLongCollection(RlpMessage msg)
+    private static List<byte[]> Flatten(List<object> list)
     {
-        var listLength = Math.Abs(Constant.LargeCollectionOffset -
-                                  Convert.ToInt16(msg.Remainder.Array![msg.Remainder.Offset]));
-        var itemLength = Convert.ToInt16(msg.Remainder.Array[msg.Remainder.Offset + 1]);
-        var data = GetArraySegment(msg.Remainder, listLength + 1, itemLength).ToArray();
-
-        while (msg.Remainder.Offset < msg.Remainder.Array!.Length)
+        var result = new List<byte[]>();
+        foreach (var item in list)
         {
-            var decoded = Decode(data);
-            msg.Data.AddRange(decoded);
-            msg.Remainder = msg.Remainder[msg.Remainder.Count..];
+            switch (item)
+            {
+                case byte[] singleByte:
+                    result.Add(singleByte);
+                    break;
+                case List<byte[]> sublist:
+                    result.AddRange(sublist);
+                    break;
+            }
         }
+        return result;
     }
-
-    private static ArraySegment<byte> GetArraySegment(ArraySegment<byte> array, int offset, int count)
+    
+    private static T[] SubArray<T>(this T[] array, int index, int length)
     {
-        return new ArraySegment<byte>(array.Array!, array.Offset + offset, count);
+        var result = new T[length];
+        Array.Copy(array, index, result, 0, length);
+        return result;
     }
 }
+

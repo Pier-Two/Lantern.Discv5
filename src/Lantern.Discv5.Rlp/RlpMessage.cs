@@ -1,6 +1,6 @@
 ﻿namespace Lantern.Discv5.Rlp;
 
-internal class RlpMessage
+public class RlpMessage
 {
     public RlpMessage(ReadOnlySpan<byte> input)
     {

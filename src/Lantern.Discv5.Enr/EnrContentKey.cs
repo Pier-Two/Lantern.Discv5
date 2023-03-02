@@ -5,6 +5,8 @@ public static class EnrContentKey
     public const string Attnets = "attnets";
     
     public const string Eth2 = "eth2";
+
+    public const string Syncnets = "syncnets";
     
     public const string Id = "id";
 
