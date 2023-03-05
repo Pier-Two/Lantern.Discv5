@@ -20,7 +20,7 @@ public class EnrRecord
 
     public void AddEntry<T>(string key, T value) where T : class, IEnrContentEntry
     {
-        if (_entries.ContainsKey(key)) 
+        if (_entries.ContainsKey(key))
             SequenceNumber++;
 
         _entries[key] = value;
@@ -36,7 +36,7 @@ public class EnrRecord
 
     public byte[] EncodeEnrRecord()
     {
-        if (Signature == null) 
+        if (Signature == null)
             throw new InvalidOperationException("Signature must be set before encoding.");
 
         var encodedSignature = RlpEncoder.EncodeBytes(Signature);
@@ -56,9 +56,7 @@ public class EnrRecord
         var encodedContent = new List<byte[]>();
 
         foreach (var (key, contentEntry) in _entries.OrderBy(e => e.Key))
-        {
             encodedContent.Add(contentEntry.EncodeEntry());
-        }
         return encodedContent.SelectMany(b => b).ToArray();
     }
 }

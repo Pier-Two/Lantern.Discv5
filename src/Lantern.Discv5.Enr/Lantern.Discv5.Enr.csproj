@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Keccak256" Version="1.0.0" />
-        <PackageReference Include="NBitcoin.Secp256k1" Version="3.1.0" />
-        <PackageReference Include="UrlBase64" Version="0.1.2" />
+        <PackageReference Include="Keccak256" Version="1.0.0"/>
+        <PackageReference Include="NBitcoin.Secp256k1" Version="3.1.0"/>
+        <PackageReference Include="UrlBase64" Version="0.1.2"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
+        <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj"/>
     </ItemGroup>
 
 </Project>

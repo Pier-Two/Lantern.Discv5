@@ -8,23 +8,13 @@ namespace Lantern.Discv5.Enr;
 
 public static class EnrRecordExtensions
 {
-    public static string EnrBytesToString(byte[] enr) => UrlBase64.Encode(enr);
-
-    public static EnrRecord[] EnrStringsToBytes(string[] enrs)
+    public static EnrRecord[] FromMultipleEnrList(List<List<byte[]>> enrs)
     {
-        var records = new EnrRecord[enrs.Length];
+        var enrRecords = new EnrRecord[enrs.Count];
 
-        for (var i = 0; i < records.Length; i++)
-        {
-            records[i] = FromString(enrs[i]);
-        }
-        
-        return records;
-    }
-    
-    public static EnrRecord FromBytes(byte[] bytes)
-    {
-        return CreateEnrRecord(bytes);
+        for (var i = 0; i < enrs.Count; i++) enrRecords[i] = CreateEnrRecordFromDecoded(enrs[i]);
+
+        return enrRecords;
     }
 
     public static EnrRecord FromString(string enrString)
@@ -35,9 +25,31 @@ public static class EnrRecordExtensions
         return CreateEnrRecord(UrlBase64.Decode(enrString));
     }
 
+    public static EnrRecord CreateEnrRecordFromDecoded(IReadOnlyList<byte[]> items)
+    {
+        var enrRecord = new EnrRecord
+        {
+            Signature = items[0],
+            SequenceNumber = RlpExtensions.ByteArrayToUInt64(items[1])
+        };
+
+        for (var i = 2; i < items.Count - 1; i++)
+        {
+            var key = Encoding.ASCII.GetString(items[i]);
+            var entry = GetEnrEntry(key, items[i + 1]);
+
+            if (entry == null)
+                continue;
+
+            enrRecord.AddEntry(key, entry);
+        }
+
+        return enrRecord;
+    }
+
     private static EnrRecord CreateEnrRecord(byte[] bytes)
     {
-        var items = RlpDecoderTest.Decode(bytes);
+        var items = RlpDecoder.Decode(bytes);
 
         var enrRecord = new EnrRecord
         {

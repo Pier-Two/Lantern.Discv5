@@ -2,63 +2,67 @@ namespace Lantern.Discv5.Rlp;
 
 public static class RlpDecoder
 {
-    public static List<byte[]> Decode(byte[] encodedData, int maxItems = int.MaxValue)
+    public static List<byte[]> Decode(byte[] input)
     {
-        var result = new List<object>();
-
+        var list = new List<object>();
         var index = 0;
-        while (index < encodedData.Length && result.Count < maxItems)
+
+        while (index < input.Length)
         {
-            var currentByte = encodedData[index];
+            var currentByte = input[index];
             switch (currentByte)
             {
-                case < 0x80:
-                    result.Add(DecodeSingleByte(encodedData, index));
+                // Single byte
+                case >= Constants.ZeroByte and <= Constants.ShortItemOffset - 1:
+                    list.Add(DecodeSingleByte(input, index));
                     index++;
                     break;
-                case < 0xb8:
+                // Short item
+                case >= Constants.ShortItemOffset and <= Constants.LargeItemOffset:
                 {
-                    var length = currentByte - 0x80;
-                    result.Add(DecodeString(encodedData, index, length));
+                    var length = currentByte - Constants.ShortItemOffset;
+                    list.Add(DecodeString(input, index, length));
                     index += 1 + length;
                     break;
                 }
-                case < 0xc0:
+                // Long item
+                case >= Constants.LargeItemOffset + 1 and <= Constants.ShortCollectionOffset - 1:
                 {
-                    var lengthBytes = currentByte - 0xb7;
-                    var length = DecodeLength(encodedData, index + 1, lengthBytes);
-                    result.Add(DecodeString(encodedData, index + lengthBytes + 1, length));
-                    index += lengthBytes + length + 1;
+                    var lengthOfLength = currentByte - Constants.LargeItemOffset;
+                    var lengthBytes = GetNextBytes(input, index + 1, lengthOfLength);
+                    var length = RlpExtensions.ByteArrayToInt32(lengthBytes);
+                    list.Add(DecodeString(input, index + lengthOfLength, length));
+                    index += lengthOfLength + length + 1;
                     break;
                 }
-                case < 0xf8:
+                // Short collection
+                case >= Constants.ShortCollectionOffset and <= Constants.LargeCollectionOffset:
                 {
-                    var length = currentByte - 0xc0;
-                    result.Add(DecodeList(encodedData, index + 1, length));
+                    var length = currentByte - Constants.ShortCollectionOffset;
+                    list.Add(DecodeList(input, index, length));
                     index += 1 + length;
                     break;
                 }
-                default:
+                // Long collection
+                case >= Constants.LargeCollectionOffset + 1 and <= Constants.MaxItemLength:
                 {
-                    var lengthBytes = currentByte - 0xf7;
-                    var length = DecodeLength(encodedData, index + 1, lengthBytes);
-                    result.Add(DecodeList(encodedData, index + lengthBytes + 1, length));
-                    index += lengthBytes + length + 1;
+                    var lengthOfLength = currentByte - Constants.LargeCollectionOffset;
+                    var lengthBytes = GetNextBytes(input, index + 1, lengthOfLength);
+                    var length = RlpExtensions.ByteArrayToInt32(lengthBytes);
+                    var sublist = DecodeList(input, index + lengthOfLength, length);
+                    list.AddRange(sublist);
+                    index += lengthOfLength + length + 1;
                     break;
                 }
             }
         }
 
-        var finalResult = Flatten(result)
-            .Take(maxItems)
-            .ToList();
-        
-        return finalResult;
+        return list.Flatten();
     }
 
     private static byte[] DecodeSingleByte(byte[] encodedData, int index)
     {
-        return new [] { encodedData[index] };
+        return new[] { encodedData[index] };
     }
 
     private static byte[] DecodeString(byte[] encodedData, int index, int length)
@@ -68,25 +72,30 @@ public static class RlpDecoder
 
     private static List<byte[]> DecodeList(byte[] encodedData, int index, int length)
     {
-        var sublistData = encodedData.SubArray(index, length);
-        return Decode(sublistData);
+        var subArray = encodedData.SubArray(index + 1, length);
+        return Decode(subArray);
     }
 
-    private static int DecodeLength(byte[] encodedData, int index, int lengthBytes)
+    public static byte[] GetNextBytes(byte[] byteArray, int index, int count)
     {
-        var length = 0;
-        for (var i = 0; i < lengthBytes; i++)
-        {
-            length = (length << 8) + encodedData[index + i];
-        }
-        return length;
+        if (index < 0 || index >= byteArray.Length)
+            throw new IndexOutOfRangeException("The provided index is out of range.");
+
+        if (count < 0) throw new ArgumentException("The provided count parameter must be a non-negative integer.");
+
+        if (index + count > byteArray.Length)
+            throw new ArgumentException("The requested range is out of bounds of the byte array.");
+
+        var resultArray = new byte[count];
+        Array.Copy(byteArray, index, resultArray, 0, count);
+
+        return resultArray;
     }
 
-    private static List<byte[]> Flatten(List<object> list)
+    private static List<byte[]> Flatten(this List<object> list)
     {
         var result = new List<byte[]>();
         foreach (var item in list)
-        {
             switch (item)
             {
                 case byte[] singleByte:
@@ -96,10 +105,10 @@ public static class RlpDecoder
                     result.AddRange(sublist);
                     break;
             }
-        }
+
         return result;
     }
-    
+
     private static T[] SubArray<T>(this T[] array, int index, int length)
     {
         var result = new T[length];
@@ -107,4 +116,3 @@ public static class RlpDecoder
         return result;
     }
 }
-

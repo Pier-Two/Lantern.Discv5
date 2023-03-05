@@ -17,6 +17,6 @@ public class EntryUdp : IEnrContentEntry
     public byte[] EncodeEntry()
     {
         return Helpers.JoinByteArrays(RlpEncoder.EncodeString(Key, Encoding.ASCII),
-                    RlpEncoder.EncodeInteger(Value));
+            RlpEncoder.EncodeInteger(Value));
     }
 }

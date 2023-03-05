@@ -9,14 +9,14 @@ public class EntrySyncnets : IEnrContentEntry
     {
         Value = value;
     }
-    
+
     public string Value { get; }
-    
+
     public string Key => EnrContentKey.Syncnets;
-    
+
     public byte[] EncodeEntry()
     {
         return Helpers.JoinByteArrays(RlpEncoder.EncodeString(Key, Encoding.ASCII),
-                    RlpEncoder.EncodeHexString(Value));
+            RlpEncoder.EncodeHexString(Value));
     }
 }

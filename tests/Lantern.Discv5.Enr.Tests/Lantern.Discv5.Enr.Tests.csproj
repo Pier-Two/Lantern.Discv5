@@ -7,12 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj" />
+        <ProjectReference Include="..\..\src\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-      <PackageReference Include="NUnit" Version="3.13.3" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0"/>
+        <PackageReference Include="NUnit" Version="3.13.3"/>
     </ItemGroup>
 
 </Project>

@@ -10,10 +10,10 @@ public class EntryAttnets : IEnrContentEntry
         Value = value;
     }
 
-    public string Key => EnrContentKey.Attnets;
-    
     public byte[] Value { get; }
-    
+
+    public string Key => EnrContentKey.Attnets;
+
     public byte[] EncodeEntry()
     {
         return Helpers.JoinByteArrays(RlpEncoder.EncodeString(Key, Encoding.ASCII),

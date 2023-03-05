@@ -4,7 +4,8 @@ public class TableUtility
 {
     private const int NodeIdSize = 256;
 
-    private static readonly int[] LeadingZerosLookup = {
+    private static readonly int[] LeadingZerosLookup =
+    {
         8, 7, 6, 6, 5, 5, 5, 5,
         4, 4, 4, 4, 4, 4, 4, 4,
         3, 3, 3, 3, 3, 3, 3, 3,
@@ -31,7 +32,7 @@ public class TableUtility
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0
     };
 
     public static int Log2Distance(ReadOnlySpan<byte> firstNodeId, ReadOnlySpan<byte> secondNodeId)

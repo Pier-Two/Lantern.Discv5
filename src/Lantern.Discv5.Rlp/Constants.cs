@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.Rlp;
 
-public struct Constant
+public struct Constants
 {
     public const byte ZeroByte = 0x00;
     public const int SizeThreshold = 55;

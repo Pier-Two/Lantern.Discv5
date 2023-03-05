@@ -7,16 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Packets" />
+        <ProjectReference Include="..\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj" />
+        <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj" />
-      <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Makaretu.KBucket" Version="0.5.0" />
+        <PackageReference Include="Makaretu.KBucket" Version="0.5.0" />
     </ItemGroup>
 
 </Project>

@@ -10,9 +10,9 @@ public class EntryId : IEnrContentEntry
         Value = value;
     }
 
-    public string Key => EnrContentKey.Id;
-    
     public string Value { get; }
+
+    public string Key => EnrContentKey.Id;
 
     public byte[] EncodeEntry()
     {
