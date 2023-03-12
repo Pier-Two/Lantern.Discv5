@@ -10,7 +10,7 @@ public abstract class Message
 
     protected byte MessageType { get; }
 
-    public byte[] RequestId { get; protected init; }
+    public byte[] RequestId { get; set; }
 
     private static byte[] GenerateRequestId()
     {

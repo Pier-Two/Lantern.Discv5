@@ -56,7 +56,6 @@ public static class RlpDecoder
                 }
             }
         }
-
         return list.Flatten();
     }
 
@@ -76,10 +75,10 @@ public static class RlpDecoder
         return Decode(subArray);
     }
 
-    public static byte[] GetNextBytes(byte[] byteArray, int index, int count)
+    private static byte[] GetNextBytes(byte[] byteArray, int index, int count)
     {
         if (index < 0 || index >= byteArray.Length)
-            throw new IndexOutOfRangeException("The provided index is out of range.");
+            throw new ArgumentException("The provided index is out of range.");
 
         if (count < 0) throw new ArgumentException("The provided count parameter must be a non-negative integer.");
 

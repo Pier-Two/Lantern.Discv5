@@ -8,7 +8,6 @@ public class UdpCommunication
     private const int MaxPacketSize = 1280;
     private const int MinPacketSize = 63;
     private const int TimeoutMilliseconds = 500;
-
     private readonly UdpClient _udpClient;
 
     public UdpCommunication(int port)
@@ -30,7 +29,6 @@ public class UdpCommunication
     {
         var receiveResult = await ReceiveAsyncWithTimeoutAsync();
         ValidatePacketSize(receiveResult.Buffer);
-
         return receiveResult.Buffer;
     }
 

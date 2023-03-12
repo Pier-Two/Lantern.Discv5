@@ -22,7 +22,7 @@ public static class EnrRecordExtensions
         if (enrString.StartsWith("enr:"))
             enrString = enrString[4..];
 
-        return CreateEnrRecord(UrlBase64.Decode(enrString));
+        return FromBytes(UrlBase64.Decode(enrString));
     }
 
     public static EnrRecord CreateEnrRecordFromDecoded(IReadOnlyList<byte[]> items)
@@ -47,7 +47,7 @@ public static class EnrRecordExtensions
         return enrRecord;
     }
 
-    private static EnrRecord CreateEnrRecord(byte[] bytes)
+    public static EnrRecord FromBytes(byte[] bytes)
     {
         var items = RlpDecoder.Decode(bytes);
 

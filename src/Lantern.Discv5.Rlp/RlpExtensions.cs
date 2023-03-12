@@ -42,7 +42,6 @@ public static class RlpExtensions
         return BitConverter.ToInt64(bytes);
     }
 
-
     public static ulong ByteArrayToUInt64(byte[] bytes)
     {
         if (bytes == null)
