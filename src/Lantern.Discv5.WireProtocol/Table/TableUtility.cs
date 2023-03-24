@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class TableUtility
+public static class TableUtility
 {
     private const int NodeIdSize = 256;
 

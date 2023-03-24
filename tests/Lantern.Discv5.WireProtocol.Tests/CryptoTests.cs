@@ -53,7 +53,7 @@ public class CryptoTests
         var staticHeader = new StaticHeader(ProtocolConstants.ProtocolId, ProtocolConstants.Version,
             whoAreYouPacket.AuthData, (byte)PacketType.WhoAreYou, nonce);
         var maskedHeader = new MaskedHeader(nodeBId, maskedIv);
-        var packet = Helpers.JoinByteArrays(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader()));
+        var packet = ByteArrayUtils.JoinByteArrays(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader()));
         var expectedWhoAreYouPacket =
             Convert.FromHexString(
                 "00000000000000000000000000000000088b3d434277464933a1ccc59f5967ad1d6035f15e528627dde75cd68292f9e6c27d6b66c8100a873fcbaed4e16b8d");
@@ -69,7 +69,7 @@ public class CryptoTests
                 "00000000000000000000000000000000088b3d434277464933a1ccc59f5967ad1d6035f15e528627dde75cd68292f9e6c27d6b66c8100a873fcbaed4e16b8d");
         var decryptedData = AesCryptography.AesCtrDecrypt(nodeBId[..16], whoAreYouPacket);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
-        var challengeData = Helpers.JoinMultipleByteArrays(whoAreYouPacket[..16], staticHeader.GetHeader());
+        var challengeData = ByteArrayUtils.Concatenate(whoAreYouPacket[..16], staticHeader.GetHeader());
         var whoAreYou = WhoAreYouPacket.DecodeAuthData(staticHeader.AuthData);
         var expectedChallengeData =
             Convert.FromHexString(
@@ -107,9 +107,9 @@ public class CryptoTests
             RequestId = new byte[] { 0, 0, 0, 1 }
         };
         var messagePt = pingMessage.EncodeMessage();
-        var messageAd = Helpers.JoinByteArrays(maskedIv, staticHeader.GetHeader());
+        var messageAd = ByteArrayUtils.JoinByteArrays(maskedIv, staticHeader.GetHeader());
         var encryptedMessage = AesCryptography.AesGcmEncrypt(sessionKeys.InitiatorKey, nonce, messagePt, messageAd);
-        var packet = Helpers.JoinMultipleByteArrays(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader()), encryptedMessage);
+        var packet = ByteArrayUtils.Concatenate(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader()), encryptedMessage);
         var expectedPacket = Convert.FromHexString("00000000000000000000000000000000088b3d4342774649305f313964a39e55ea96c005ad521d8c7560413a7008f16c9e6d2f43bbea8814a546b7409ce783d34c4f53245d08da4bb252012b2cba3f4f374a90a75cff91f142fa9be3e0a5f3ef268ccb9065aeecfd67a999e7fdc137e062b2ec4a0eb92947f0d9a74bfbf44dfba776b21301f8b65efd5796706adff216ab862a9186875f9494150c4ae06fa4d1f0396c93f215fa4ef524f1eadf5f0f4126b79336671cbcf7a885b1f8bd2a5d839cf8");
         //Assert.IsTrue(packet.SequenceEqual(expectedPacket));
     }
@@ -134,7 +134,7 @@ public class CryptoTests
         var result = CryptoSession.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephemeralPubKey, nodeBId);
         var sharedSecret = nodeBCrypto.GenerateSharedSecret(ephemeralPubKey);
         var sessionKeys = CryptoSession.GenerateKeyDataFromSecret(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
-        var messageAd = Helpers.JoinByteArrays(maskingIv, staticHeader.GetHeader());
+        var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCryptography.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
             encryptedMessage, messageAd);
@@ -162,7 +162,7 @@ public class CryptoTests
         // If it contains a record, it verifies the record's signature 
         // Then, it verifies the 'id-signature' by extracting ephemeral public key from the handshake packet and using nodeB challenge data
         var enr = EnrRecordExtensions.FromBytes(handshakePacket.Record!);
-        var enrRecordSignatureVerify = V4IdentityScheme.VerifyEnrRecord(enr);
+        var enrRecordSignatureVerify = IdentitySchemeV4.VerifyEnrRecord(enr);
         var idSignature = handshakePacket.IdSignature;
         var maskingIv = packet[..16];
         var challengeData =
@@ -172,7 +172,7 @@ public class CryptoTests
         var idSignatureVerify = CryptoSession.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephemeralPubKey, nodeBId);
         var sharedSecret = nodeBCrypto.GenerateSharedSecret(ephemeralPubKey);
         var sessionKeys = CryptoSession.GenerateKeyDataFromSecret(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
-        var messageAd = Helpers.JoinByteArrays(maskingIv, staticHeader.GetHeader());
+        var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCryptography.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
             encryptedMessage, messageAd);

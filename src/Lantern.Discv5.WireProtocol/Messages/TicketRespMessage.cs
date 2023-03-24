@@ -28,9 +28,9 @@ public class TicketRespMessage : Message
         var encodedTicket = RlpEncoder.EncodeBytes(Ticket);
         var encodedWaitTime = RlpEncoder.EncodeInteger(WaitTime);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedTicket,
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedTicket,
                 encodedWaitTime));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static TicketRespMessage DecodeMessage(byte[] message)

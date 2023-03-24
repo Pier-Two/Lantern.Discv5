@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.Enr;
 
-public interface IEnrIdentityScheme
+public interface IIdentityScheme
 {
     byte[] SignEnrRecord(EnrRecord record);
 }

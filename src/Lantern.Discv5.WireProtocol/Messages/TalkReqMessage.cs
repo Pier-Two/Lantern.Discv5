@@ -21,9 +21,9 @@ public class TalkReqMessage : Message
         var encodedProtocol = RlpEncoder.EncodeBytes(Protocol);
         var encodedRequest = RlpEncoder.EncodeBytes(Request);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedProtocol,
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedProtocol,
                 encodedRequest));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static TalkReqMessage DecodeMessage(byte[] message)

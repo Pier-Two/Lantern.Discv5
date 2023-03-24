@@ -17,9 +17,9 @@ public class WhoAreYouPacket : PacketBase
     private static byte[] PreparePacketBase(byte[] idNonce, int enrSeq)
     {
         var enrSeqArray = new byte[AuthDataSizes.EnrSeqSize];
-        var enrSeqBytes = Helpers.ToBigEndianBytes(enrSeq);
+        var enrSeqBytes = ByteArrayUtils.ToBigEndianBytesTrimmed(enrSeq);
         Array.Copy(enrSeqBytes, 0, enrSeqArray, AuthDataSizes.EnrSeqSize - enrSeqBytes.Length, enrSeqBytes.Length);
-        return Helpers.JoinByteArrays(idNonce, enrSeqArray);
+        return ByteArrayUtils.JoinByteArrays(idNonce, enrSeqArray);
     }
 
     public static WhoAreYouPacket DecodeAuthData(byte[] authData)

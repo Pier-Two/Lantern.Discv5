@@ -26,9 +26,9 @@ public class RegTopicMessage : Message
         var encodedEnr = Enr.EncodeEnrRecord();
         var encodedTicket = RlpEncoder.EncodeBytes(Ticket);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedTopic,
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedTopic,
                 encodedEnr, encodedTicket));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static RegTopicMessage DecodeMessage(byte[] message)

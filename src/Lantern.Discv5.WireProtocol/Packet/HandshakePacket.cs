@@ -26,9 +26,9 @@ public class HandshakePacket : PacketBase
 
     private static byte[] PreparePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = default)
     {
-        var authDataHead = Helpers.JoinMultipleByteArrays(srcId, Helpers.ToBigEndianBytes(idSignature.Length),
-            Helpers.ToBigEndianBytes(ephPubkey.Length));
-        return Helpers.JoinMultipleByteArrays(authDataHead, idSignature, ephPubkey, record);
+        var authDataHead = ByteArrayUtils.Concatenate(srcId, ByteArrayUtils.ToBigEndianBytesTrimmed(idSignature.Length),
+            ByteArrayUtils.ToBigEndianBytesTrimmed(ephPubkey.Length));
+        return ByteArrayUtils.Concatenate(authDataHead, idSignature, ephPubkey, record);
     }
     
     public static HandshakePacket DecodeAuthData(byte[] authData)

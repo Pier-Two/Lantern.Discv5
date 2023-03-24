@@ -33,21 +33,21 @@ public class StaticHeader
     public byte[] GetHeader()
     {
         var protocolId = Encoding.ASCII.GetBytes(ProtocolId);
-        var authDataSize = Helpers.ToBigEndianBytes(AuthDataSize);
+        var authDataSize = ByteArrayUtils.ToBigEndianBytesTrimmed(AuthDataSize);
         var authDataBytes = new byte[AuthDataSizes.AuthDataSizeBytesLength];
         Array.Copy(authDataSize, 0, authDataBytes, AuthDataSizes.AuthDataSizeBytesLength - authDataSize.Length, authDataSize.Length);
 
-        return Helpers.JoinMultipleByteArrays(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
+        return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
     }
 
     public byte[] ToBytes()
     {
         var protocolId = Encoding.ASCII.GetBytes(ProtocolId);
-        var authDataSize = Helpers.ToBigEndianBytes(AuthDataSize);
+        var authDataSize = ByteArrayUtils.ToBigEndianBytesTrimmed(AuthDataSize);
         var authDataSizeBytes = new byte[AuthDataSizes.AuthDataSizeBytesLength];
         Array.Copy(authDataSize, 0, authDataSizeBytes, AuthDataSizes.AuthDataSizeBytesLength - authDataSize.Length, authDataSize.Length);
         
-        return Helpers.JoinMultipleByteArrays(protocolId, Version, new[] { Flag }, Nonce, authDataSizeBytes);
+        return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataSizeBytes);
     }
 
     public static StaticHeader DecodeFromBytes(byte[] decryptedData)

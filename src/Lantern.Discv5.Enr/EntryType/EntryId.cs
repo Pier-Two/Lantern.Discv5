@@ -3,7 +3,7 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EntryType;
 
-public class EntryId : IEnrContentEntry
+public class EntryId : IContentEntry
 {
     public EntryId(string value)
     {
@@ -16,7 +16,7 @@ public class EntryId : IEnrContentEntry
 
     public byte[] EncodeEntry()
     {
-        return Helpers.JoinByteArrays(RlpEncoder.EncodeString(Key, Encoding.ASCII),
+        return ByteArrayUtils.JoinByteArrays(RlpEncoder.EncodeString(Key, Encoding.ASCII),
             RlpEncoder.EncodeString(Value, Encoding.ASCII));
     }
 }

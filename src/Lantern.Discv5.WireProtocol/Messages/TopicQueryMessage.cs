@@ -17,8 +17,8 @@ public class TopicQueryMessage : Message
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
         var encodedTopic = RlpEncoder.EncodeBytes(Topic);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedTopic));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedTopic));
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static TopicQueryMessage DecodeMessage(byte[] message)

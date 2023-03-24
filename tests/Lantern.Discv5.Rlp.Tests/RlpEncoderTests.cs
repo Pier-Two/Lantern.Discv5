@@ -101,7 +101,7 @@ public class RlpEncoderTests
             242, 237, 147, 36, 77, 171, 90, 246, 161, 246, 113, 170, 45, 0, 132, 26, 136, 115, 121, 110, 99, 110, 101,
             116, 115, 0, 131, 116, 99, 112, 130, 35, 40, 131, 117, 100, 112, 130, 35, 40
         };
-        var rlpEncoded = RlpEncoder.EncodeEachByteInBytes(bytes);
+        var rlpEncoded = RlpEncoder.EncodeByteCollection(bytes);
         var rlpExpected = new byte[]
         {
             246, 129, 242, 129, 237, 129, 147, 36, 77, 129, 171, 90, 129, 246, 129, 161, 129, 246, 113, 129, 170, 45,

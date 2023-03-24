@@ -17,8 +17,8 @@ public class TalkRespMessage : Message
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
         var encodedResponse = RlpEncoder.EncodeBytes(Response);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedResponse));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedResponse));
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static TalkRespMessage DecodeMessage(byte[] message)

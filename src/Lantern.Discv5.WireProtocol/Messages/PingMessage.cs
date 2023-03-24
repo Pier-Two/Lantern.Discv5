@@ -17,8 +17,8 @@ public class PingMessage : Message
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
         var encodedEnrSeq = RlpEncoder.EncodeInteger(EnrSeq);
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedEnrSeq));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedEnrSeq));
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static PingMessage DecodeMessage(byte[] message)

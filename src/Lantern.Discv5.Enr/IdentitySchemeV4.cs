@@ -4,11 +4,11 @@ using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.Enr;
 
-public class V4IdentityScheme : IEnrIdentityScheme
+public class IdentitySchemeV4 : IIdentityScheme
 {
     private readonly ECPrivKey? _privateKey;
 
-    public V4IdentityScheme(byte[] privateKey)
+    public IdentitySchemeV4(byte[] privateKey)
     {
         _privateKey = Context.Instance.CreateECPrivKey(privateKey);
     }

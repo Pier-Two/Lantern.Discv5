@@ -34,9 +34,9 @@ public class PongMessage : Message
         var encodedEnrSeq = RlpEncoder.EncodeInteger(EnrSeq);
         var encodedRecipientIp = RlpEncoder.EncodeBytes(RecipientIp.GetAddressBytes());
         var encodedRecipientPort = RlpEncoder.EncodeInteger(RecipientPort);
-        var encodedMessage = RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId,
+        var encodedMessage = RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId,
             encodedEnrSeq, encodedRecipientIp, encodedRecipientPort));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static PongMessage DecodeMessage(byte[] message)

@@ -1,36 +1,31 @@
 ﻿using Lantern.Discv5.Rlp;
-using NeoSmart.Utils;
 
 namespace Lantern.Discv5.Enr;
 
-public class EnrRecord
+public record EnrRecord(byte[]? Signature = null)
 {
-    private readonly Dictionary<string, IEnrContentEntry> _entries = new();
-
-    public byte[]? Signature { get; set; }
-
+    private readonly Dictionary<string, IContentEntry> _entries = new();
     public ulong SequenceNumber { get; set; }
 
-    public T GetEntry<T>(string key, T defaultValue = default!) where T : IEnrContentEntry
+    public T GetEntry<T>(string key, T defaultValue = default!) where T : IContentEntry
     {
-        if (_entries.TryGetValue(key, out var value) && value is T result) return result;
-
-        return defaultValue;
+        return _entries.TryGetValue(key, out var value) && value is T result ? result : defaultValue;
     }
 
-    public void AddEntry<T>(string key, T value) where T : class, IEnrContentEntry
+    public EnrRecord AddEntry<T>(string key, T value) where T : class, IContentEntry
     {
         if (_entries.ContainsKey(key))
             SequenceNumber++;
 
         _entries[key] = value;
+        return this;
     }
 
     public byte[] EncodeContent()
     {
         var encodedContent = EncodeEnrContent();
         var encodedSeq = RlpEncoder.EncodeUlong(SequenceNumber);
-        var encodedItems = Helpers.JoinMultipleByteArrays(encodedSeq, encodedContent);
+        var encodedItems = ByteArrayUtils.Concatenate(encodedSeq, encodedContent);
         return RlpEncoder.EncodeCollectionOfBytes(encodedItems);
     }
 
@@ -42,21 +37,20 @@ public class EnrRecord
         var encodedSignature = RlpEncoder.EncodeBytes(Signature);
         var encodedSeq = RlpEncoder.EncodeUlong(SequenceNumber);
         var encodedContent = EncodeEnrContent();
-        var encodedItems = Helpers.JoinMultipleByteArrays(encodedSignature, encodedSeq, encodedContent);
+        var encodedItems = ByteArrayUtils.Concatenate(encodedSignature, encodedSeq, encodedContent);
         return RlpEncoder.EncodeCollectionOfBytes(encodedItems);
     }
 
     public override string ToString()
     {
-        return $"enr:{UrlBase64.Encode(EncodeEnrRecord())}";
+        return $"enr:{Base64UrlConverter.ToBase64UrlString(EncodeEnrRecord())}";
     }
 
     private byte[] EncodeEnrContent()
     {
-        var encodedContent = new List<byte[]>();
-
-        foreach (var (key, contentEntry) in _entries.OrderBy(e => e.Key))
-            encodedContent.Add(contentEntry.EncodeEntry());
-        return encodedContent.SelectMany(b => b).ToArray();
+        return _entries
+            .OrderBy(e => e.Key)
+            .SelectMany(e => e.Value.EncodeEntry())
+            .ToArray();
     }
 }

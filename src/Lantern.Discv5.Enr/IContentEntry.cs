@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.Enr;
 
-public interface IEnrContentEntry
+public interface IContentEntry
 {
     string Key { get; }
 

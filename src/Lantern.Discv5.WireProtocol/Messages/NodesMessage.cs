@@ -33,9 +33,9 @@ public class NodesMessage : Message
 
         var encodedEnrs = RlpEncoder.EncodeCollectionOfBytes(stream.ToArray());
         var encodedItems =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedTotal,
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedTotal,
                 encodedEnrs));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedItems);
+        return ByteArrayUtils.Concatenate(messageId, encodedItems);
     }
 
     public static NodesMessage DecodeMessage(byte[] message)

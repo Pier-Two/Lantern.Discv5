@@ -64,7 +64,7 @@ public class CryptoSession
     public byte[] GenerateIdSignature(byte[] challengeData, byte[] ephemeralPubkey, byte[] nodeId)
     {
         var idSignatureText = Encoding.UTF8.GetBytes(SessionConstants.IdSignatureProof);
-        var idSignatureInput = Helpers.JoinMultipleByteArrays(idSignatureText, challengeData, ephemeralPubkey, nodeId);
+        var idSignatureInput = ByteArrayUtils.Concatenate(idSignatureText, challengeData, ephemeralPubkey, nodeId);
         var hash = SHA256.HashData(idSignatureInput);
         _privateKey.TrySignECDSA(hash, out var signature);
         return signature!.r.ToBytes().Concat(signature.s.ToBytes()).ToArray();
@@ -73,38 +73,19 @@ public class CryptoSession
     public static bool VerifyIdSignature(byte[] idSignature, byte[] publicKey, byte[] challengeData, byte[] ephemeralPubkey, byte[] nodeId)
     {
         var idSignatureText = Encoding.UTF8.GetBytes(SessionConstants.IdSignatureProof);
-        var idSignatureInput = Helpers.JoinMultipleByteArrays(idSignatureText, challengeData, ephemeralPubkey, nodeId);
+        var idSignatureInput = ByteArrayUtils.Concatenate(idSignatureText, challengeData, ephemeralPubkey, nodeId);
         var hash = SHA256.HashData(idSignatureInput);
         var key = Context.Instance.CreatePubKey(publicKey);
         SecpECDSASignature.TryCreateFromCompact(idSignature, out var signature);
         return key.SigVerify(signature!, hash);
     }
 
-    /*
-    public byte[] GenerateKeyData(byte[] destPublicKey, byte[] nodeIdA, byte[] nodeIdB, byte[] challengeData)
-    {
-        var kdfInfo = Helpers.JoinMultipleByteArrays(Encoding.UTF8.GetBytes(SessionConstants.DiscoveryAgreement), nodeIdA, nodeIdB);
-        var sharedSecret = GenerateSharedSecret(destPublicKey);
-        var prk = HKDF.Extract(HashAlgorithmName.SHA256, sharedSecret, challengeData);
-        var keyData = new byte[32];
-        HKDF.Expand(HashAlgorithmName.SHA256, prk, keyData, kdfInfo);
-        return keyData;
-    }*/
-    
     public static SessionKeys GenerateKeyDataFromSecret(byte[] sharedSecret, byte[] nodeIdA, byte[] nodeIdB, byte[] challengeData)
     {
-        var kdfInfo = Helpers.JoinMultipleByteArrays(Encoding.UTF8.GetBytes(SessionConstants.DiscoveryAgreement), nodeIdA, nodeIdB);
+        var kdfInfo = ByteArrayUtils.Concatenate(Encoding.UTF8.GetBytes(SessionConstants.DiscoveryAgreement), nodeIdA, nodeIdB);
         var prk = HKDF.Extract(HashAlgorithmName.SHA256, sharedSecret, challengeData);
         var keyData = new byte[32];
         HKDF.Expand(HashAlgorithmName.SHA256, prk, keyData, kdfInfo);
         return new SessionKeys(keyData);
     }
-    
-    /*
-    private byte[] GenerateSharedSecret(byte[] ephemeralPublicKey)
-    {
-        var remotePublicKeyContext = Context.Instance.CreatePubKey(ephemeralPublicKey);
-        var sharedPublicKey = remotePublicKeyContext.GetSharedPubkey(_ephemeralPrivateKey);
-        return sharedPublicKey.ToBytes();
-    }*/
 }

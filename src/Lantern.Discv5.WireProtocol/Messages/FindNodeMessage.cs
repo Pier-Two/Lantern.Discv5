@@ -21,8 +21,8 @@ public class FindNodeMessage : Message
 
         var encodedDistances = RlpEncoder.EncodeCollectionOfBytes(stream.ToArray());
         var encodedMessage =
-            RlpEncoder.EncodeCollectionOfBytes(Helpers.JoinMultipleByteArrays(encodedRequestId, encodedDistances));
-        return Helpers.JoinMultipleByteArrays(messageId, encodedMessage);
+            RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedDistances));
+        return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
 
     public static FindNodeMessage DecodeMessage(byte[] message)

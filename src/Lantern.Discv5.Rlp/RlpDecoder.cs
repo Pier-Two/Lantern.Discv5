@@ -10,52 +10,42 @@ public static class RlpDecoder
         while (index < input.Length)
         {
             var currentByte = input[index];
-            switch (currentByte)
+
+            int length, lengthOfLength;
+
+            if (currentByte <= Constants.ShortItemOffset - 1)
             {
-                // Single byte
-                case >= Constants.ZeroByte and <= Constants.ShortItemOffset - 1:
-                    list.Add(DecodeSingleByte(input, index));
-                    index++;
-                    break;
-                // Short item
-                case >= Constants.ShortItemOffset and <= Constants.LargeItemOffset:
-                {
-                    var length = currentByte - Constants.ShortItemOffset;
-                    list.Add(DecodeString(input, index, length));
-                    index += 1 + length;
-                    break;
-                }
-                // Long item
-                case >= Constants.LargeItemOffset + 1 and <= Constants.ShortCollectionOffset - 1:
-                {
-                    var lengthOfLength = currentByte - Constants.LargeItemOffset;
-                    var lengthBytes = GetNextBytes(input, index + 1, lengthOfLength);
-                    var length = RlpExtensions.ByteArrayToInt32(lengthBytes);
-                    list.Add(DecodeString(input, index + lengthOfLength, length));
-                    index += lengthOfLength + length + 1;
-                    break;
-                }
-                // Short collection
-                case >= Constants.ShortCollectionOffset and <= Constants.LargeCollectionOffset:
-                {
-                    var length = currentByte - Constants.ShortCollectionOffset;
-                    list.Add(DecodeList(input, index, length));
-                    index += 1 + length;
-                    break;
-                }
-                // Long collection
-                case >= Constants.LargeCollectionOffset + 1 and <= Constants.MaxItemLength:
-                {
-                    var lengthOfLength = currentByte - Constants.LargeCollectionOffset;
-                    var lengthBytes = GetNextBytes(input, index + 1, lengthOfLength);
-                    var length = RlpExtensions.ByteArrayToInt32(lengthBytes);
-                    var sublist = DecodeList(input, index + lengthOfLength, length);
-                    list.AddRange(sublist);
-                    index += lengthOfLength + length + 1;
-                    break;
-                }
+                list.Add(DecodeSingleByte(input, index));
+                index++;
+            }
+            else if (currentByte <= Constants.LargeItemOffset)
+            {
+                length = currentByte - Constants.ShortItemOffset;
+                list.Add(DecodeString(input, index + 1, length));
+                index += 1 + length;
+            }
+            else if (currentByte <= Constants.ShortCollectionOffset - 1)
+            {
+                lengthOfLength = currentByte - Constants.LargeItemOffset;
+                length = RlpExtensions.ByteArrayToInt32(GetNextBytes(input, index + 1, lengthOfLength));
+                list.Add(DecodeString(input, index + 1 + lengthOfLength, length));
+                index += 1 + lengthOfLength + length;
+            }
+            else if (currentByte <= Constants.LargeCollectionOffset)
+            {
+                length = currentByte - Constants.ShortCollectionOffset;
+                list.Add(DecodeList(input, index + 1, length));
+                index += 1 + length;
+            }
+            else
+            {
+                lengthOfLength = currentByte - Constants.LargeCollectionOffset;
+                length = RlpExtensions.ByteArrayToInt32(GetNextBytes(input, index + 1, lengthOfLength));
+                list.AddRange(DecodeList(input, index + 1 + lengthOfLength, length));
+                index += 1 + lengthOfLength + length;
             }
         }
+
         return list.Flatten();
     }
 
@@ -66,13 +56,12 @@ public static class RlpDecoder
 
     private static byte[] DecodeString(byte[] encodedData, int index, int length)
     {
-        return encodedData.SubArray(index + 1, length);
+        return encodedData.SubArray(index, length);
     }
 
     private static List<byte[]> DecodeList(byte[] encodedData, int index, int length)
     {
-        var subArray = encodedData.SubArray(index + 1, length);
-        return Decode(subArray);
+        return Decode(encodedData.SubArray(index, length));
     }
 
     private static byte[] GetNextBytes(byte[] byteArray, int index, int count)
@@ -85,10 +74,7 @@ public static class RlpDecoder
         if (index + count > byteArray.Length)
             throw new ArgumentException("The requested range is out of bounds of the byte array.");
 
-        var resultArray = new byte[count];
-        Array.Copy(byteArray, index, resultArray, 0, count);
-
-        return resultArray;
+        return byteArray.SubArray(index, count);
     }
 
     private static List<byte[]> Flatten(this List<object> list)

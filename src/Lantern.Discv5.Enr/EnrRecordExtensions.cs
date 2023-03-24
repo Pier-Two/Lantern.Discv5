@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Lantern.Discv5.Enr.EntryType;
 using Lantern.Discv5.Rlp;
-using NeoSmart.Utils;
 
 namespace Lantern.Discv5.Enr;
 
@@ -22,7 +21,7 @@ public static class EnrRecordExtensions
         if (enrString.StartsWith("enr:"))
             enrString = enrString[4..];
 
-        return FromBytes(UrlBase64.Decode(enrString));
+        return FromBytes(Base64UrlConverter.FromBase64UrlString(enrString));
     }
 
     public static EnrRecord CreateEnrRecordFromDecoded(IReadOnlyList<byte[]> items)
@@ -71,7 +70,7 @@ public static class EnrRecordExtensions
         return enrRecord;
     }
 
-    private static IEnrContentEntry? GetEnrEntry(string stringKey, byte[] value)
+    private static IContentEntry? GetEnrEntry(string stringKey, byte[] value)
     {
         return stringKey switch
         {

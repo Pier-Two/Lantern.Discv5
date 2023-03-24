@@ -40,7 +40,7 @@ public class RlpDecoderTests
     public void Test_RlpDecoder_ShouldDecodeSmallIntegerCorrectly()
     {
         var rawValue = 23;
-        var value = Helpers.ToBigEndianBytes(rawValue);
+        var value = ByteArrayUtils.ToBigEndianBytesTrimmed(rawValue);
         var encodedBytes = RlpEncoder.EncodeBytes(value);
         var decodedBytes = RlpDecoder.Decode(encodedBytes);
         Assert.AreEqual(rawValue, RlpExtensions.ByteArrayToUInt64(decodedBytes.SelectMany(e => e).ToArray()));
@@ -50,7 +50,7 @@ public class RlpDecoderTests
     public void Test_RlpDecoder_ShouldDecodeLargeIntegerCorrectly()
     {
         var rawValue = 999999999;
-        var value = Helpers.ToBigEndianBytes(rawValue);
+        var value = ByteArrayUtils.ToBigEndianBytesTrimmed(rawValue);
         var encodedBytes = RlpEncoder.EncodeBytes(value);
         var decodedBytes = RlpDecoder.Decode(encodedBytes);
         Assert.AreEqual(rawValue, RlpExtensions.ByteArrayToUInt64(decodedBytes.SelectMany(e => e).ToArray()));
