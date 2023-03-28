@@ -1,7 +1,15 @@
 namespace Lantern.Discv5.Rlp;
 
+/// <summary>
+/// RlpDecoder class handles the RLP (Recursive Length Prefix) decoding of byte arrays.
+/// </summary>
 public static class RlpDecoder
 {
+    /// <summary>
+    /// Decode RLP encoded input into a list of byte arrays.
+    /// </summary>
+    /// <param name="input">The RLP encoded input byte array.</param>
+    /// <returns>A list of byte arrays containing the decoded data.</returns>
     public static List<byte[]> Decode(byte[] input)
     {
         var list = new List<object>();
@@ -10,7 +18,6 @@ public static class RlpDecoder
         while (index < input.Length)
         {
             var currentByte = input[index];
-
             int length, lengthOfLength;
 
             if (currentByte <= Constants.ShortItemOffset - 1)
@@ -48,22 +55,49 @@ public static class RlpDecoder
 
         return list.Flatten();
     }
-
+    
+    /// <summary>
+    /// Decode a single byte item from the encoded data.
+    /// </summary>
+    /// <param name="encodedData">The RLP encoded input byte array.</param>
+    /// <param name="index">The index of the item in the encoded data.</param>
+    /// <returns>A byte array containing the decoded single byte item.</returns>
     private static byte[] DecodeSingleByte(byte[] encodedData, int index)
     {
         return new[] { encodedData[index] };
     }
 
+    /// <summary>
+    /// Decode a string item from the encoded data.
+    /// </summary>
+    /// <param name="encodedData">The RLP encoded input byte array.</param>
+    /// <param name="index">The starting index of the item in the encoded data.</param>
+    /// <param name="length">The length of the item to decode.</param>
+    /// <returns>A byte array containing the decoded string item.</returns>
     private static byte[] DecodeString(byte[] encodedData, int index, int length)
     {
-        return encodedData.SubArray(index, length);
+        return encodedData[index..( index + length)];
     }
 
+    /// <summary>
+    /// Decode a list item from the encoded data.
+    /// </summary>
+    /// <param name="encodedData">The RLP encoded input byte array.</param>
+    /// <param name="index">The starting index of the list item in the encoded data.</param>
+    /// <param name="length">The length of the list item to decode.</param>
+    /// <returns>A list of byte arrays containing the decoded list items.</returns>
     private static List<byte[]> DecodeList(byte[] encodedData, int index, int length)
     {
-        return Decode(encodedData.SubArray(index, length));
+        return Decode(encodedData[index..(index + length)]);
     }
 
+    /// <summary>
+    /// Get the next bytes from the byte array.
+    /// </summary>
+    /// <param name="byteArray">The input byte array.</param>
+    /// <param name="index">The starting index to get the bytes from.</param>
+    /// <param name="count">The number of bytes to retrieve.</param>
+    /// <returns>A byte array containing the requested bytes.</returns>
     private static byte[] GetNextBytes(byte[] byteArray, int index, int count)
     {
         if (index < 0 || index >= byteArray.Length)
@@ -73,10 +107,15 @@ public static class RlpDecoder
 
         if (index + count > byteArray.Length)
             throw new ArgumentException("The requested range is out of bounds of the byte array.");
-
-        return byteArray.SubArray(index, count);
+        
+        return byteArray[index..(index + count)];
     }
 
+    /// <summary>
+    /// Flatten a list containing byte arrays and lists of byte arrays into a single list of byte arrays.
+    /// </summary>
+    /// <param name="list">The input list containing byte arrays and lists of byte arrays.</param>
+    /// <returns>A flattened list containing only byte arrays.</returns>
     private static List<byte[]> Flatten(this List<object> list)
     {
         var result = new List<byte[]>();
@@ -91,13 +130,6 @@ public static class RlpDecoder
                     break;
             }
 
-        return result;
-    }
-
-    private static T[] SubArray<T>(this T[] array, int index, int length)
-    {
-        var result = new T[length];
-        Array.Copy(array, index, result, 0, length);
         return result;
     }
 }

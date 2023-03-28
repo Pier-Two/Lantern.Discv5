@@ -1,24 +1,32 @@
-﻿using Lantern.Discv5.Rlp;
+﻿using Lantern.Discv5.Enr.Content;
+using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr;
 
-public record EnrRecord(byte[]? Signature = null)
+public class EnrRecord
 {
     private readonly Dictionary<string, IContentEntry> _entries = new();
+    
     public ulong SequenceNumber { get; set; }
+    
+    public byte[] Signature { get; }
+    
+    public EnrRecord(byte[] signature)
+    {
+        Signature = signature;
+    }
 
     public T GetEntry<T>(string key, T defaultValue = default!) where T : IContentEntry
     {
-        return _entries.TryGetValue(key, out var value) && value is T result ? result : defaultValue;
+        return _entries.GetValueOrDefault(key) is T result ? result : defaultValue;
     }
 
-    public EnrRecord AddEntry<T>(string key, T value) where T : class, IContentEntry
+    public void SetEntry<T>(string key, T value) where T : class, IContentEntry
     {
         if (_entries.ContainsKey(key))
             SequenceNumber++;
 
         _entries[key] = value;
-        return this;
     }
 
     public byte[] EncodeContent()
@@ -43,7 +51,7 @@ public record EnrRecord(byte[]? Signature = null)
 
     public override string ToString()
     {
-        return $"enr:{Base64UrlConverter.ToBase64UrlString(EncodeEnrRecord())}";
+        return $"enr:{Base64Url.ToBase64UrlString(EncodeEnrRecord())}";
     }
 
     private byte[] EncodeEnrContent()

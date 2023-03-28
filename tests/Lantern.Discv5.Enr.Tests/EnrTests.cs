@@ -1,5 +1,8 @@
 ﻿using System.Net;
-using Lantern.Discv5.Enr.EntryType;
+using Lantern.Discv5.Enr.Content;
+using Lantern.Discv5.Enr.Content.EntryTypes;
+using Lantern.Discv5.Enr.Factory;
+using Lantern.Discv5.Enr.Identity;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.Enr.Tests;
@@ -25,10 +28,10 @@ public class EnrTests
         var udp = new EntryUdp(30303);
         
         enr.SequenceNumber = 1;
-        enr.AddEntry(EnrContentKey.Id, id);
-        enr.AddEntry(EnrContentKey.Ip, ip);
-        enr.AddEntry(EnrContentKey.Secp256K1, pubKey);
-        enr.AddEntry(EnrContentKey.Udp, udp);
+        enr.SetEntry(EnrContentKey.Id, id);
+        enr.SetEntry(EnrContentKey.Ip, ip);
+        enr.SetEntry(EnrContentKey.Secp256K1, pubKey);
+        enr.SetEntry(EnrContentKey.Udp, udp);
         Assert.AreEqual(enrString, enr.ToString());
     }
 
@@ -37,8 +40,7 @@ public class EnrTests
     {
         var enrString =
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
-
-        var enr = EnrRecordExtensions.FromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString);
         var signature =
             Convert.FromHexString(
                 "7098ad865b00a582051940cb9cf36836572411a47278783077011599ed5cd16b76f2635f4e234738f30813a89eb9137e3e3df5266e3a1f11df72ecf1145ccb9c");
@@ -67,7 +69,7 @@ public class EnrTests
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
 
-        var enr = EnrRecordExtensions.FromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString);
         var signature =
             Convert.FromHexString(
                 "e4b4d21bcf0dd744702a7003570cca458d74950ae740236d181b2d9f452cfc816bbf22d0dc2c4192d257aede969254ef52f53edf72a95984d42e9779223e2d5f");
@@ -99,11 +101,11 @@ public class EnrTests
     [Test]
     public void Test_V4IdentitySchemeSigning_ShouldSignContentCorrectly()
     {
-        var enr = EnrRecordExtensions.FromString(
+        var enr = new EnrRecordFactory().CreateFromString(
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var privateKey = Convert.FromHexString("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291");
-        var identityScheme = new IdentitySchemeV4(privateKey);
-        var signature = identityScheme.SignEnrRecord(enr);
+        var identityScheme = new IdentitySchemeV4Signer(privateKey);
+        var signature = identityScheme.SignRecord(enr);
         var expectedSignature =
             Convert.FromHexString(
                 "7098ad865b00a582051940cb9cf36836572411a47278783077011599ed5cd16b76f2635f4e234738f30813a89eb9137e3e3df5266e3a1f11df72ecf1145ccb9c");
@@ -113,17 +115,19 @@ public class EnrTests
     [Test]
     public void Test_V4RecordVerification_ShouldVerifySignatureCorrectly()
     {
-        var enr = EnrRecordExtensions.FromString(
+        var enr = new EnrRecordFactory().CreateFromString(
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
-        Assert.AreEqual(true, IdentitySchemeV4.VerifyEnrRecord(enr));
+        var identityVerifier = new IdentitySchemeV4Verifier();
+        Assert.AreEqual(true, identityVerifier.VerifyRecord(enr));
     }
 
     [Test]
     public void Test_V4NodeIdentityDerivation_ShouldDeriveNodeIdCorrectly()
     {
-        var enr = EnrRecordExtensions.FromString(
+        var enr = new EnrRecordFactory().CreateFromString(
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var nodeId = Convert.FromHexString("a448f24c6d18e575453db13171562b71999873db5b286df957af199ec94617f7");
-        Assert.AreEqual(nodeId, IdentitySchemeV4.DeriveNodeId(enr));
+        var identityVerifier = new IdentitySchemeV4Verifier();
+        Assert.AreEqual(nodeId, identityVerifier.GetNodeIdFromRecord(enr));
     }
 }

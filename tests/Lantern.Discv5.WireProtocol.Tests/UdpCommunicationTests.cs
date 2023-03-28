@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Lantern.Discv5.WireProtocol.Session;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;

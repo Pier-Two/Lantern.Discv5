@@ -1,6 +1,9 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.WireProtocol.Messages;
+using Lantern.Discv5.Enr.Factory;
+using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Message.Requests;
+using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Table;
 using NUnit.Framework;
 
@@ -12,7 +15,7 @@ public class MessageTests
     [Test]
     public void Test_PingMessage_ShouldEncodeCorrectly()
     {
-        var pingMessage = new PingMessage(12);
+        var pingMessage = new PingMessageBase(12);
         var encodedMessage = pingMessage.EncodeMessage();
         var expectedPrefix = new[] { MessageType.Ping, 202, 136 };
         Assert.AreEqual(12, encodedMessage.Length);
@@ -23,8 +26,8 @@ public class MessageTests
     [Test]
     public void Test_PingMessage_ShouldDecodeCorrectly()
     {
-        var pingMessage = new PingMessage(12);
-        var newPingMessage = PingMessage.DecodeMessage(pingMessage.EncodeMessage());
+        var pingMessage = new PingMessageBase(12);
+        var newPingMessage = PingMessageBase.DecodeMessage(pingMessage.EncodeMessage());
         Assert.AreEqual(pingMessage.RequestId, newPingMessage.RequestId);
         Assert.AreEqual(pingMessage.EnrSeq, newPingMessage.EnrSeq);
     }
@@ -33,7 +36,7 @@ public class MessageTests
     public void Test_PongMessage_ShouldEncodeCorrectly()
     {
         var recipientIp = IPAddress.Loopback;
-        var pongMessage = new PongMessage(12, recipientIp, 3402);
+        var pongMessage = new PongMessageBase(12, recipientIp, 3402);
         var encodedMessage = pongMessage.EncodeMessage();
         var expectedPrefix = new[] { 2, 210, 136 };
         var expectedSuffix = new[] { 12, 132, 127, 0, 0, 1, 130, 13, 74 };
@@ -47,8 +50,8 @@ public class MessageTests
     public void Test_PongMessage_ShouldDecodeCorrectly()
     {
         var recipientIp = IPAddress.Loopback;
-        var pongMessage = new PongMessage(12, recipientIp, 3402);
-        var newPongMessage = PongMessage.DecodeMessage(pongMessage.EncodeMessage());
+        var pongMessage = new PongMessageBase(12, recipientIp, 3402);
+        var newPongMessage = PongMessageBase.DecodeMessage(pongMessage.EncodeMessage());
         Assert.AreEqual(pongMessage.RequestId, newPongMessage.RequestId);
         Assert.AreEqual(pongMessage.EnrSeq, newPongMessage.EnrSeq);
         Assert.AreEqual(pongMessage.RecipientIp, newPongMessage.RecipientIp);
@@ -65,7 +68,7 @@ public class MessageTests
         var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
         var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
-        var findNodeMessage = new FindNodeMessage(distances);
+        var findNodeMessage = new FindNodeMessageBase(distances);
         var encodedMessage = findNodeMessage.EncodeMessage();
         var expectedPrefix = new[] { 3, 207, 136 };
         var expectedSuffix = new[] { 197, 130, 1, 0, 129, 255 };
@@ -84,8 +87,8 @@ public class MessageTests
         var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
         var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
-        var findNodeMessage = new FindNodeMessage(distances);
-        var newFindNodeMessage = FindNodeMessage.DecodeMessage(findNodeMessage.EncodeMessage());
+        var findNodeMessage = new FindNodeMessageBase(distances);
+        var newFindNodeMessage = FindNodeMessageBase.DecodeMessage(findNodeMessage.EncodeMessage());
         Assert.AreEqual(findNodeMessage.Distances, newFindNodeMessage.Distances);
     }
 
@@ -97,8 +100,8 @@ public class MessageTests
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
         var enrs = new[]
-            { EnrRecordExtensions.FromString(firstEnrString), EnrRecordExtensions.FromString(secondEnrString) };
-        var nodesMessage = new NodesMessage(2, enrs);
+            { new EnrRecordFactory().CreateFromString(firstEnrString), new EnrRecordFactory().CreateFromString(secondEnrString) };
+        var nodesMessage = new NodesMessageBase(2, enrs);
         var encodedMessage = nodesMessage.EncodeMessage();
         var expectedPrefix = new[] { 4, 249, 1, 81, 136 };
         var expectedSuffix = new[]
@@ -131,9 +134,9 @@ public class MessageTests
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
         var enrs = new[]
-            { EnrRecordExtensions.FromString(firstEnrString), EnrRecordExtensions.FromString(secondEnrString) };
-        var nodesMessage = new NodesMessage(2, enrs);
-        var decodedMessage = NodesMessage.DecodeMessage(nodesMessage.EncodeMessage());
+            { new EnrRecordFactory().CreateFromString(firstEnrString), new EnrRecordFactory().CreateFromString(secondEnrString) };
+        var nodesMessage = new NodesMessageBase(2, enrs);
+        var decodedMessage = NodesMessageBase.DecodeMessage(nodesMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.RequestId, nodesMessage.RequestId);
         Assert.AreEqual(decodedMessage.Total, nodesMessage.Total);
         Assert.AreEqual(decodedMessage.Enrs.Length, nodesMessage.Enrs.Length);
@@ -147,7 +150,7 @@ public class MessageTests
     {
         var protocol = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var request = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
-        var talkReqMessage = new TalkReqMessage(protocol, request);
+        var talkReqMessage = new TalkReqMessageBase(protocol, request);
         var encodedMessage = talkReqMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 5, 223, 136 };
         var expectedSuffix = new byte[]
@@ -162,8 +165,8 @@ public class MessageTests
     {
         var protocol = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var request = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
-        var talkReqMessage = new TalkReqMessage(protocol, request);
-        var decodedMessage = TalkReqMessage.DecodeMessage(talkReqMessage.EncodeMessage());
+        var talkReqMessage = new TalkReqMessageBase(protocol, request);
+        var decodedMessage = TalkReqMessageBase.DecodeMessage(talkReqMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Protocol, talkReqMessage.Protocol);
         Assert.AreEqual(decodedMessage.Request, talkReqMessage.Request);
     }
@@ -172,7 +175,7 @@ public class MessageTests
     public void Test_TalkResp_ShouldEncodeCorrectly()
     {
         var response = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
-        var talkRespMessage = new TalkRespMessage(response);
+        var talkRespMessage = new TalkRespMessageBase(response);
         var encodedMessage = talkRespMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 6, 212, 136 };
         var expectedSuffix = new byte[] { 138, 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
@@ -185,8 +188,8 @@ public class MessageTests
     public void Test_TalkResp_ShouldDecodeCorrectly()
     {
         var response = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
-        var talkRespMessage = new TalkRespMessage(response);
-        var decodedMessage = TalkRespMessage.DecodeMessage(talkRespMessage.EncodeMessage());
+        var talkRespMessage = new TalkRespMessageBase(response);
+        var decodedMessage = TalkRespMessageBase.DecodeMessage(talkRespMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Response, talkRespMessage.Response);
     }
 
@@ -195,10 +198,10 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = EnrRecordExtensions.FromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
-        var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
+        var regTopicMessage = new RegTopicMessageBase(topic, enr, ticket);
         var encodedMessage = regTopicMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 7, 248, 221, 136 };
         var expectedSuffix = new byte[]
@@ -223,12 +226,12 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = EnrRecordExtensions.FromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
-        var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
+        var regTopicMessage = new RegTopicMessageBase(topic, enr, ticket);
         var encodedMessage = regTopicMessage.EncodeMessage();
-        var decodedMessage = RegTopicMessage.DecodeMessage(encodedMessage);
+        var decodedMessage = RegTopicMessageBase.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regTopicMessage.Topic);
         Assert.AreEqual(regTopicMessage.Enr.ToString(), decodedMessage.Enr.ToString());
         Assert.AreEqual(decodedMessage.Ticket, regTopicMessage.Ticket);
@@ -239,7 +242,7 @@ public class MessageTests
     {
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var waitTime = 100;
-        var ticketRespMessage = new TicketRespMessage(ticket, waitTime);
+        var ticketRespMessage = new TicketMessageBase(ticket, waitTime);
         var encodedMessage = ticketRespMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 8, 213, 136 };
         var expectedSuffix = new byte[] { 138, 34, 12, 56, 41, 94, 24, 11, 67, 89, 30, 100 };
@@ -254,9 +257,9 @@ public class MessageTests
     {
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var waitTime = 100;
-        var ticketRespMessage = new TicketRespMessage(ticket, waitTime);
+        var ticketRespMessage = new TicketMessageBase(ticket, waitTime);
         var encodedMessage = ticketRespMessage.EncodeMessage();
-        var decodedMessage = TicketRespMessage.DecodeMessage(encodedMessage);
+        var decodedMessage = TicketMessageBase.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Ticket, ticketRespMessage.Ticket);
         Assert.AreEqual(decodedMessage.WaitTime, ticketRespMessage.WaitTime);
     }
@@ -265,7 +268,7 @@ public class MessageTests
     public void Test_RegConfirmation_ShouldEncodeCorrectly()
     {
         var topic = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
-        var regConfirmationMessage = new RegConfirmationMessage(topic);
+        var regConfirmationMessage = new RegConfirmationMessageBase(topic);
         var encodedMessage = regConfirmationMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 9, 212, 136 };
         var expectedSuffix = new byte[] { 138, 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
@@ -278,9 +281,9 @@ public class MessageTests
     public void Test_RegConfirmation_ShouldDecodeCorrectly()
     {
         var topic = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
-        var regConfirmationMessage = new RegConfirmationMessage(topic);
+        var regConfirmationMessage = new RegConfirmationMessageBase(topic);
         var encodedMessage = regConfirmationMessage.EncodeMessage();
-        var decodedMessage = RegConfirmationMessage.DecodeMessage(encodedMessage);
+        var decodedMessage = RegConfirmationMessageBase.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regConfirmationMessage.Topic);
     }
 
@@ -292,7 +295,7 @@ public class MessageTests
             34, 12, 56, 41, 94, 24, 11, 67, 89, 30, 94, 24, 11, 67, 89, 30, 94, 24, 11, 67, 89, 30, 11, 67, 89, 30, 11,
             67, 89, 30, 53, 200
         };
-        var topicQueryMessage = new TopicQueryMessage(topicHash);
+        var topicQueryMessage = new TopicQueryMessageBase(topicHash);
         var encodedMessage = topicQueryMessage.EncodeMessage();
         var expectedPrefix = new byte[] { 10, 234, 136 };
         var expectedSuffix = new byte[]
@@ -313,9 +316,9 @@ public class MessageTests
             34, 12, 56, 41, 94, 24, 11, 67, 89, 30, 94, 24, 11, 67, 89, 30, 94, 24, 11, 67, 89, 30, 11, 67, 89, 30, 11,
             67, 89, 30, 53, 200
         };
-        var topicQueryMessage = new TopicQueryMessage(topicHash);
+        var topicQueryMessage = new TopicQueryMessageBase(topicHash);
         var encodedMessage = topicQueryMessage.EncodeMessage();
-        var decodedMessage = TopicQueryMessage.DecodeMessage(encodedMessage);
+        var decodedMessage = TopicQueryMessageBase.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, topicQueryMessage.Topic);
     }
 }

@@ -3,7 +3,8 @@
 namespace Lantern.Discv5.Rlp;
 
 /// <summary>
-/// RlpEncoder is a utility class that provides methods to encode integers, strings, and byte arrays using Recursive Length Prefix (RLP) encoding.
+/// RlpEncoder is a utility class that provides methods to encode integers, strings,
+/// and byte arrays using Recursive Length Prefix (RLP) encoding.
 /// </summary>
 public static class RlpEncoder
 {
