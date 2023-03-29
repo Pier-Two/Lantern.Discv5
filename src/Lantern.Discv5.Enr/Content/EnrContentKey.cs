@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.Enr.Content;
 
-public sealed class EnrContentKey
+public class EnrContentKey
 {
     private EnrContentKey(string value) => Value = value;
     

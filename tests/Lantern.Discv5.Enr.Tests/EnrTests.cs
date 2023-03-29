@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Lantern.Discv5.Enr.Content;
 using Lantern.Discv5.Enr.Content.EntryTypes;
+using Lantern.Discv5.Enr.Factory;
 using Lantern.Discv5.Enr.Identity;
 using NUnit.Framework;
 
