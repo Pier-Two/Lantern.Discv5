@@ -12,7 +12,7 @@ public class EntryEth2 : IContentEntry
 
     public byte[] Value { get; }
 
-    public string Key => EnrContentKey.Eth2;
+    public EnrContentKey Key => EnrContentKey.Eth2;
 
     public IEnumerable<byte> EncodeEntry()
     {

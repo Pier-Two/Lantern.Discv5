@@ -12,7 +12,7 @@ public class EntrySecp256K1 : IContentEntry
 
     public byte[] Value { get; }
 
-    public string Key => EnrContentKey.Secp256K1;
+    public EnrContentKey Key => EnrContentKey.Secp256K1;
 
     public IEnumerable<byte> EncodeEntry()
     {

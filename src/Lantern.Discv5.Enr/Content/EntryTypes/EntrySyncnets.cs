@@ -12,7 +12,7 @@ public class EntrySyncnets : IContentEntry
 
     public string Value { get; }
 
-    public string Key => EnrContentKey.Syncnets;
+    public EnrContentKey Key => EnrContentKey.Syncnets;
 
     public IEnumerable<byte> EncodeEntry()
     {

@@ -12,7 +12,7 @@ public class EntryUdp : IContentEntry
 
     public int Value { get; }
 
-    public string Key => EnrContentKey.Udp;
+    public EnrContentKey Key => EnrContentKey.Udp;
 
     public IEnumerable<byte> EncodeEntry()
     {

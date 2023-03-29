@@ -12,7 +12,7 @@ public class EntryId : IContentEntry
 
     public string Value { get; }
 
-    public string Key => EnrContentKey.Id;
+    public EnrContentKey Key => EnrContentKey.Id;
 
     public IEnumerable<byte> EncodeEntry()
     {

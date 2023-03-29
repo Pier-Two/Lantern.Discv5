@@ -12,7 +12,7 @@ public class EntryTcp : IContentEntry
 
     public int Value { get; }
 
-    public string Key => EnrContentKey.Tcp;
+    public EnrContentKey Key => EnrContentKey.Tcp;
 
     public IEnumerable<byte> EncodeEntry()
     {

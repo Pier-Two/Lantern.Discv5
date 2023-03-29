@@ -7,6 +7,14 @@ namespace Lantern.Discv5.Rlp.Tests;
 public class RlpEncoderTests
 {
     [Test]
+    public void Test()
+    {
+        var item = new byte[] { 0x80 };
+        var rlpEncoded = RlpEncoder.EncodeBytes(item);
+        Console.WriteLine(string.Join(", ", rlpEncoded));
+    }
+    
+    [Test]
     public void Test_RlpEncoder_ShouldEncodeStringCorrectly()
     {
         var rlpEncoded = RlpEncoder.EncodeString("cat", Encoding.UTF8);

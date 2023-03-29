@@ -13,7 +13,7 @@ public class EntryIp : IContentEntry
 
     public IPAddress Value { get; }
 
-    public string Key => EnrContentKey.Ip;
+    public EnrContentKey Key => EnrContentKey.Ip;
 
     public IEnumerable<byte> EncodeEntry()
     {
