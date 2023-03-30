@@ -20,7 +20,7 @@
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Lantern.Discv5.WireProtocol\Lantern.Discv5.WireProtocol.csproj" />
+        <ProjectReference Include="..\src\Lantern.Discv5.WireProtocol\Lantern.Discv5.WireProtocol.csproj" />
     </ItemGroup>
 
 </Project>

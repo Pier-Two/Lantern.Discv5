@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj"/>
+        <ProjectReference Include="..\src\Lantern.Discv5.Enr\Lantern.Discv5.Enr.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
