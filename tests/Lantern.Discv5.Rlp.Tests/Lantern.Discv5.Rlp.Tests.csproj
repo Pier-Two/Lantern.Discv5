@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\src\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj"/>
+        <ProjectReference Include="..\..\src\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj"/>
     </ItemGroup>
 
 </Project>
