@@ -36,7 +36,7 @@ public static class RlpEncoder
     public static byte[] EncodeHexString(string value)
     {
         var bytes = Convert.FromHexString(value);
-        return bytes[0] == Constants.ZeroByte ? new byte[] { 0 } : Encode(bytes, false);
+        return bytes[0] == Constants.ZeroByte ? new byte[]{ 0 } : Encode(bytes, false);
     }
 
     /// <summary>
@@ -47,7 +47,6 @@ public static class RlpEncoder
     /// <returns>A byte array representing the encoded string.</returns>
     public static byte[] EncodeString(string value, Encoding encoding)
     {
-        ValidateEncoding(encoding);
         return Encode(encoding.GetBytes(value), false);
     }
 
@@ -59,8 +58,6 @@ public static class RlpEncoder
     /// <returns>An IEnumerable of bytes representing the encoded strings.</returns>
     public static IEnumerable<byte> EncodeStringCollection(IEnumerable<string> values, Encoding encoding)
     {
-        ValidateEncoding(encoding);
-
         using var stream = new MemoryStream();
         foreach (var value in values)
         {
@@ -85,7 +82,7 @@ public static class RlpEncoder
     /// </summary>
     /// <param name="items">The collection of byte items to be encoded.</param>
     /// <returns>An IEnumerable of bytes representing the encoded byte items.</returns>
-    public static IEnumerable<byte> EncodeByteCollection(IEnumerable<byte> items)
+    public static IEnumerable<byte> EncodeByteItemsAsCollection(IEnumerable<byte> items)
     {
         using var stream = new MemoryStream();
         foreach (var item in items)
@@ -121,19 +118,7 @@ public static class RlpEncoder
 
         return Encode(stream.ToArray(), true);
     }
-
-    /// <summary>
-    /// Validates the encoding parameter (must be ASCII or UTF8).
-    /// </summary>
-    /// <param name="encoding">The encoding to be validated.</param>
-    private static void ValidateEncoding(Encoding encoding)
-    {
-        if (!Equals(encoding, Encoding.UTF8) && !Equals(encoding, Encoding.ASCII))
-        {
-            throw new ArgumentException("Encoding not supported", nameof(encoding));
-        }
-    }
-
+    
     /// <summary>
     /// Encodes a byte array using RLP encoding.
     /// </summary>
@@ -159,7 +144,7 @@ public static class RlpEncoder
 
         if (length == 1 && array[0] < Constants.ShortItemOffset)
         {
-            return array[0] == 0 ? new[] { (byte)Constants.ShortItemOffset } : array;
+            return array;
         }
 
         return length < Constants.SizeThreshold

@@ -1,4 +1,6 @@
-﻿using Lantern.Discv5.Enr.Content;
+﻿using Lantern.Discv5.Enr.Common;
+using Lantern.Discv5.Enr.EnrContent.Interfaces;
+using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr;
@@ -6,12 +8,12 @@ namespace Lantern.Discv5.Enr;
 public class EnrRecord
 {
     private readonly Dictionary<string, IContentEntry> _entries = new();
+
+    public ulong SequenceNumber { get; set; } = 1;
     
-    public ulong SequenceNumber { get; set; }
-    
-    public byte[] Signature { get; }
-    
-    public EnrRecord(byte[] signature)
+    public byte[]? Signature { get; private set; }
+
+    public EnrRecord(byte[]? signature = null)
     {
         Signature = signature;
     }
@@ -47,6 +49,11 @@ public class EnrRecord
         var encodedContent = EncodeEnrContent();
         var encodedItems = ByteArrayUtils.Concatenate(encodedSignature, encodedSeq, encodedContent);
         return RlpEncoder.EncodeCollectionOfBytes(encodedItems);
+    }
+    
+    public void UpdateSignature(IIdentitySchemeSigner signer)
+    {
+        Signature = signer.SignRecord(this);
     }
 
     public override string ToString()

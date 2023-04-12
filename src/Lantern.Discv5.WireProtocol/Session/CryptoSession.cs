@@ -1,6 +1,6 @@
-using System.Security.Cryptography;
 using System.Text;
 using Lantern.Discv5.Rlp;
+using Lantern.Discv5.WireProtocol.Crypto;
 using NBitcoin.Secp256k1;
 using SHA256 = System.Security.Cryptography.SHA256;
 
@@ -10,55 +10,24 @@ public class CryptoSession
 {
     private readonly ECPrivKey _privateKey;
     private readonly ECPrivKey _ephemeralPrivateKey;
-
-    public CryptoSession()
+    private readonly ISessionKeys _sessionKeys;
+    
+    public CryptoSession(ISessionKeys sessionKeys)
     {
-        var privateKeyRandomBytes = new byte[32];
-        RandomNumberGenerator.Create().GetBytes(privateKeyRandomBytes);
-        _privateKey = Context.Instance.CreateECPrivKey(privateKeyRandomBytes);
-        
-        var ephemeralPrivateKeyRandomBytes = new byte[32];
-        RandomNumberGenerator.Create().GetBytes(ephemeralPrivateKeyRandomBytes);
-        _ephemeralPrivateKey = Context.Instance.CreateECPrivKey(ephemeralPrivateKeyRandomBytes);
-    }
-
-    public CryptoSession(byte[] privateKey)
-    {
-        _privateKey = Context.Instance.CreateECPrivKey(privateKey);
-        var randomBytes = new byte[32];
-        RandomNumberGenerator.Create().GetBytes(randomBytes);
-        _ephemeralPrivateKey = Context.Instance.CreateECPrivKey(randomBytes);
+        _sessionKeys = sessionKeys;
+        _privateKey = sessionKeys.PrivateKey;
+        _ephemeralPrivateKey = sessionKeys.EphemeralPrivateKey;
     }
     
-    public CryptoSession(byte[] privateKey, byte[] ephemeralPrivateKey)
-    {
-        _privateKey = Context.Instance.CreateECPrivKey(privateKey);
-        _ephemeralPrivateKey = Context.Instance.CreateECPrivKey(ephemeralPrivateKey);
-    }
-
-    public byte[] GeneratePublicKey()
-    {
-        return _privateKey.CreatePubKey().ToBytes();
-    }
+    public byte[] PublicKey => _privateKey.CreatePubKey().ToBytes();
     
-    public byte[] GenerateEphemeralPublicKey()
-    {
-        return _ephemeralPrivateKey.CreatePubKey().ToBytes();
-    }
+    public byte[] EphemeralPublicKey => _ephemeralPrivateKey.CreatePubKey().ToBytes();
     
-    public byte[] GenerateSharedSecret(byte[] ephemeralPublicKey)
+    public byte[] GenerateSharedSecret(byte[] remoteEphemeralPublicKey)
     {
-        var remotePublicKeyContext = Context.Instance.CreatePubKey(ephemeralPublicKey);
-        var sharedPublicKey = remotePublicKeyContext.GetSharedPubkey(_privateKey);
-        return sharedPublicKey.ToBytes();
-    }
-
-    public static byte[] GenerateSharedSecret(byte[] ephemeralPublicKey, byte[] ephemeralPrivateKey)
-    {
-        var remotePublicKeyContext = Context.Instance.CreatePubKey(ephemeralPublicKey);
-        var remotePrivateKeyContext = Context.Instance.CreateECPrivKey(ephemeralPrivateKey);
-        var sharedPublicKey = remotePublicKeyContext.GetSharedPubkey(remotePrivateKeyContext);
-        return sharedPublicKey.ToBytes();
+        var remotePublicKey = _sessionKeys.CryptoContext.CreatePubKey(remoteEphemeralPublicKey);
+        var sharedSecret = remotePublicKey.GetSharedPubkey(_privateKey);
+        return sharedSecret.ToBytes();
     }
     
     public byte[] GenerateIdSignature(byte[] challengeData, byte[] ephemeralPubkey, byte[] nodeId)
@@ -67,25 +36,16 @@ public class CryptoSession
         var idSignatureInput = ByteArrayUtils.Concatenate(idSignatureText, challengeData, ephemeralPubkey, nodeId);
         var hash = SHA256.HashData(idSignatureInput);
         _privateKey.TrySignECDSA(hash, out var signature);
-        return signature!.r.ToBytes().Concat(signature.s.ToBytes()).ToArray();
+        return ConcatenateSignature(signature!);
     }
     
-    public static bool VerifyIdSignature(byte[] idSignature, byte[] publicKey, byte[] challengeData, byte[] ephemeralPubkey, byte[] nodeId)
+    private static byte[] ConcatenateSignature(SecpECDSASignature signature)
     {
-        var idSignatureText = Encoding.UTF8.GetBytes(SessionConstants.IdSignatureProof);
-        var idSignatureInput = ByteArrayUtils.Concatenate(idSignatureText, challengeData, ephemeralPubkey, nodeId);
-        var hash = SHA256.HashData(idSignatureInput);
-        var key = Context.Instance.CreatePubKey(publicKey);
-        SecpECDSASignature.TryCreateFromCompact(idSignature, out var signature);
-        return key.SigVerify(signature!, hash);
-    }
-
-    public static SessionKeys GenerateKeyDataFromSecret(byte[] sharedSecret, byte[] nodeIdA, byte[] nodeIdB, byte[] challengeData)
-    {
-        var kdfInfo = ByteArrayUtils.Concatenate(Encoding.UTF8.GetBytes(SessionConstants.DiscoveryAgreement), nodeIdA, nodeIdB);
-        var prk = HKDF.Extract(HashAlgorithmName.SHA256, sharedSecret, challengeData);
-        var keyData = new byte[32];
-        HKDF.Expand(HashAlgorithmName.SHA256, prk, keyData, kdfInfo);
-        return new SessionKeys(keyData);
+        var rBytes = signature.r.ToBytes();
+        var sBytes = signature.s.ToBytes();
+        var result = new byte[rBytes.Length + sBytes.Length];
+        Buffer.BlockCopy(rBytes, 0, result, 0, rBytes.Length);
+        Buffer.BlockCopy(sBytes, 0, result, rBytes.Length, sBytes.Length);
+        return result;
     }
 }

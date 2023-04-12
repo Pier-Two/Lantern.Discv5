@@ -1,8 +1,9 @@
 ﻿using System.Net;
-using Lantern.Discv5.Enr.Content;
-using Lantern.Discv5.Enr.Content.EntryTypes;
-using Lantern.Discv5.Enr.Factory;
-using Lantern.Discv5.Enr.Identity;
+using Lantern.Discv5.Enr.EnrContent;
+using Lantern.Discv5.Enr.EnrContent.Entries;
+using Lantern.Discv5.Enr.EnrFactory;
+using Lantern.Discv5.Enr.IdentityScheme;
+using Lantern.Discv5.Enr.IdentityScheme.V4;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.Enr.Tests;
@@ -79,6 +80,9 @@ public class EnrTests
 
         var attnets = enr.GetEntry<EntryAttnets>(EnrContentKey.Attnets).Value;
         Assert.AreEqual(Convert.FromHexString("0000000000000000"), attnets);
+        
+        var syncnets = enr.GetEntry<EntrySyncnets>(EnrContentKey.Syncnets).Value;
+        Assert.AreEqual(Convert.FromHexString("00"), syncnets);
 
         var eth2 = enr.GetEntry<EntryEth2>(EnrContentKey.Eth2).Value;
         Assert.AreEqual(Convert.FromHexString("ee28d7b3000000724605000000000000"), eth2);
@@ -95,6 +99,7 @@ public class EnrTests
 
         var udp = enr.GetEntry<EntryUdp>(EnrContentKey.Udp).Value;
         Assert.AreEqual(Convert.ToInt32("2328", 16), udp);
+        
         Assert.AreEqual(enrString, enr.ToString());
     }
 

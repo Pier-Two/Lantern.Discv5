@@ -7,11 +7,12 @@ namespace Lantern.Discv5.Rlp.Tests;
 public class RlpEncoderTests
 {
     [Test]
-    public void Test()
+    public void Test_RlpEncoder_ShouldEncodeEmptyStringsCorrectly()
     {
-        var item = new byte[] { 0x80 };
-        var rlpEncoded = RlpEncoder.EncodeBytes(item);
-        Console.WriteLine(string.Join(", ", rlpEncoded));
+        var emptyString = "";
+        var rlpEncoded = RlpEncoder.EncodeString(emptyString, Encoding.UTF8);
+        var rlpExpected = new byte[] { 128 };
+        Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
     
     [Test]
@@ -30,12 +31,13 @@ public class RlpEncoderTests
         var rlpExpected = new byte[] { 200, 131, 99, 97, 116, 131, 100, 111, 103 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
-
+    
     [Test]
     public void Test_RlpEncoder_ShouldEncodeZeroHexCorrectly()
     {
         var rlpEncoded = RlpEncoder.EncodeHexString("00");
         var rlpExpected = new byte[] { 0 };
+        Console.WriteLine(string.Join(", ", rlpEncoded));
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
 
@@ -75,18 +77,18 @@ public class RlpEncoderTests
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionOfBytesCorrectly()
     {
-        var bytes = new byte[] { 0 };
+        var bytes = new byte[] { };
         var rlpEncoded = RlpEncoder.EncodeCollectionOfBytes(bytes);
-        var rlpExpected = new byte[] { 128 };
+        var rlpExpected = new byte[] { 192 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
 
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionsOfBytesCorrectly()
     {
-        var bytes = new byte[] { 0 };
+        var bytes = new byte[] { };
         var rlpEncoded = RlpEncoder.EncodeCollectionsOfBytes(bytes);
-        var rlpExpected = new byte[] { 193, 128 };
+        var rlpExpected = new byte[] { 193, 192 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
 
@@ -109,12 +111,10 @@ public class RlpEncoderTests
             242, 237, 147, 36, 77, 171, 90, 246, 161, 246, 113, 170, 45, 0, 132, 26, 136, 115, 121, 110, 99, 110, 101,
             116, 115, 0, 131, 116, 99, 112, 130, 35, 40, 131, 117, 100, 112, 130, 35, 40
         };
-        var rlpEncoded = RlpEncoder.EncodeByteCollection(bytes);
+        var rlpEncoded = RlpEncoder.EncodeByteItemsAsCollection(bytes);
         var rlpExpected = new byte[]
         {
-            246, 129, 242, 129, 237, 129, 147, 36, 77, 129, 171, 90, 129, 246, 129, 161, 129, 246, 113, 129, 170, 45,
-            128, 129, 132, 26, 129, 136, 115, 121, 110, 99, 110, 101, 116, 115, 128, 129, 131, 116, 99, 112, 129, 130,
-            35, 40, 129, 131, 117, 100, 112, 129, 130, 35, 40
+            246, 129, 242, 129, 237, 129, 147, 36, 77, 129, 171, 90, 129, 246, 129, 161, 129, 246, 113, 129, 170, 45, 0, 129, 132, 26, 129, 136, 115, 121, 110, 99, 110, 101, 116, 115, 0, 129, 131, 116, 99, 112, 129, 130, 35, 40, 129, 131, 117, 100, 112, 129, 130, 35, 40
         };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
