@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace Lantern.Discv5.WireProtocol.Messages;
 
 public abstract class Message
@@ -15,8 +17,8 @@ public abstract class Message
     private static byte[] GenerateRequestId()
     {
         var requestId = new byte[8];
-        var random = new Random(); 
-        random.NextBytes(requestId);
+        var random = RandomNumberGenerator.Create(); 
+        random.GetBytes(requestId);
         return requestId;
     }
 
