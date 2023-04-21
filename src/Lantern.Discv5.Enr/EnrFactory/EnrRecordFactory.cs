@@ -1,5 +1,6 @@
 using System.Text;
 using Lantern.Discv5.Enr.Common;
+using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EnrFactory;
@@ -9,13 +10,6 @@ public sealed class EnrRecordFactory
     private const int EnrPrefixLength = 4;
     
     public EnrEntryRegistry EntryRegistry { get; } = new();
-
-    public EnrRecord[] CreateFromMultipleEnrList(IEnumerable<IEnumerable<byte[]>> enrs)
-    {
-        if (enrs == null) throw new ArgumentNullException(nameof(enrs));
-        
-        return enrs.Select(enr => CreateFromDecoded(enr.ToArray())).ToArray();
-    }
 
     public EnrRecord CreateFromString(string enrString)
     {
@@ -34,6 +28,14 @@ public sealed class EnrRecordFactory
         var items = RlpDecoder.Decode(bytes);
         return CreateFromDecoded(items);
     }
+    
+    public EnrRecord[] CreateFromMultipleEnrList(IEnumerable<IEnumerable<byte[]>> enrs)
+    {
+        if (enrs == null) throw new ArgumentNullException(nameof(enrs));
+        
+        return enrs.Select(enr => CreateFromDecoded(enr.ToArray())).ToArray();
+    }
+
 
     public EnrRecord CreateFromDecoded(IReadOnlyList<byte[]> items)
     {

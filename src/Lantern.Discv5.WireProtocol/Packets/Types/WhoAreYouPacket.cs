@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol.Packets.Types;
 
 public class WhoAreYouPacket : Packet
 {
-    public WhoAreYouPacket(byte[] idNonce, int enrSeq) : base(PreparePacketBase(idNonce, enrSeq))
+    public WhoAreYouPacket(byte[] idNonce, ulong enrSeq) : base(PreparePacketBase(idNonce, enrSeq))
     {
         IdNonce = idNonce;
         EnrSeq = enrSeq;
@@ -13,9 +13,9 @@ public class WhoAreYouPacket : Packet
 
     public readonly byte[] IdNonce;
 
-    public readonly int EnrSeq;
+    public readonly ulong EnrSeq;
 
-    private static byte[] PreparePacketBase(byte[] idNonce, int enrSeq)
+    private static byte[] PreparePacketBase(byte[] idNonce, ulong enrSeq)
     {
         var enrSeqArray = new byte[AuthDataSizes.EnrSeqSize];
         var enrSeqBytes = ByteArrayUtils.ToBigEndianBytesTrimmed(enrSeq);
@@ -29,7 +29,7 @@ public class WhoAreYouPacket : Packet
         var idNonce = authData[..AuthDataSizes.IdNonceSize];
         index += AuthDataSizes.IdNonceSize;
         
-        var enrSeq = (int)RlpExtensions.ByteArrayToInt64(authData[index..AuthDataSizes.WhoAreYou]);
+        var enrSeq = (ulong)RlpExtensions.ByteArrayToInt64(authData[index..AuthDataSizes.WhoAreYou]);
         return new WhoAreYouPacket(idNonce, enrSeq);
     }
 }

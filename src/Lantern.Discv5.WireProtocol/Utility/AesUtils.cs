@@ -3,7 +3,7 @@ using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 
-namespace Lantern.Discv5.WireProtocol.Crypto;
+namespace Lantern.Discv5.WireProtocol.Utility;
 
 /// <summary>
 /// Provides utility methods for handling AES cryptography operations.

@@ -1,4 +1,4 @@
-using Lantern.Discv5.WireProtocol.Crypto;
+using Lantern.Discv5.WireProtocol.Utility;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;

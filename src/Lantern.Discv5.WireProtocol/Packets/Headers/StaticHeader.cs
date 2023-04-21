@@ -2,7 +2,7 @@ using System.Text;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Packets.Constants;
 
-namespace Lantern.Discv5.WireProtocol.Packets.PacketHeaders;
+namespace Lantern.Discv5.WireProtocol.Packets.Headers;
 
 public class StaticHeader
 {

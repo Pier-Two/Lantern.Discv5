@@ -1,4 +1,4 @@
-namespace Lantern.Discv5.WireProtocol.Packets;
+namespace Lantern.Discv5.WireProtocol.Packets.Types;
 
 public enum PacketType
 {

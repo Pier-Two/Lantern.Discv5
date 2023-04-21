@@ -1,5 +1,5 @@
-using Lantern.Discv5.WireProtocol.Crypto;
 using Lantern.Discv5.WireProtocol.Session;
+using Lantern.Discv5.WireProtocol.Utility;
 using NBitcoin.Secp256k1;
 using NUnit.Framework;
 
@@ -30,8 +30,8 @@ public class CryptoSessionTests
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         var sharedSecret =  SessionUtils.GenerateSharedSecret(destPubkey, ephemeralKey, Context.Instance);
-        var initiatorKey = SessionUtils.GenerateKeyDataFromSecret(sharedSecret, nodeIdA, nodeIdB, challengeData).InitiatorKey;
-        var recipientKey = SessionUtils.GenerateKeyDataFromSecret(sharedSecret, nodeIdA, nodeIdB, challengeData).RecipientKey;
+        var initiatorKey = SessionUtils.GenerateSessionKeys(sharedSecret, nodeIdA, nodeIdB, challengeData).InitiatorKey;
+        var recipientKey = SessionUtils.GenerateSessionKeys(sharedSecret, nodeIdA, nodeIdB, challengeData).RecipientKey;
         Assert.IsTrue(initiatorKey.SequenceEqual(Convert.FromHexString("dccc82d81bd610f4f76d3ebe97a40571")));
         Assert.IsTrue(recipientKey.SequenceEqual(Convert.FromHexString("ac74bb8773749920b0d3a8881c173ec5")));
     }
@@ -40,7 +40,7 @@ public class CryptoSessionTests
     public void Test_IdSignatureGeneration_ShouldCreateSignatureCorrectly()
     {
         var staticKey = Convert.FromHexString("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736");
-        var session = new CryptoSession(new TestSessionKeys(staticKey));
+        var session = new CryptoSession(new BaseSessionKeys(staticKey), SessionType.Initiator);
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         var emphemeralPubkey =
             Convert.FromHexString("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231");
@@ -54,7 +54,7 @@ public class CryptoSessionTests
     public void Test_IdSignatureVerification_ShouldVerifySignatureCorrectly()
     {
         var staticKey = Convert.FromHexString("fb757dc581730490a1d7a00deea65e9b1936924caaea8f44d476014856b68736");
-        var cryptoSession = new CryptoSession(new TestSessionKeys(staticKey));
+        var cryptoSession = new CryptoSession(new BaseSessionKeys(staticKey), SessionType.Initiator);
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         var emphemeralPubkey =
             Convert.FromHexString("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231");

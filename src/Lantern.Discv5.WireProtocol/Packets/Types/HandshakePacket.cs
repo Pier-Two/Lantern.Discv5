@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol.Packets.Types;
 
 public class HandshakePacket : Packet
 {
-    public HandshakePacket(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = default) : base(PreparePacketBase(idSignature, ephPubkey, srcId, record))
+    public HandshakePacket(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null) : base(PreparePacketBase(idSignature, ephPubkey, srcId, record))
     {
         IdSignature = idSignature;
         EphPubkey = ephPubkey;
@@ -20,16 +20,24 @@ public class HandshakePacket : Packet
     public byte[]? SrcId { get; }
     
     public byte[]? Record { get; }
-    
-    public int SigSize => IdSignature.Length;
-    
-    public int EphKeySize => EphPubkey.Length;
 
-    private static byte[] PreparePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = default)
+    private static byte[] PreparePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null)
     {
         var authDataHead = ByteArrayUtils.Concatenate(srcId, ByteArrayUtils.ToBigEndianBytesTrimmed(idSignature.Length),
             ByteArrayUtils.ToBigEndianBytesTrimmed(ephPubkey.Length));
-        return ByteArrayUtils.Concatenate(authDataHead, idSignature, ephPubkey, record);
+        
+        byte[] packetBase;
+
+        if (record != null)
+        {
+            packetBase = ByteArrayUtils.Concatenate(authDataHead, idSignature, ephPubkey, record);
+        }
+        else
+        {
+            packetBase = ByteArrayUtils.Concatenate(authDataHead, idSignature, ephPubkey);
+        }
+        
+        return packetBase;
     }
     
     public static HandshakePacket DecodeAuthData(byte[] authData)

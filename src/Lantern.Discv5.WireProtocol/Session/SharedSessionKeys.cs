@@ -1,8 +1,8 @@
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public class SessionKeys
+public class SharedSessionKeys
 {
-    public SessionKeys(byte[] keyData)
+    public SharedSessionKeys(byte[] keyData)
     {
         InitiatorKey = keyData[..16];
         RecipientKey = keyData[16..];

@@ -1,4 +1,5 @@
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Messages.Responses;
