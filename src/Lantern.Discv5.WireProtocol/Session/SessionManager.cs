@@ -10,7 +10,7 @@ public class SessionManager : ISessionManager
     public SessionManager(SessionOptions options)
     {
         _sessionCache = new SessionCache(options.CacheSize, this);
-        _sessionKeys = options.SessionKeys;
+        _sessionKeys = options.SessionKeys!;
     }
 
     public CryptoSession CreateSession(SessionType sessionType, byte[] challengeData)

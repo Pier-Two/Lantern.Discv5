@@ -1,13 +1,12 @@
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.Rlp;
-using Lantern.Discv5.WireProtocol.Messages.Decoders;
-using Lantern.Discv5.WireProtocol.Messages.Requests;
-using Lantern.Discv5.WireProtocol.Packets.Constants;
-using Lantern.Discv5.WireProtocol.Packets.Headers;
-using Lantern.Discv5.WireProtocol.Packets.Types;
+using Lantern.Discv5.WireProtocol.Message.Decoders;
+using Lantern.Discv5.WireProtocol.Message.Requests;
+using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
+using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
-using Lantern.Discv5.WireProtocol.Utility;
 using NBitcoin.Secp256k1;
 using NUnit.Framework;
 
@@ -38,14 +37,14 @@ public class PacketTests
         var nodeBId = Convert.FromHexString("bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9");
         var nonce = Convert.FromHexString("ffffffffffffffffffffffff");
         var ordinaryPacket = Convert.FromHexString("00000000000000000000000000000000088b3d4342774649325f313964a39e55ea96c005ad52be8c7560413a7008f16c9e6d2f43bbea8814a546b7409ce783d34c4f53245d08dab84102ed931f66d1492acb308fa1c6715b9d139b81acbdcc");
-        var decryptedData = AesUtils.AesCtrDecrypt(nodeBId[..16], ordinaryPacket[..16],ordinaryPacket[16..]);
+        var decryptedData = AESUtility.AesCtrDecrypt(nodeBId[..16], ordinaryPacket[..16],ordinaryPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         
         Assert.AreEqual(ProtocolConstants.ProtocolId, staticHeader.ProtocolId);
         Assert.AreEqual(ProtocolConstants.Version, staticHeader.Version);
         Assert.AreEqual((byte)PacketType.Ordinary, staticHeader.Flag);
         Assert.IsTrue(nonce.SequenceEqual(staticHeader.Nonce));
-        Assert.AreEqual(AuthDataSizes.Ordinary, staticHeader.AuthData.Length);
+        Assert.AreEqual(PacketConstants.Ordinary, staticHeader.AuthData.Length);
     }
     
     [Test]
@@ -73,7 +72,7 @@ public class PacketTests
         var whoAreYouPacket =
             Convert.FromHexString(
                 "00000000000000000000000000000000088b3d434277464933a1ccc59f5967ad1d6035f15e528627dde75cd68292f9e6c27d6b66c8100a873fcbaed4e16b8d");
-        var decryptedData = AesUtils.AesCtrDecrypt(nodeBId[..16], whoAreYouPacket[..16],whoAreYouPacket[16..]);
+        var decryptedData = AESUtility.AesCtrDecrypt(nodeBId[..16], whoAreYouPacket[..16],whoAreYouPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         var challengeData = ByteArrayUtils.Concatenate(whoAreYouPacket[..16], staticHeader.GetHeader());
         var whoAreYou = WhoAreYouPacket.DecodeAuthData(staticHeader.AuthData);
@@ -104,8 +103,8 @@ public class PacketTests
         var maskedIv = Convert.FromHexString("00000000000000000000000000000000");
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000001");
         var idSignature = nodeACrypto.GenerateIdSignature(challengeData, nodeAEphemeralPubkey, nodeBId);
-        var sharedSecret = SessionUtils.GenerateSharedSecret(nodeBPubkey, nodeAEphemeralPrivKey, Context.Instance);
-        var sessionKeys = SessionUtils.GenerateSessionKeys(sharedSecret, nodeAId, nodeBId, challengeData);
+        var sharedSecret = SessionUtility.GenerateSharedSecret(nodeBPubkey, nodeAEphemeralPrivKey, Context.Instance);
+        var sessionKeys = SessionUtility.GenerateSessionKeys(sharedSecret, nodeAId, nodeBId, challengeData);
         var handshakePacket = new HandshakePacket(idSignature, nodeAEphemeralPubkey, nodeAId);
         var staticHeader = new StaticHeader(ProtocolConstants.ProtocolId, ProtocolConstants.Version, handshakePacket.AuthData, (byte)PacketType.Handshake, nonce);
         var maskedHeader = new MaskedHeader(nodeBId, maskedIv);
@@ -115,7 +114,7 @@ public class PacketTests
         };
         var messagePt = pingMessage.EncodeMessage();
         var messageAd = ByteArrayUtils.JoinByteArrays(maskedIv, staticHeader.GetHeader());
-        var encryptedMessage = AesUtils.AesGcmEncrypt(sessionKeys.InitiatorKey, nonce, messagePt, messageAd);
+        var encryptedMessage = AESUtility.AesGcmEncrypt(sessionKeys.InitiatorKey, nonce, messagePt, messageAd);
         var packet = ByteArrayUtils.Concatenate(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader()), encryptedMessage);
         var expectedPacket = Convert.FromHexString("00000000000000000000000000000000088b3d4342774649305f313964a39e55ea96c005ad521d8c7560413a7008f16c9e6d2f43bbea8814a546b7409ce783d34c4f53245d08da4bb252012b2cba3f4f374a90a75cff91f142fa9be3e0a5f3ef268ccb9065aeecfd67a999e7fdc137e062b2ec4a0eb92947f0d9a74bfbf44dfba776b21301f8b65efd5796706adff216ab862a9186875f9494150c4ae06fa4d1f0396c93f215fa4ef524f1eadf5f0f4126b79336671cbcf7a885b1f8bd2a5d839cf8");
         Assert.IsTrue(packet.SequenceEqual(expectedPacket));
@@ -130,7 +129,7 @@ public class PacketTests
         var packet = Convert.FromHexString(
             "00000000000000000000000000000000088b3d4342774649305f313964a39e55ea96c005ad521d8c7560413a7008f16c9e6d2f43bbea8814a546b7409ce783d34c4f53245d08da4bb252012b2cba3f4f374a90a75cff91f142fa9be3e0a5f3ef268ccb9065aeecfd67a999e7fdc137e062b2ec4a0eb92947f0d9a74bfbf44dfba776b21301f8b65efd5796706adff216ab862a9186875f9494150c4ae06fa4d1f0396c93f215fa4ef524f1eadf5f0f4126b79336671cbcf7a885b1f8bd2a5d839cf8");
         var ephPublicKey = Convert.FromHexString("039a003ba6517b473fa0cd74aefe99dadfdb34627f90fec6362df85803908f53a5");
-        var decryptedData = AesUtils.AesCtrDecrypt(nodeBId[..16], packet[..16], packet[16..]);
+        var decryptedData = AESUtility.AesCtrDecrypt(nodeBId[..16], packet[..16], packet[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         var handshakePacket = HandshakePacket.DecodeAuthData(staticHeader.AuthData);
         var idSignature = handshakePacket.IdSignature;
@@ -138,12 +137,12 @@ public class PacketTests
         var challengeData =
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000001");
-        var result = SessionUtils.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephPublicKey, nodeBId, Context.Instance);
+        var result = SessionUtility.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephPublicKey, nodeBId, Context.Instance);
         var sharedSecret = nodeBCrypto.GenerateSharedSecretFromPrivateKey(ephPublicKey);
-        var sessionKeys = SessionUtils.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData); 
+        var sessionKeys = SessionUtility.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData); 
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
-        var decryptedMessage = AesUtils.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
+        var decryptedMessage = AESUtility.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
             encryptedMessage, messageAd);
         var pingMessage = new PingDecoder().DecodeMessage(decryptedMessage);
         var expectedRequestId = Convert.FromHexString("00000001");
@@ -164,7 +163,7 @@ public class PacketTests
         var packet = Convert.FromHexString(
             "00000000000000000000000000000000088b3d4342774649305f313964a39e55ea96c005ad539c8c7560413a7008f16c9e6d2f43bbea8814a546b7409ce783d34c4f53245d08da4bb23698868350aaad22e3ab8dd034f548a1c43cd246be98562fafa0a1fa86d8e7a3b95ae78cc2b988ded6a5b59eb83ad58097252188b902b21481e30e5e285f19735796706adff216ab862a9186875f9494150c4ae06fa4d1f0396c93f215fa4ef524e0ed04c3c21e39b1868e1ca8105e585ec17315e755e6cfc4dd6cb7fd8e1a1f55e49b4b5eb024221482105346f3c82b15fdaae36a3bb12a494683b4a3c7f2ae41306252fed84785e2bbff3b022812d0882f06978df84a80d443972213342d04b9048fc3b1d5fcb1df0f822152eced6da4d3f6df27e70e4539717307a0208cd208d65093ccab5aa596a34d7511401987662d8cf62b139471");
         
-        var decryptedData = AesUtils.AesCtrDecrypt(nodeBId[..16], packet[..16],packet[16..]);
+        var decryptedData = AESUtility.AesCtrDecrypt(nodeBId[..16], packet[..16],packet[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         var handshakePacket = HandshakePacket.DecodeAuthData(staticHeader.AuthData);
         var identityVerifier = new IdentitySchemeV4Verifier();
@@ -179,12 +178,12 @@ public class PacketTests
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         
-        var idSignatureVerify = SessionUtils.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephPublicKey, nodeBId, Context.Instance);
+        var idSignatureVerify = SessionUtility.VerifyIdSignature(idSignature, nodeAPubkey, challengeData, ephPublicKey, nodeBId, Context.Instance);
         var sharedSecret = nodeBCrypto.GenerateSharedSecretFromPrivateKey(ephPublicKey);
-        var sessionKeys = SessionUtils.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
+        var sessionKeys = SessionUtility.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
-        var decryptedMessage = AesUtils.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce, encryptedMessage, messageAd);
+        var decryptedMessage = AESUtility.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce, encryptedMessage, messageAd);
         var pingMessage = new PingDecoder().DecodeMessage(decryptedMessage);
         var expectedRequestId = Convert.FromHexString("00000001");
         var expectedEnrSeq = 1;

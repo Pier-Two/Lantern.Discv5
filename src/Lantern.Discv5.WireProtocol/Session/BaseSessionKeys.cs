@@ -1,4 +1,3 @@
-using Lantern.Discv5.WireProtocol.Utility;
 using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.WireProtocol.Session;
@@ -7,8 +6,8 @@ public class BaseSessionKeys : ISessionKeys
 {
     public BaseSessionKeys(byte[]? privateKey = null, byte[]? ephemeralPrivateKey = null)
     {
-        PrivateKey = CryptoContext.CreateECPrivKey(privateKey ?? SessionUtils.GenerateRandomPrivateKey());
-        EphemeralPrivateKey = CryptoContext.CreateECPrivKey(ephemeralPrivateKey ?? SessionUtils.GenerateRandomPrivateKey());
+        PrivateKey = CryptoContext.CreateECPrivKey(privateKey ?? SessionUtility.GenerateRandomPrivateKey());
+        EphemeralPrivateKey = CryptoContext.CreateECPrivKey(ephemeralPrivateKey ?? SessionUtility.GenerateRandomPrivateKey());
     }
 
     public ECPrivKey PrivateKey { get; } 
@@ -19,6 +18,6 @@ public class BaseSessionKeys : ISessionKeys
 
     private ECPrivKey GeneratePrivateKey()
     {
-        return CryptoContext.CreateECPrivKey(SessionUtils.GenerateRandomPrivateKey());
+        return CryptoContext.CreateECPrivKey(SessionUtility.GenerateRandomPrivateKey());
     }
 }

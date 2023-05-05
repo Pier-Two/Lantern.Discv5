@@ -4,7 +4,7 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public interface ISessionManager
 {
-    public CryptoSession GetSession(byte[] nodeId, IPEndPoint endPoint);
+    public CryptoSession? GetSession(byte[] nodeId, IPEndPoint endPoint);
     
     public CryptoSession CreateSession(SessionType sessionType, byte[] challengeData);
     

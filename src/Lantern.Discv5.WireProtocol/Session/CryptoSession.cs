@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Lantern.Discv5.Rlp;
-using Lantern.Discv5.WireProtocol.Utility;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 using NBitcoin.Secp256k1;
 using SHA256 = System.Security.Cryptography.SHA256;
 
@@ -13,18 +13,23 @@ public class CryptoSession
     private readonly ECPrivKey _ephemeralPrivateKey;
     private readonly ISessionKeys _sessionKeys;
     private readonly SessionType _sessionType;
-    private SharedSessionKeys? _sharedSessionKeys;
     private int? _outgoingMessageCounter;
     
     public byte[]? ChallengeData { get; set; }
 
-    public SharedSessionKeys CurrentSessionKeys;
+    public SharedSessionKeys? CurrentSessionKeys;
+    
+    public SessionType SessionType => _sessionType;
+    
+    public bool IsEstablished { get; set; }
+    
     public CryptoSession(ISessionKeys sessionKeys, SessionType sessionType)
     {
         _sessionKeys = sessionKeys;
         _privateKey = sessionKeys.PrivateKey;
         _ephemeralPrivateKey = sessionKeys.EphemeralPrivateKey;
         _sessionType = sessionType;
+        IsEstablished = false;
     }
     
     public byte[] PublicKey => _privateKey.CreatePubKey().ToBytes();
@@ -38,6 +43,32 @@ public class CryptoSession
         var hash = SHA256.HashData(idSignatureInput);
         _privateKey.TrySignECDSA(hash, out var signature);
         return ConcatenateSignature(signature!);
+    }
+
+    public byte[]? EncryptMessage(StaticHeader header, byte[] rawMessage, byte[] maskingIv)
+    {
+        if (CurrentSessionKeys != null)
+        {
+            var encryptionKey = _sessionType == SessionType.Initiator ? CurrentSessionKeys.InitiatorKey : CurrentSessionKeys.RecipientKey;
+            var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
+            var encryptedMessage = AESUtility.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
+            return encryptedMessage;
+        }
+        Console.WriteLine("Session keys are not available.");
+        return null;
+    }
+
+    public byte[] DecryptMessage(StaticHeader header, byte[] encryptedMessage, byte[] maskingIv)
+    {
+        if (CurrentSessionKeys != null)
+        {
+            var decryptionKey = _sessionType == SessionType.Initiator ? CurrentSessionKeys.RecipientKey : CurrentSessionKeys.InitiatorKey;
+            var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
+            var decryptedMessage = AESUtility.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
+            return decryptedMessage;
+        }
+        Console.WriteLine("Session keys are not available.");
+        return null;
     }
 
     public byte[] GenerateSharedSecret(byte[] publicKey)

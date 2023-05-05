@@ -1,8 +1,8 @@
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Messages;
-using Lantern.Discv5.WireProtocol.Packets;
-using Lantern.Discv5.WireProtocol.Packets.Handlers;
+using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Packet.Handlers;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +27,8 @@ public static class ServiceConfiguration
         services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
+        services.AddSingleton<IPendingRequests, PendingRequests>();
+        services.AddSingleton<IMessageConstructor, MessageConstructor>();
         services.AddSingleton<IMessageHandler, MessageHandler>();
 
         services.AddTransient<OrdinaryPacketHandler>();

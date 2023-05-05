@@ -1,20 +1,21 @@
 using System.Net;
-using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
 public class ConnectionOptions
 {
     public int Port { get; }
-    public IPAddress IpAddress { get; }
+    public IPAddress LocalIpAddress { get; }
+    public IPAddress? ExternalIpAddress { get; }
     public int TimeoutMilliseconds { get; }
     public int LookupIntervalMilliseconds { get; }
     public int MaxRetryCount { get; }
 
     private ConnectionOptions(Builder builder)
     {
-        IpAddress = builder.IpAddress;
         Port = builder.Port;
+        LocalIpAddress = builder.LocalIpAddress;
+        ExternalIpAddress = builder.ExternalIpAddress;
         TimeoutMilliseconds = builder.TimeoutMilliseconds;
         LookupIntervalMilliseconds = builder.LookupIntervalMilliseconds;
         MaxRetryCount = builder.MaxRetryCount;
@@ -22,8 +23,9 @@ public class ConnectionOptions
 
     public class Builder
     {
-        public int Port { get; private set; } = 30303;
-        public IPAddress IpAddress { get; private set; } = Networking.GetLocalIpAddress();
+        public int Port { get; private set; } = 9000;
+        public IPAddress LocalIpAddress { get; private set; } = ConnectionUtility.GetLocalIpAddress();
+        public IPAddress? ExternalIpAddress { get; private set; }
         public int TimeoutMilliseconds { get; private set; } = 2000;
         public int LookupIntervalMilliseconds { get; private set; } = 3000;
         public int MaxRetryCount { get; private set; } = 3;
@@ -36,7 +38,21 @@ public class ConnectionOptions
 
         public Builder WithIpAddress(IPAddress ipAddress)
         {
-            IpAddress = ipAddress;
+            LocalIpAddress = ipAddress;
+            return this;
+        }
+
+        public async Task<Builder> WithExternalIpAddressAsync()
+        {
+            try
+            {
+                ExternalIpAddress = await ConnectionUtility.DetermineExternalIpAddress();
+            }
+            catch (Exception ex)
+            {
+                // Console.WriteLine("Failed to determine external IP address.");
+            }
+            
             return this;
         }
 

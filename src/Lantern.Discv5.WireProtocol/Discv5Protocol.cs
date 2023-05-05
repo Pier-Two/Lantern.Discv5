@@ -12,10 +12,9 @@ public class Discv5Protocol
         _connectionService = serviceProvider.GetRequiredService<ConnectionService>();
     }
 
-    public async Task StartServiceAsync()
+    public async Task StartDiscoveryAsync()
     {
         await _connectionService.StartAsync();
-        await Task.Delay(2000);
         await _connectionService.StopAsync();
     }
 }

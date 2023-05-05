@@ -16,6 +16,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
         <PackageReference Include="NBitcoin.Secp256k1" Version="3.1.0" />
         <PackageReference Include="NUnit" Version="3.13.3" />
+        <PackageReference Include="Open.Nat" Version="2.1.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
     </ItemGroup>
 

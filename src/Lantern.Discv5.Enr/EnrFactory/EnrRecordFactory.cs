@@ -1,5 +1,4 @@
 using System.Text;
-using Lantern.Discv5.Enr.Common;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 

@@ -4,9 +4,19 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface ITableManager
 {
-    public TableOptions Options { get; }
+    public int RecordCount { get; }
     
-    public void AddEnrRecord(NodeBucket nodeBucket);
+    public IEnumerable<EnrRecord> GetBootstrapEnrs();
     
-    public EnrRecord GetEnrRecord(byte[] nodeId);
+    public void UpdateTable(NodeTableEntry nodeEntry);
+    
+    public void UpdateTable(EnrRecord enrRecord);
+    
+    public NodeTableEntry GetNodeEntry(byte[] nodeId);
+
+    public IEnumerable<NodeTableEntry> GetInitialNodesForLookup(byte[] targetNodeId);
+    
+    public List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances);
+
+    public int[] GetClosestNeighbours(byte[] targetNodeId);
 }

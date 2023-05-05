@@ -1,55 +1,108 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.WireProtocol.Identity;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
 public class TableManager : ITableManager
 {
-    private const string DefaultIdentityScheme = "v4";
-    
-    public readonly KademliaTable.KBucket<NodeBucket> NodeRecordTable;
-    
-    public TableOptions Options { get; }
-    
-    public TableManager(TableOptions options)
+    private readonly IIdentityManager _identityManager;
+    private readonly RoutingTable _routingTable;
+    private readonly TableOptions _tableOptions;
+
+    public TableManager(IIdentityManager identityManager, TableOptions tableOptions)
     {
-        NodeRecordTable = new KademliaTable.KBucket<NodeBucket>
+        _identityManager = identityManager;
+        _routingTable = new RoutingTable(identityManager.Verifier.GetNodeIdFromRecord(identityManager.Record), tableOptions.MaxReplacementCacheSize);
+        _tableOptions = tableOptions;
+    }
+
+    public int RecordCount => _routingTable.GetTotalNodeCount();
+    
+    public IEnumerable<EnrRecord> GetBootstrapEnrs()
+    {
+        return _tableOptions.BootstrapEnrs;
+    }
+
+    public void UpdateTable(NodeTableEntry entry)
+    {
+        _routingTable.Update(entry);
+    }
+    
+    public void UpdateTable(EnrRecord enrRecord)
+    {
+        var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
+        var newNodeEntry = new NodeTableEntry(enrRecord, _identityManager.Verifier);
+        _routingTable.Update(newNodeEntry);
+        _routingTable.MarkNodeAsLive(nodeId);
+    }
+
+    public NodeTableEntry GetNodeEntry(byte[] nodeId)
+    {
+        var nodeEntry = _routingTable.GetNodeEntry(nodeId);
+
+        if (nodeEntry == null)
         {
-            ContactsPerBucket = options.BucketSize
-        };
-        Options = options;
-        PopulateTable(options.BootstrapEnrs);
-    }
+            var bootstrapEnrs = GetBootstrapEnrs();
 
-    public void AddEnrRecord(NodeBucket nodeBucket)
-    {
-        NodeRecordTable.Add(nodeBucket);
-    }
-
-    public void RemoveEnrRecord(NodeBucket nodeBucket)
-    {
-        NodeRecordTable.Remove(nodeBucket);
-    }
-
-    public EnrRecord GetEnrRecord(byte[] nodeId)
-    {
-        NodeRecordTable.TryGet(nodeId, out var nodeBucket);
-        return nodeBucket.Record;
-    }
-    
-    private void PopulateTable(IEnumerable<EnrRecord> bootstrapEnrs)
-    {
-        foreach (var enrRecord in bootstrapEnrs)
-        {
-            var idType = enrRecord.GetEntry<EntryId>(EnrContentKey.Id).Value;
-
-            if (idType == DefaultIdentityScheme)
+            foreach (var bootstrapEnr in bootstrapEnrs)
             {
-                var nodeBucket = new NodeBucket(enrRecord, new IdentitySchemeV4Verifier());
-                NodeRecordTable.Add(nodeBucket);
+                var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
+
+                if (nodeId.SequenceEqual(bootstrapNodeId))
+                {
+                    var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
+                    return bootstrapEntry;
+                }
             }
         }
+        else
+        {
+            return nodeEntry;
+        }
+        
+        return null;
+    }
+
+    public List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances)
+    {
+        var enrRecords = new List<EnrRecord>();
+
+        foreach (var distance in distances)
+        {
+            if (distance == 0)
+            {
+                enrRecords.Add(_identityManager.Record);
+            }
+            else
+            {
+                var nodeAtDistance = _routingTable.GetNodeEntryAtDistance(distance);
+                enrRecords.Add(nodeAtDistance.Record);
+            }
+        }
+
+        return enrRecords;
+    }
+    
+    public IEnumerable<NodeTableEntry> GetInitialNodesForLookup(byte[] targetNodeId)
+    {
+        return _routingTable.GetInitialNodesForLookup(targetNodeId);
+    }
+
+    public int[] GetClosestNeighbours(byte[] targetNodeId)
+    {
+        var neighbours = _routingTable.GetInitialNodesForLookup(targetNodeId);
+        var distances = new int[neighbours.Count];
+        var identityVerifier = new IdentitySchemeV4Verifier();
+        
+        foreach (var neighbour in neighbours)
+        {
+            var neighbourNodeId = identityVerifier.GetNodeIdFromRecord(neighbour.Record);
+            var selfNodeId = identityVerifier.GetNodeIdFromRecord(_identityManager.Record);
+            var distance = RoutingTable.Log2Distance(neighbourNodeId, selfNodeId);
+            distances[neighbours.IndexOf(neighbour)] = distance;
+        }
+        
+        return distances;
     }
 }

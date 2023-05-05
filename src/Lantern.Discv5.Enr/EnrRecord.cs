@@ -1,5 +1,4 @@
-﻿using Lantern.Discv5.Enr.Common;
-using Lantern.Discv5.Enr.EnrContent.Interfaces;
+﻿using Lantern.Discv5.Enr.EnrContent.Interfaces;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 

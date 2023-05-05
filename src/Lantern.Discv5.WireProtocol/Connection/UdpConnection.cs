@@ -3,6 +3,8 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
+using IPEndPoint = System.Net.IPEndPoint;
+using OperationCanceledException = System.OperationCanceledException;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
@@ -10,49 +12,70 @@ public class UdpConnection : IUdpConnection
 {
     private const int MaxPacketSize = 1280;
     private const int MinPacketSize = 63;
-    private readonly int _timeoutMilliseconds;
     private readonly UdpClient _udpClient;
+    private readonly ConnectionOptions _connectionOptions;
     private readonly Channel<UdpReceiveResult> _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
 
     public UdpConnection(ConnectionOptions options)
     {
-        _timeoutMilliseconds = options.TimeoutMilliseconds;
-        _udpClient = new UdpClient(new IPEndPoint(options.IpAddress, options.Port));
+        _connectionOptions = options;
+        _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
+        LogConnectionDetails(options);
+    }
+    
+    private void LogConnectionDetails(ConnectionOptions options)
+    {
+        Console.WriteLine("\nConnection DETAILS");
+        Console.WriteLine("==================");
+        Console.WriteLine("Local endpoint: " + _udpClient.Client.LocalEndPoint);
+        Console.WriteLine("External endpoint: " + _udpClient.Client.RemoteEndPoint);
+        Console.WriteLine("External ip address: " + options.ExternalIpAddress);
     }
 
     public async Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken cancellationToken = default)
     {
         ValidatePacketSize(data);
-        var sendTask = _udpClient.SendAsync(data, data.Length, destination);
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(_timeoutMilliseconds);
-        await sendTask.ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_connectionOptions.TimeoutMilliseconds);
+
+        await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
     }
+    
 
     public async Task ListenAsync(CancellationToken cancellationToken = default)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            // Ignore the UdpTimeoutException here and let ReceiveAsync handle it
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                var returnedResult = await ReceiveAsync(cancellationToken);
-                _messageChannel.Writer.TryWrite(returnedResult);
-            }
-            catch (UdpTimeoutException)
-            {
-                // Do nothing, continue listening
+                try
+                {
+                    var returnedResult = await ReceiveAsync(cancellationToken).ConfigureAwait(false);
+                    _messageChannel.Writer.TryWrite(returnedResult);
+                }
+                catch (UdpTimeoutException)
+                {
+                    // Do nothing, continue listening
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error receiving packet: {ex}");
+                }
             }
         }
-
-        // Propagate the cancellation
-        cancellationToken.ThrowIfCancellationRequested();
+        finally
+        {
+            CompleteMessageChannel();
+        }
     }
 
     public async Task<UdpReceiveResult> ReceiveAsync(CancellationToken cancellationToken = default)
     {
-        var receiveResult = await ReceiveAsyncWithTimeout(cancellationToken);
+        var receiveResult = await ReceiveAsyncWithTimeout(cancellationToken).ConfigureAwait(false);
         ValidatePacketSize(receiveResult.Buffer);
+        
         return receiveResult;
     }
 
@@ -72,6 +95,10 @@ public class UdpConnection : IUdpConnection
     public void Close()
     {
         _udpClient.Close();
+    }
+
+    public void Dispose()
+    {
         _udpClient.Dispose();
     }
 
@@ -86,18 +113,21 @@ public class UdpConnection : IUdpConnection
 
     private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken cancellationToken = default)
     {
-        var receiveTask = _udpClient.ReceiveAsync(cancellationToken).AsTask();
-        var timeoutTask = Task.Delay(_timeoutMilliseconds, cancellationToken);
-        var completedTask = await Task.WhenAny(receiveTask, timeoutTask);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_connectionOptions.TimeoutMilliseconds);
 
-        if (completedTask != timeoutTask) 
-            return await receiveTask;
-        
-        if (timeoutTask.IsCanceled)
+        try
         {
-            throw new OperationCanceledException("Receive operation was canceled", cancellationToken);
-        } 
-        
-        throw new UdpTimeoutException("Receive timed out");
+            return await _udpClient.ReceiveAsync(cts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                /*throw new OperationCanceledException("Receive operation was canceled", cancellationToken);*/
+            }
+
+            throw new UdpTimeoutException("Receive timed out");
+        }
     }
 }

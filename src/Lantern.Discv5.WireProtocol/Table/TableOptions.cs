@@ -4,35 +4,28 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public class TableOptions
 {
-    public int BucketSize { get; }
-    public int BucketCount { get; }
+    public int MaxReplacementCacheSize { get; }
+    
     public EnrRecord[] BootstrapEnrs { get; }
 
     private TableOptions(Builder builder)
     {
-        BucketSize = builder.BucketSize;
-        BucketCount = builder.BucketCount;
+        MaxReplacementCacheSize = builder.MaxReplacementCacheSize;
         BootstrapEnrs = builder.BootstrapEnrs;
     }
 
     public class Builder
     {
-        public int BucketSize { get; private set; } = 16;
-        public int BucketCount { get; private set; } = 256;
+        public int MaxReplacementCacheSize { get; private set; } = 3;
+        
         public EnrRecord[] BootstrapEnrs { get; private set; } = Array.Empty<EnrRecord>();
 
-        public Builder WithBucketSize(int bucketSize)
+        public Builder WithMaxReplacementCacheSize(int maxReplacementCacheSize)
         {
-            BucketSize = bucketSize;
+            MaxReplacementCacheSize = maxReplacementCacheSize;
             return this;
         }
-
-        public Builder WithBucketCount(int bucketCount)
-        {
-            BucketCount = bucketCount;
-            return this;
-        }
-
+        
         public Builder WithBootstrapEnrs(IEnumerable<EnrRecord> bootstrapEnrs)
         {
             BootstrapEnrs = bootstrapEnrs.ToArray();

@@ -1,4 +1,4 @@
-using Lantern.Discv5.WireProtocol.Packets;
+using Lantern.Discv5.WireProtocol.Packet;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
@@ -10,12 +10,13 @@ public sealed class ConnectionService
     private readonly TaskCompletionSource _shutdownTcs;
     private readonly ConnectionOptions _connectionOptions;
 
-    public ConnectionService(IPacketService packetService, IUdpConnection udpConnection, ConnectionOptions connectionOptions)
+    public ConnectionService(IPacketService packetService, IUdpConnection udpConnection,
+        ConnectionOptions connectionOptions)
     {
         _packetService = packetService;
         _udpConnection = udpConnection;
         _connectionOptions = connectionOptions;
-        _serviceCts = new CancellationTokenSource();
+        _serviceCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         _shutdownTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
@@ -25,7 +26,7 @@ public sealed class ConnectionService
         var lookupTask = StartServiceAsync(_serviceCts.Token);
         var handleTask = HandleIncomingPacketsAsync(_serviceCts.Token);
 
-        await Task.WhenAny(listenTask, handleTask, lookupTask, Task.Delay(_connectionOptions.TimeoutMilliseconds, _serviceCts.Token)).ConfigureAwait(false);
+        await Task.WhenAny(listenTask, handleTask, lookupTask).ConfigureAwait(false);
         _udpConnection.CompleteMessageChannel();
     }
 
@@ -50,10 +51,18 @@ public sealed class ConnectionService
 
     private async Task StartServiceAsync(CancellationToken cancellationToken = default)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            await _packetService.SendOrdinaryPacketForLookup(_udpConnection).ConfigureAwait(false);
-            await Task.Delay(_connectionOptions.LookupIntervalMilliseconds, cancellationToken).ConfigureAwait(false);
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await _packetService.RunDiscoveryAsync().ConfigureAwait(false);
+                await Task.Delay(_connectionOptions.LookupIntervalMilliseconds, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            _shutdownTcs.TrySetResult();
         }
     }
 
@@ -63,7 +72,18 @@ public sealed class ConnectionService
         {
             await foreach (var packet in _udpConnection.ReadMessagesAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                await _packetService.HandleReceivedPacket(_udpConnection, packet).ConfigureAwait(false);
+                try
+                {
+                    await _packetService.HandleReceivedPacket(packet).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Do nothing, continue listening for incoming packets
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
         }
         finally

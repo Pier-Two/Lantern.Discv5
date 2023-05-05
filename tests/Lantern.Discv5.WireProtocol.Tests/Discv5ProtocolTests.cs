@@ -16,26 +16,27 @@ public class Discv5ProtocolTests
     public void Setup()
     {
         var privateKey = Convert.FromHexString("A90C6EB0A559E47C2C109B5A7826B947CA3787CF4503DBF4EDB0A08BD3C84FD5");
-        var signer =
-            new IdentitySchemeV4Signer(
-                Convert.FromHexString("A90C6EB0A559E47C2C109B5A7826B947CA3787CF4503DBF4EDB0A08BD3C84FD5"));
+        var signer = new IdentitySchemeV4Signer(privateKey);
         var verifier = new IdentitySchemeV4Verifier();
-        var testSessionKeys = new BaseSessionKeys(privateKey);
+        var sessionKeys = new BaseSessionKeys(privateKey);
         var bootstrapEnrs = new[]
         {
-            "enr:-HW4QGGuWgs0oUYUf5R_oGzvgRF9ZoZYO2Ql827deQASncnLJI4QiR7y49WGHPq_2ynEkkQaeHwb4JyrJV9b3u7Ql_gBgmlkgnY0iXNlY3AyNTZrMaEC7shDw9kzX9w2Kgl9ZzyDo8zdlISuG-RmNr1ePmVUujk"
+            "enr:-Ku4QP2xDnEtUXIjzJ_DhlCRN9SN99RYQPJL92TMlSv7U5C1YnYLjwOQHgZIUXw6c-BvRg2Yc2QsZxxoS_pPRVe0yK8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMeFF5GrS7UZpAH2Ly84aLK-TyvH-dRo0JM1i8yygH50YN1ZHCCJxA",
+            "enr:-Ku4QHqVeJ8PPICcWk1vSn_XcSkjOkNiTg6Fmii5j6vUQgvzMc9L1goFnLKgXqBJspJjIsB91LTOleFmyWWrFVATGngBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAMRHkWJc2VjcDI1NmsxoQKLVXFOhp2uX6jeT0DvvDpPcU8FWMjQdR4wMuORMhpX24N1ZHCCIyg"
         };
+        
         var bootstrapEnrsType = bootstrapEnrs
             .Select(enr => new EnrRecordFactory().CreateFromString(enr))
             .ToArray();
         
         var connectionOptions = new ConnectionOptions.Builder()
+            .WithExternalIpAddressAsync().Result
             .Build();
 
         var sessionOptions = new SessionOptions.Builder()
             .WithSigner(signer)
             .WithVerifier(verifier)
-            .WithSessionKeys(testSessionKeys)
+            .WithSessionKeys(sessionKeys)
             .WithCacheSize(100)
             .Build();
 
@@ -52,6 +53,6 @@ public class Discv5ProtocolTests
     [Test]
     public async Task Test()
     { 
-        await _discv5Protocol.StartServiceAsync();
+        await _discv5Protocol.StartDiscoveryAsync();
     }
 }
