@@ -20,21 +20,21 @@ public class HandshakePacketHandler : PacketHandlerBase
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
     private readonly ITableManager _tableManager;
-    private readonly IMessageHandler _messageHandler;
+    private readonly IMessageResponder _messageResponder;
 
-    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, ITableManager tableManager, IMessageHandler messageHandler)
+    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, ITableManager tableManager, IMessageResponder messageResponder)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _tableManager = tableManager;
-        _messageHandler = messageHandler;
+        _messageResponder = messageResponder;
     }
 
     public override PacketType PacketType => PacketType.Handshake;
 
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
-        Console.Write("\nReceived HANDSHAKE packet => ");
+        Console.Write("\nReceived HANDSHAKE packet from " + returnedResult.RemoteEndPoint.Address + " => ");
         var selfRecord = _identityManager.Record;
         var selfNodeId = _identityManager.Verifier.GetNodeIdFromRecord(selfRecord);
         var rawPacket = returnedResult.Buffer;
@@ -106,7 +106,7 @@ public class HandshakePacketHandler : PacketHandlerBase
     
     private byte[]? PrepareMessageForHandshake(byte[] decryptedMessage, byte[] selfNodeId, byte[] senderNodeId, CryptoSession session) 
     {
-        var response = _messageHandler.HandleMessage(decryptedMessage);
+        var response = _messageResponder.HandleMessage(decryptedMessage);
 
         if (response == null)
         {

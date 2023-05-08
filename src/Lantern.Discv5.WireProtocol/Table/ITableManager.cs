@@ -11,10 +11,16 @@ public interface ITableManager
     public void UpdateTable(NodeTableEntry nodeEntry);
     
     public void UpdateTable(EnrRecord enrRecord);
+
+    public void MarkNodeAsQueried(byte[] nodeId);
+
+    public void RefreshTable();
     
-    public NodeTableEntry GetNodeEntry(byte[] nodeId);
+    public NodeTableEntry? GetNodeEntry(byte[] nodeId);
 
     public IEnumerable<NodeTableEntry> GetInitialNodesForLookup(byte[] targetNodeId);
+
+    public NodeTableEntry GetNodeForFindNode(byte[] targetNodeId);
     
     public List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances);
 

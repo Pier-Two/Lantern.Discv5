@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Timers;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
@@ -22,19 +21,21 @@ public class PacketService : IPacketService
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
     private readonly ITableManager _tableManager;
-    private readonly IMessageConstructor _messageConstructor;
+    private readonly IMessageRequester _messageRequester;
     private readonly IUdpConnection _udpConnection;
+    private readonly ILookupManager _lookupManager;
 
     public PacketService(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
-        ISessionManager sessionManager, ITableManager tableManager, IMessageConstructor messageConstructor,
-        IUdpConnection udpConnection)
+        ISessionManager sessionManager, ITableManager tableManager, IMessageRequester messageRequester,
+        IUdpConnection udpConnection, ILookupManager lookupManager)
     {
         _packetHandlerFactory = packetHandlerFactory;
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _tableManager = tableManager;
-        _messageConstructor = messageConstructor;
+        _messageRequester = messageRequester;
         _udpConnection = udpConnection;
+        _lookupManager = lookupManager;
         LogIdentityManagerDetails(); // For debugging purposes only (ignore for now)
     }
 
@@ -49,46 +50,65 @@ public class PacketService : IPacketService
 
     public async Task RunDiscoveryAsync()
     {
-        var sourceNodeId = _identityManager.Verifier.GetNodeIdFromRecord(_identityManager.Record);
-        
         if (_tableManager.RecordCount == 0)
         {
-            await DiscoverFromBootstrapEnrsAsync();
-            await PerformLookup(sourceNodeId, sourceNodeId);
+            Console.WriteLine("Initialising from bootstrap ENRs...\n");
+            var bootstrapEnrs = _tableManager.GetBootstrapEnrs();
+
+            foreach (var bootstrapEnr in bootstrapEnrs)
+            {
+                await SendPacket(MessageType.Ping, bootstrapEnr);
+            }
+            
             return;
         }
-        await PerformLookup(sourceNodeId, RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize));
+        
+        await PerformDiscovery();
     }
 
-    private async Task DiscoverFromBootstrapEnrsAsync()
+    public async Task PingNodeAsync()
     {
-        Console.WriteLine("Starting discovery from bootstrap ENRs...\n");
-        var bootstrapEnrs = _tableManager.GetBootstrapEnrs();
-        var sourceNodeId = _identityManager.Verifier.GetNodeIdFromRecord(_identityManager.Record);
-
-        foreach (var bootstrapEnr in bootstrapEnrs)
+        if (_tableManager.RecordCount > 0)
         {
-            await SendPacket(MessageType.Ping, sourceNodeId, bootstrapEnr);
+            Console.WriteLine("Pinging node for checking liveness...");
+            var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
+            var nodeEntry = _tableManager.GetInitialNodesForLookup(targetNodeId).First();
+            await SendPacket(MessageType.Ping, nodeEntry.Record);
         }
     }
-
-    private async Task PerformLookup(byte[] sourceNodeId, byte[] targetNodeId)
+    
+    public async Task PerformLookup(byte[] targetNodeId)
     {
         Console.WriteLine("\nPerforming lookup...");
-        var initialNodesForLookup = _tableManager.GetInitialNodesForLookup(targetNodeId);
-
-        foreach (var nodeEntry in initialNodesForLookup)
+        var closestNodes = await _lookupManager.PerformLookup(targetNodeId);
+        Console.WriteLine("Lookup completed. Closest nodes found:");
+        foreach (var node in closestNodes)
         {
-            await SendPacket(MessageType.FindNode, sourceNodeId, nodeEntry.Record);
+            Console.WriteLine("Node ID: " + Convert.ToHexString(node.Id));
         }
     }
 
-    private async Task SendPacket(MessageType messageType, byte[] sourceNodeId, EnrRecord record)
+    private async Task PerformDiscovery()
     {
+        Console.WriteLine("\nPerforming discovery...");
+        var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
+        var initialNodesForLookup = _tableManager.GetInitialNodesForLookup(targetNodeId);
+        
+        // Establish sessions with initial nodes
+        foreach (var nodeEntry in initialNodesForLookup)
+        {
+            if (!nodeEntry.IsQueried)
+            {
+                await SendPacket(MessageType.FindNode, nodeEntry.Record);
+            }
+        }
+    }
+
+    public async Task SendPacket(MessageType messageType, EnrRecord record)
+    {
+        var sourceNodeId = _identityManager.Verifier.GetNodeIdFromRecord(_identityManager.Record);
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(record);
-        var ipAddress = record.GetEntry<EntryIp>(EnrContentKey.Ip).Value;
-        var port = record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value;
-        var destEndPoint = new IPEndPoint(ipAddress, port);
+        var destEndPoint = new IPEndPoint(record.GetEntry<EntryIp>(EnrContentKey.Ip).Value, record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
         var packetNonce = RandomUtility.GenerateNonce(PacketConstants.NonceSize);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
@@ -96,11 +116,15 @@ public class PacketService : IPacketService
         if (cryptoSession is { IsEstablished: true })
         {
             var sessionKeys = cryptoSession.CurrentSessionKeys;
-            var encryptionKey = cryptoSession.SessionType == SessionType.Initiator
-                ? sessionKeys.InitiatorKey
-                : sessionKeys.RecipientKey;
+            var encryptionKey = cryptoSession.SessionType switch
+            {
+                SessionType.Initiator => sessionKeys.InitiatorKey,
+                SessionType.Recipient => sessionKeys.RecipientKey,
+                _ => throw new InvalidOperationException("Invalid session type")
+            };
+            
             var ordinaryPacket = PacketConstructor.ConstructOrdinaryPacket(sourceNodeId, destNodeId, maskingIv);
-            var message = _messageConstructor.ConstructMessage(messageType, destNodeId);
+            var message = _messageRequester.ConstructMessage(messageType, destNodeId);
             var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, ordinaryPacket.Result.Item2.GetHeader());
             var encryptedMessage =
                 AESUtility.AesGcmEncrypt(encryptionKey, ordinaryPacket.Result.Item2.Nonce, message, messageAd);
@@ -117,8 +141,7 @@ public class PacketService : IPacketService
             Console.WriteLine("Sent RANDOM packet to initiate handshake with " + destEndPoint);
         }
     }
-
-
+    
     public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
         var decryptedPacket = DecryptPacket(returnedResult.Buffer);

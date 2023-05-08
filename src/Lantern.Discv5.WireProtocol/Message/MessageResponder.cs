@@ -1,3 +1,4 @@
+using System.Net;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
@@ -5,23 +6,26 @@ using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Decoders;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
-using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class MessageHandler : IMessageHandler
+public class MessageResponder : IMessageResponder
 {
     private const int RecordLimit = 16;
     private readonly IIdentityManager _identityManager;
     private readonly ITableManager _tableManager;
     private readonly IPendingRequests _pendingRequests;
+    private readonly ILookupManager _lookupManager;
+    private readonly ITalkResponder? _talkResponder;
 
-    public MessageHandler(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests)
+    public MessageResponder(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ILookupManager lookupManager, ITalkResponder? talkResponder = null)
     {
         _identityManager = identityManager;
         _tableManager = tableManager;
         _pendingRequests = pendingRequests;
+        _lookupManager = lookupManager;
+        _talkResponder = talkResponder;
     }
     
     public byte[]? HandleMessage(byte[] message)
@@ -36,10 +40,6 @@ public class MessageHandler : IMessageHandler
             MessageType.Nodes => HandleNodesMessage(message),
             MessageType.TalkReq => HandleTalkReqMessage(message),
             MessageType.TalkResp => HandleTalkRespMessage(message),
-            MessageType.RegTopic => HandleRegTopicMessage(message),
-            MessageType.Ticket => HandleTicketMessage(message),
-            MessageType.RegConfirmation => HandleRegConfirmationMessage(message),
-            MessageType.TopicQuery => HandleTopicQueryMessage(message),
             _ => throw new ArgumentOutOfRangeException(nameof(messageType), messageType, null)
         };
     }
@@ -57,7 +57,7 @@ public class MessageHandler : IMessageHandler
     
     private byte[]? HandlePongMessage(byte[] message)
     {
-        Console.Write("Received message type => " + MessageType.Pong);
+        Console.Write("Received message type => " + MessageType.Pong + "\n");
         var decodedMessage = new PongDecoder().DecodeMessage(message);
         var result = _pendingRequests.ContainsPendingRequest(decodedMessage.RequestId);
         
@@ -79,13 +79,22 @@ public class MessageHandler : IMessageHandler
             Console.WriteLine("ENR record is not known.");
             return null;
         }
+        
         var enrRecord = nodeEntry.Record;
         
         if (nodeEntry.IsLive == false)
         {
             _tableManager.UpdateTable(enrRecord);
             _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
-            Console.WriteLine("\nAdded bootstrap enr record to table. Node id: " + Convert.ToHexString(pendingRequest.NodeId));
+
+            Console.WriteLine("\nAdded bootstrap enr record to table. ENR: " + Convert.ToHexString(new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord)));
+
+            if (!_identityManager.IsIpAddressAndPortSet())
+            {
+                var endpoint = new IPEndPoint(decodedMessage.RecipientIp, decodedMessage.RecipientPort);
+                _identityManager.UpdateIpAddressAndPort(endpoint);
+            }
+
             return null;
         }
         
@@ -100,13 +109,14 @@ public class MessageHandler : IMessageHandler
         return findNodeMessage.EncodeMessage();
     }
     
-    private byte[]? HandleFindNodeMessage(byte[] message)
+    private byte[] HandleFindNodeMessage(byte[] message)
     {
         Console.Write("Received message type => " + MessageType.FindNode);
         var decodedMessage = new FindNodeDecoder().DecodeMessage(message);
         var distances = decodedMessage.Distances.Take(RecordLimit);
         var closestNodes = _tableManager.GetEnrRecordsAtDistances(distances).ToArray();
         var nodesMessage = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, closestNodes);
+
         return nodesMessage.EncodeMessage();
     }
     
@@ -133,61 +143,74 @@ public class MessageHandler : IMessageHandler
 
             foreach (var distance in findNodesRequest.Distances)
             {
-                var distanceToNode = RoutingTable.Log2Distance(nodeId, pendingRequest.NodeId);
+                var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
+                
                 if (distance == distanceToNode)
                 {
                     _tableManager.UpdateTable(enr);
-                    Console.WriteLine("Added enr record to table. Node id: " + Convert.ToHexString(nodeId));
+                    Console.WriteLine("Added enr record to table. Node ID: " + Convert.ToHexString(identityVerifier.GetNodeIdFromRecord(enr)));
                     break;
                 }
             }
         }
+
+        var nodes = decodedMessage.Enrs.Select(x => new NodeTableEntry(x, new IdentitySchemeV4Verifier())).ToList();
+        _lookupManager.ReceiveNodesResponse(nodes);
+        _tableManager.MarkNodeAsQueried(pendingRequest.NodeId);
 
         return null;
     }
     
     private byte[]? HandleTalkReqMessage(byte[] message)
     {
+        if (_talkResponder == null)
+        {
+            Console.WriteLine("Talk responder is not set.");
+            return null;
+        }
+        
         Console.Write("Received message type => " + MessageType.TalkReq);
         var decodedMessage = new TalkReqDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
+        var pendingRequest = ValidateRequest(decodedMessage);
+        
+        if(pendingRequest == null)
+            return null;
+        
+        var result = _talkResponder.RespondToRequest(decodedMessage.Protocol, decodedMessage.Request);
+
+        if (result)
+        {
+            _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
+        }
+        
+        return null;
     }
     
     private byte[]? HandleTalkRespMessage(byte[] message)
     {
+        if (_talkResponder == null)
+        {
+            Console.WriteLine("Talk responder is not set.");
+            return null;
+        }
+
         Console.Write("Received message type => " + MessageType.TalkResp);
         var decodedMessage = new TalkRespDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
-    }
-    
-    private byte[]? HandleRegTopicMessage(byte[] message)
-    {
-        Console.Write("Received message type => " + MessageType.RegTopic);
-        var decodedMessage = new RegTopicDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
-    }
-    
-    private byte[]? HandleTicketMessage(byte[] message)
-    {
-        Console.Write("Received message type => " + MessageType.Ticket);
-        var decodedMessage = new TicketDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
-    }
-    
-    private byte[]? HandleRegConfirmationMessage(byte[] message)
-    {
-        Console.Write("Received message type => " + MessageType.RegConfirmation);
-        var decodedMessage = new RegConfirmationDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
-    }
-    
-    private byte[]? HandleTopicQueryMessage(byte[] message)
-    {
-        Console.Write("Received message type => " + MessageType.TopicQuery);
-        var decodedMessage = new TopicQueryDecoder().DecodeMessage(message);
-        throw new NotImplementedException();
-    }
+        var pendingRequest = ValidateRequest(decodedMessage);
+        
+        if(pendingRequest == null)
+            return null;
 
+        var result  = _talkResponder.HandleResponse(decodedMessage.Response);
+        
+        if (result)
+        {
+            _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
+        }
+        
+        return null;
+    }
+    
     private PendingRequest? ValidateRequest(Message message)
     {
         var result = _pendingRequests.ContainsPendingRequest(message.RequestId);

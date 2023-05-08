@@ -1,18 +1,21 @@
 using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public sealed class ConnectionService
+public sealed class ConnectionService : IConnectionService
 {
+    private readonly ITableManager _tableManager;
     private readonly IPacketService _packetService;
     private readonly IUdpConnection _udpConnection;
     private readonly CancellationTokenSource _serviceCts;
     private readonly TaskCompletionSource _shutdownTcs;
     private readonly ConnectionOptions _connectionOptions;
 
-    public ConnectionService(IPacketService packetService, IUdpConnection udpConnection,
+    public ConnectionService(ITableManager tableManager, IPacketService packetService, IUdpConnection udpConnection,
         ConnectionOptions connectionOptions)
     {
+        _tableManager = tableManager;
         _packetService = packetService;
         _udpConnection = udpConnection;
         _connectionOptions = connectionOptions;
@@ -20,13 +23,15 @@ public sealed class ConnectionService
         _shutdownTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
-    public async Task StartAsync()
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         var listenTask = _udpConnection.ListenAsync(_serviceCts.Token);
-        var lookupTask = StartServiceAsync(_serviceCts.Token);
+        var pingTask = PingNodeAsync(_serviceCts.Token);
+        var discoveryTask = StartServiceAsync(_serviceCts.Token);
+        var refreshTask = RefreshBucketsAsync(_serviceCts.Token);
         var handleTask = HandleIncomingPacketsAsync(_serviceCts.Token);
 
-        await Task.WhenAny(listenTask, handleTask, lookupTask).ConfigureAwait(false);
+        await Task.WhenAny(listenTask, discoveryTask, refreshTask, pingTask, handleTask ).ConfigureAwait(false);
         _udpConnection.CompleteMessageChannel();
     }
 
@@ -49,6 +54,48 @@ public sealed class ConnectionService
         }
     }
 
+    private async Task RefreshBucketsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                _tableManager.RefreshTable();
+                await Task.Delay(_connectionOptions.RefreshIntervalMilliseconds, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _shutdownTcs.TrySetResult();
+        }
+    }
+    
+    private async Task PingNodeAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await _packetService.PingNodeAsync().ConfigureAwait(false);
+                await Task.Delay(_connectionOptions.PingIntervalMilliseconds, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _shutdownTcs.TrySetResult();
+        }
+    }
+    
     private async Task StartServiceAsync(CancellationToken cancellationToken = default)
     {
         try

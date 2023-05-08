@@ -9,12 +9,15 @@ public class NodeTableEntry
     {
         Record = record;
         Id = verifier.GetNodeIdFromRecord(record);
+        IsQueried = false;
         IsLive = false;
     }
 
     public byte[] Id { get; }
     
     public EnrRecord Record { get; }
+    
+    public bool IsQueried { get; set; }
     
     public bool IsLive { get; set; }
 

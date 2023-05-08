@@ -13,11 +13,11 @@ public class TableManager : ITableManager
     public TableManager(IIdentityManager identityManager, TableOptions tableOptions)
     {
         _identityManager = identityManager;
-        _routingTable = new RoutingTable(identityManager.Verifier.GetNodeIdFromRecord(identityManager.Record), tableOptions.MaxReplacementCacheSize);
+        _routingTable = new RoutingTable(tableOptions, identityManager.Verifier.GetNodeIdFromRecord(identityManager.Record));
         _tableOptions = tableOptions;
     }
 
-    public int RecordCount => _routingTable.GetTotalNodeCount();
+    public int RecordCount => _routingTable.GetTotalEntriesCount();
     
     public IEnumerable<EnrRecord> GetBootstrapEnrs()
     {
@@ -36,8 +36,22 @@ public class TableManager : ITableManager
         _routingTable.Update(newNodeEntry);
         _routingTable.MarkNodeAsLive(nodeId);
     }
+    
+    public void MarkNodeAsQueried(byte[] nodeId)
+    {
+        _routingTable.MarkNodeAsQueried(nodeId);
+    }
 
-    public NodeTableEntry GetNodeEntry(byte[] nodeId)
+    public void RefreshTable()
+    {
+        if (RecordCount > 0)
+        {
+            Console.WriteLine("Refreshing buckets...");
+            _routingTable.RefreshBuckets();
+        }
+    }
+
+    public NodeTableEntry? GetNodeEntry(byte[] nodeId)
     {
         var nodeEntry = _routingTable.GetNodeEntry(nodeId);
 
@@ -76,17 +90,27 @@ public class TableManager : ITableManager
             }
             else
             {
-                var nodeAtDistance = _routingTable.GetNodeEntryAtDistance(distance);
-                enrRecords.Add(nodeAtDistance.Record);
+                var nodesAtDistance = _routingTable.GetNodesAtDistance(distance);
+
+                foreach (var nodeAtDistance in nodesAtDistance)
+                {
+                    enrRecords.Add(nodeAtDistance.Record);
+                }
             }
         }
 
         return enrRecords;
     }
+
     
     public IEnumerable<NodeTableEntry> GetInitialNodesForLookup(byte[] targetNodeId)
     {
         return _routingTable.GetInitialNodesForLookup(targetNodeId);
+    }
+
+    public NodeTableEntry GetNodeForFindNode(byte[] targetNodeId)
+    {
+        return _routingTable.GetNodeForFindNode(targetNodeId);
     }
 
     public int[] GetClosestNeighbours(byte[] targetNodeId)
@@ -99,7 +123,7 @@ public class TableManager : ITableManager
         {
             var neighbourNodeId = identityVerifier.GetNodeIdFromRecord(neighbour.Record);
             var selfNodeId = identityVerifier.GetNodeIdFromRecord(_identityManager.Record);
-            var distance = RoutingTable.Log2Distance(neighbourNodeId, selfNodeId);
+            var distance = TableUtility.Log2Distance(neighbourNodeId, selfNodeId);
             distances[neighbours.IndexOf(neighbour)] = distance;
         }
         

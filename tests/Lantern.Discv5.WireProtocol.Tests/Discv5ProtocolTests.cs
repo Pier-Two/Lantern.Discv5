@@ -15,14 +15,14 @@ public class Discv5ProtocolTests
     [SetUp]
     public void Setup()
     {
-        var privateKey = Convert.FromHexString("A90C6EB0A559E47C2C109B5A7826B947CA3787CF4503DBF4EDB0A08BD3C84FD5");
+        var privateKey = Convert.FromHexString("BAFA8BDEC1F4F02D227A2F99C5FD8F439B457942B466115A0FAB9FC3F9E97D67");//SessionUtility.GenerateRandomPrivateKey();
         var signer = new IdentitySchemeV4Signer(privateKey);
         var verifier = new IdentitySchemeV4Verifier();
-        var sessionKeys = new BaseSessionKeys(privateKey);
+        var sessionKeys = new SessionKeys(privateKey);
         var bootstrapEnrs = new[]
         {
-            "enr:-Ku4QP2xDnEtUXIjzJ_DhlCRN9SN99RYQPJL92TMlSv7U5C1YnYLjwOQHgZIUXw6c-BvRg2Yc2QsZxxoS_pPRVe0yK8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQMeFF5GrS7UZpAH2Ly84aLK-TyvH-dRo0JM1i8yygH50YN1ZHCCJxA",
-            "enr:-Ku4QHqVeJ8PPICcWk1vSn_XcSkjOkNiTg6Fmii5j6vUQgvzMc9L1goFnLKgXqBJspJjIsB91LTOleFmyWWrFVATGngBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC1MD8qAAAAAP__________gmlkgnY0gmlwhAMRHkWJc2VjcDI1NmsxoQKLVXFOhp2uX6jeT0DvvDpPcU8FWMjQdR4wMuORMhpX24N1ZHCCIyg"
+            "enr:-LK4QLnkZV1BLaze436M59DsWnJkb1cD6Hr1bT45aqgZExv4DMPZk_QRuihxMMkYUolAghmt8U50qDpgapGorgv-Ff48h2F0dG5ldHOIAAAEAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhJw7izuJc2VjcDI1NmsxoQKosgoCoL8nni_8gBXh2b1zbyfcTElOXCvv6fr3tbrZsoN0Y3CCIymDdWRwgiMp",
+            "enr:-Ly4QKecnqhE18429F_xNxOawWrRF673vE3WxbKpFFvlCrw3DBnyAgwqvOn606ZFL0NX6zY2CkGMFWYrU7Z8_AkohmsEh2F0dG5ldHOIAAAAAAAAAACEZXRoMpC7pNqWAwAAAP__________gmlkgnY0gmlwhDZQj4KJc2VjcDI1NmsxoQLWa-UIglSK-K4-MiTdi6pEYhPwQYxJN4k2q6NMevQUhIhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA"
         };
         
         var bootstrapEnrsType = bootstrapEnrs

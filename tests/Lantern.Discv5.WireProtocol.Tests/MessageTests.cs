@@ -66,8 +66,8 @@ public class MessageTests
         var secondNodeId = Convert.FromHexString("922259344d3e88c6c34c94192f598dca417174209f9dbfd423038a6460c59bd6");
         var thirdNodeId = Convert.FromHexString("bd9261edff7e5908db711d9acd5470296af8a695646b3585255d8dc51a319e3c");
         var fourthNodeId = Convert.FromHexString("c4606371d7a8f19ff21404f7cb61c9d9f0a1440597717d6b0e5de92004f52ed9");
-        var firstDistance = RoutingTable.Log2Distance(firstNodeId, secondNodeId);
-        var secondDistance = RoutingTable.Log2Distance(thirdNodeId, fourthNodeId);
+        var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
+        var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
         var findNodeMessage = new FindNodeMessage(distances);
         var encodedMessage = findNodeMessage.EncodeMessage();
@@ -85,8 +85,8 @@ public class MessageTests
         var secondNodeId = Convert.FromHexString("922259344d3e88c6c34c94192f598dca417174209f9dbfd423038a6460c59bd6");
         var thirdNodeId = Convert.FromHexString("bd9261edff7e5908db711d9acd5470296af8a695646b3585255d8dc51a319e3c");
         var fourthNodeId = Convert.FromHexString("c4606371d7a8f19ff21404f7cb61c9d9f0a1440597717d6b0e5de92004f52ed9");
-        var firstDistance = RoutingTable.Log2Distance(firstNodeId, secondNodeId);
-        var secondDistance = RoutingTable.Log2Distance(thirdNodeId, fourthNodeId);
+        var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
+        var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
         var findNodeMessage = new FindNodeMessage(distances);
         var newFindNodeMessage = new FindNodeDecoder().DecodeMessage(findNodeMessage.EncodeMessage());

@@ -27,8 +27,7 @@ public class UdpConnection : IUdpConnection
     {
         Console.WriteLine("\nConnection DETAILS");
         Console.WriteLine("==================");
-        Console.WriteLine("Local endpoint: " + _udpClient.Client.LocalEndPoint);
-        Console.WriteLine("External endpoint: " + _udpClient.Client.RemoteEndPoint);
+        Console.WriteLine("Listening at endpoint: " + _udpClient.Client.LocalEndPoint);
         Console.WriteLine("External ip address: " + options.ExternalIpAddress);
     }
 

@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
@@ -17,11 +19,33 @@ public class IdentityManager: IIdentityManager
 
     public EnrRecord Record { get; }
     
-    public IdentityManager(ConnectionOptions connectionOptions, SessionOptions? sessionOptions = null)
+    public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions)
     {
-        Signer = sessionOptions?.Signer ?? new IdentitySchemeV4Signer(SessionUtility.GenerateRandomPrivateKey());
-        Verifier = sessionOptions?.Verifier ?? new IdentitySchemeV4Verifier();
+        Signer = sessionOptions.Signer;
+        Verifier = sessionOptions.Verifier;
         Record = CreateNewRecord(connectionOptions, Signer);
+    }
+
+    public bool IsIpAddressAndPortSet()
+    {
+        return Record.HasKey(EnrContentKey.Ip) && Record.HasKey(EnrContentKey.Udp) || (Record.HasKey(EnrContentKey.Ip6) && Record.HasKey(EnrContentKey.Udp6));
+    }
+
+    public void UpdateIpAddressAndPort(IPEndPoint endpoint)
+    {
+        if (endpoint.AddressFamily == AddressFamily.InterNetwork)
+        {
+            Record.SetEntry(EnrContentKey.Ip, new EntryIp(endpoint.Address));
+            Record.SetEntry(EnrContentKey.Udp, new EntryUdp(endpoint.Port));
+        }
+        else if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            Record.SetEntry(EnrContentKey.Ip6, new EntryIp6(endpoint.Address));
+            Record.SetEntry(EnrContentKey.Udp6, new EntryUdp6(endpoint.Port));
+        }
+        
+        Record.UpdateSignature(Signer);
+        Console.Write("\nSelf ENR record updated => " + Record);
     }
 
     private static EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeSigner signer)
@@ -32,7 +56,6 @@ public class IdentityManager: IIdentityManager
                 .WithSigner(signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
                 .WithEntry(EnrContentKey.Ip, new EntryIp(options.ExternalIpAddress)) // Should use external IP address
-                .WithEntry(EnrContentKey.Tcp, new EntryTcp(options.Port))
                 .WithEntry(EnrContentKey.Udp, new EntryUdp(options.Port))
                 .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();

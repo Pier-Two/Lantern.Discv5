@@ -17,21 +17,21 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
     private readonly ITableManager _tableManager;
-    private readonly IMessageConstructor _messageConstructor;
+    private readonly IMessageRequester _messageRequester;
     
-    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, ITableManager tableManager, IMessageConstructor messageConstructor)
+    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, ITableManager tableManager, IMessageRequester messageRequester)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _tableManager = tableManager;
-        _messageConstructor = messageConstructor;
+        _messageRequester = messageRequester;
     }
 
     public override PacketType PacketType => PacketType.WhoAreYou;
 
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
-        Console.Write("\nReceived WHOAREYOU packet => ");
+        Console.Write("\nReceived WHOAREYOU packet from " + returnedResult.RemoteEndPoint.Address + " => ");
         var selfRecord = _identityManager.Record;
         var selfNodeId = _identityManager.Verifier.GetNodeIdFromRecord(selfRecord);
         var packetBuffer = returnedResult.Buffer;
@@ -46,27 +46,28 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             Console.WriteLine("Failed to get dest node id from packet nonce.");
             return;
         }
-        
-        var destNodeRecord = _tableManager.GetNodeEntry(destNodeId).Record;
 
-        if (destNodeRecord == null)
+        var nodeEntry = _tableManager.GetNodeEntry(destNodeId);
+        
+        if(nodeEntry == null)
         {
-            Console.WriteLine("Could not find destination record.");
+            Console.WriteLine("Failed to get node entry from the ENR table at node id: " + Convert.ToHexString(destNodeId));
             return;
         }
         
+        var destNodeRecord = nodeEntry.Record;
         var destNodePubkey = destNodeRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         var challengeData = ByteArrayUtils.JoinByteArrays(returnedResult.Buffer.AsSpan()[..16], staticHeader.GetHeader());
         var cryptoSession = _sessionManager.GetSession(destNodeId, returnedResult.RemoteEndPoint);
 
         if (cryptoSession == null)
         {
-            Console.Write("Creating new session with dest node id: " + Convert.ToHexString(destNodeId)[..10] + " " + returnedResult.RemoteEndPoint);
+            Console.Write("Creating new session with node: " + returnedResult.RemoteEndPoint);
             cryptoSession = _sessionManager.CreateSession(SessionType.Initiator, destNodeId, returnedResult.RemoteEndPoint, challengeData);
         }
         else
         {
-            Console.WriteLine("Session already exists with: " + Convert.ToHexString(destNodeId) + " " + returnedResult.RemoteEndPoint);
+            Console.Write("Updating existing session with node: " + returnedResult.RemoteEndPoint);
             cryptoSession.ChallengeData = challengeData;
         }
 
@@ -79,7 +80,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         cryptoSession.CurrentSessionKeys = sessionKeys;
         
         var handshakePacket = PacketConstructor.ConstructHandshakePacket(idSignature, ephemeralPubkey, selfNodeId, destNodeId, maskingIv, selfNodeRecord);
-        var message = _messageConstructor.ConstructMessage(MessageType.Ping, destNodeId);
+        var message = _messageRequester.ConstructMessage(MessageType.Ping, destNodeId);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, handshakePacket.Result.Item2.GetHeader());
         var encryptedMessage = AESUtility.AesGcmEncrypt(sessionKeys.InitiatorKey, handshakePacket.Result.Item2.Nonce, message, messageAd);
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Result.Item1, encryptedMessage);

@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol;
 
 public class Discv5Protocol
 {
-    private readonly ConnectionService _connectionService;
+    private readonly IConnectionService _connectionService;
 
     public Discv5Protocol(IServiceProvider serviceProvider)
     {
@@ -15,6 +15,11 @@ public class Discv5Protocol
     public async Task StartDiscoveryAsync()
     {
         await _connectionService.StartAsync();
+        await _connectionService.StopAsync();
+    }
+    
+    public async Task StopDiscoveryAsync()
+    {
         await _connectionService.StopAsync();
     }
 }

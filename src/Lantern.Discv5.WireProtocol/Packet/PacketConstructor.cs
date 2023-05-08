@@ -28,6 +28,16 @@ public static class PacketConstructor
         var packet = ByteArrayUtils.Concatenate(maskingIv, encryptedMaskedHeader);
         return await Task.FromResult(Tuple.Create(packet, packetStaticHeader));
     }
+    
+    public static async Task<Tuple<byte[], StaticHeader>> ConstructWhoAreYouPacketWithoutEnr(byte[] destNodeId, byte[] packetNonce, byte[] maskingIv)
+    {
+        var whoAreYouPacket = new WhoAreYouPacket(RandomUtility.GenerateIdNonce(PacketConstants.IdNonceSize), 0);
+        var packetStaticHeader = ConstructStaticHeader(PacketType.WhoAreYou, whoAreYouPacket.AuthData, packetNonce);
+        var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
+        var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader());
+        var packet = ByteArrayUtils.JoinByteArrays(maskingIv, encryptedMaskedHeader);
+        return await Task.FromResult(Tuple.Create(packet, packetStaticHeader));
+    }
 
     public static async Task<Tuple<byte[], StaticHeader>> ConstructWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce, EnrRecord destRecord, byte[] maskingIv)
     {

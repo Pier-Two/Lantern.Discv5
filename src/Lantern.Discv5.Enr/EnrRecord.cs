@@ -29,6 +29,11 @@ public class EnrRecord
 
         _entries[key] = value;
     }
+    
+    public bool HasKey(string key)
+    {
+        return _entries.ContainsKey(key);
+    }
 
     public byte[] EncodeContent()
     {

@@ -10,14 +10,14 @@ public class SessionManager : ISessionManager
     public SessionManager(SessionOptions options)
     {
         _sessionCache = new SessionCache(options.CacheSize, this);
-        _sessionKeys = options.SessionKeys!;
+        _sessionKeys = options.SessionKeys;
     }
 
     public CryptoSession CreateSession(SessionType sessionType, byte[] challengeData)
     {
         Span<byte> privateKey = stackalloc byte[32];
         _sessionKeys.PrivateKey.WriteToSpan(privateKey);
-        var sessionKeys = new BaseSessionKeys(privateKey.ToArray());
+        var sessionKeys = new SessionKeys(privateKey.ToArray());
         var cryptoSession = new CryptoSession(sessionKeys, sessionType)
         {
             ChallengeData = challengeData

@@ -28,12 +28,7 @@ public class SessionCache
     
     public byte[]? GetHandshakeInteraction(byte[] packetNonce)
     {
-        if (_cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId))
-        {
-            return destNodeId;
-        }
-
-        return null;
+        return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
     }
     
     public CryptoSession CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint, byte[] challengeData)
@@ -59,20 +54,19 @@ public class SessionCache
     public CryptoSession? GetSession(byte[] nodeId, IPEndPoint endPoint)
     {
         var key = (nodeId, endPoint);
-        if (_sessions.TryGetValue(key, out var node))
-        {
-            lock (_lruList)
-            {
-                if (node.Previous != null)
-                {
-                    _lruList.Remove(node);
-                    _lruList.AddFirst(node);
-                }
-            }
-            return node.Value.Session;
-        }
 
-        return null;
+        if (!_sessions.TryGetValue(key, out var node)) 
+            return null;
+        
+        lock (_lruList)
+        {
+            if (node.Previous == null) 
+                return node.Value.Session;
+            
+            _lruList.Remove(node);
+            _lruList.AddFirst(node);
+        }
+        return node.Value.Session;
     }
     
     private void EnsureCacheSize()
@@ -80,13 +74,14 @@ public class SessionCache
         while (_lruList.Count > _maxSize)
         {
             var lastNode = _lruList.Last;
-            if (lastNode != null)
+
+            if (lastNode == null) continue;
+            
+            _sessions.TryRemove(lastNode.Value.Key, out _);
+            
+            lock (_lruList)
             {
-                _sessions.TryRemove(lastNode.Value.Key, out _);
-                lock (_lruList)
-                {
-                    _lruList.RemoveLast();
-                }
+                _lruList.RemoveLast();
             }
         }
     }

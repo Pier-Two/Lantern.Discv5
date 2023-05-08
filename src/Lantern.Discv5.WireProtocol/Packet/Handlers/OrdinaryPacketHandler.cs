@@ -15,40 +15,45 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
     private readonly ITableManager _tableManager;
-    private readonly IMessageHandler _messageHandler;
+    private readonly IMessageResponder _messageResponder;
 
     public OrdinaryPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager,
-        ITableManager tableManager, IMessageHandler messageHandler)
+        ITableManager tableManager, IMessageResponder messageResponder)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _tableManager = tableManager;
-        _messageHandler = messageHandler;
+        _messageResponder = messageResponder;
     }
 
     public override PacketType PacketType => PacketType.Ordinary;
 
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
-        Console.Write("\nReceived ORDINARY packet => ");
+        Console.Write("\nReceived ORDINARY packet from " + returnedResult.RemoteEndPoint.Address + " => ");
         var selfRecord = _identityManager.Record;
         var selfNodeId = _identityManager.Verifier.GetNodeIdFromRecord(selfRecord);
         var packetBuffer = returnedResult.Buffer;
         var decryptedPacket = AESUtility.AesCtrDecrypt(selfNodeId[..16], packetBuffer[..16], packetBuffer[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
         var sender = returnedResult.RemoteEndPoint;
-
-        // Add the contents of the previous HandleOrdinaryPacket method here
-
         var destNodeId = staticHeader.AuthData;
-        var destNodeRecord = _tableManager.GetNodeEntry(destNodeId).Record;
+        var nodeRecord = _tableManager.GetNodeEntry(destNodeId);
 
-        if (destNodeRecord == null)
+        if (nodeRecord == null)
         {
-            Console.WriteLine("Could not find destination record.");
+            Console.Write("Could not find record in the table for node: " + Convert.ToHexString(destNodeId));
+            var newMaskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+            var whoAreYouPacket =
+                await PacketConstructor.ConstructWhoAreYouPacketWithoutEnr(destNodeId, staticHeader.Nonce, newMaskingIv);
+            var challengeData = ByteArrayUtils.JoinByteArrays(newMaskingIv, whoAreYouPacket.Item2.GetHeader());
+            _sessionManager.CreateSession(SessionType.Recipient, destNodeId, sender, challengeData);
+            await connection.SendAsync(whoAreYouPacket.Item1, sender);
+            Console.Write(" => Sent WHOAREYOU packet.\n");
             return;
         }
-
+        
+        var destNodeRecord = nodeRecord.Record;
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
         var constructedWhoAreYouPacket =
             await PacketConstructor.ConstructWhoAreYouPacket(destNodeId, staticHeader.Nonce, destNodeRecord!, maskingIv);
@@ -82,7 +87,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
                     
                     Console.Write("Successfully decrypted ORDINARY packet" + " => ");
                     
-                    var response = _messageHandler.HandleMessage(decryptedMessage);
+                    var response = _messageResponder.HandleMessage(decryptedMessage);
                     cryptoSession.IsEstablished = true;
                     
                     if (response != null)
@@ -101,7 +106,6 @@ public class OrdinaryPacketHandler : PacketHandlerBase
                 {
                     Console.WriteLine(ex);
                 }
-
             }
         }
     }

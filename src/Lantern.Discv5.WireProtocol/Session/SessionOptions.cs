@@ -4,9 +4,9 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionOptions
 {
-    public IIdentitySchemeSigner? Signer { get; }
-    public IIdentitySchemeVerifier? Verifier { get; }
-    public ISessionKeys? SessionKeys { get; }
+    public IIdentitySchemeSigner Signer { get; }
+    public IIdentitySchemeVerifier Verifier { get; }
+    public ISessionKeys SessionKeys { get; }
     public int CacheSize { get; }
 
     private SessionOptions(Builder builder)
@@ -19,9 +19,9 @@ public class SessionOptions
 
     public class Builder
     {
-        public IIdentitySchemeSigner? Signer { get; private set; }
-        public IIdentitySchemeVerifier? Verifier { get; private set; }
-        public ISessionKeys? SessionKeys { get; private set; }
+        public IIdentitySchemeSigner Signer { get; private set; }
+        public IIdentitySchemeVerifier Verifier { get; private set; }
+        public ISessionKeys SessionKeys { get; private set; }
         public int CacheSize { get; private set; }
 
         public Builder WithSigner(IIdentitySchemeSigner signer)
@@ -50,11 +50,6 @@ public class SessionOptions
 
         public SessionOptions Build()
         {
-            if (Signer == null || Verifier == null || SessionKeys == null)
-            {
-                throw new InvalidOperationException("Signer, Verifier, and SessionKeys must be set before building.");
-            }
-
             return new SessionOptions(this);
         }
     }

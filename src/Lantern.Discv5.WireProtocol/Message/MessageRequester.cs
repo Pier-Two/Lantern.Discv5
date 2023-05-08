@@ -1,38 +1,32 @@
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Packet;
-using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class MessageConstructor : IMessageConstructor
+public class MessageRequester : IMessageRequester
 {
     private readonly IIdentityManager _identityManager;
     private readonly ITableManager _tableManager;
     private readonly IPendingRequests _pendingRequests;
+    private readonly ITalkRequester? _talkRequester;
 
-    public MessageConstructor(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests)
+    public MessageRequester(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ITalkRequester? talkRequester = null)
     {
         _identityManager = identityManager;
         _tableManager = tableManager;
         _pendingRequests = pendingRequests;
+        _talkRequester = talkRequester;
     }
     
-    public byte[]? ConstructMessage(MessageType messageType, byte[] destNodeId)
+    public byte[] ConstructMessage(MessageType messageType, byte[] destNodeId)
     {
         return messageType switch
         {
             MessageType.Ping => ConstructPingMessage(destNodeId),
-            MessageType.Pong => ConstructPongMessage(),
             MessageType.FindNode => ConstructFindNodeMessage(destNodeId),
-            MessageType.Nodes => ConstructNodesMessage(),
-            MessageType.TalkReq => ConstructTalkReqMessage(),
-            MessageType.TalkResp => ConstructTalkRespMessage(),
-            MessageType.RegTopic => ConstructRegTopicMessage(),
-            MessageType.Ticket => ConstructTicketMessage(),
-            MessageType.RegConfirmation => ConstructRegConfirmationMessage(),
-            MessageType.TopicQuery => ConstructTopicQueryMessage(),
+            MessageType.TalkReq => ConstructTalkReqMessage(destNodeId),
             _ => throw new ArgumentOutOfRangeException(nameof(messageType), messageType, null)
         };
     }
@@ -50,11 +44,6 @@ public class MessageConstructor : IMessageConstructor
         return pingMessage.EncodeMessage();
     }
     
-    private byte[] ConstructPongMessage()
-    {
-        throw new NotImplementedException();
-    }
-    
     private byte[] ConstructFindNodeMessage(byte[] destNodeId)
     {
         var randomNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
@@ -69,39 +58,24 @@ public class MessageConstructor : IMessageConstructor
 
         return findNodesMessage.EncodeMessage();
     }
-    
-    private byte[] ConstructNodesMessage()
-    {
-        throw new NotImplementedException();
-    }
-    
-    private byte[] ConstructTalkReqMessage()
-    {
-        throw new NotImplementedException();
-    }
-    
-    private byte[] ConstructTalkRespMessage()
-    {
-        throw new NotImplementedException();
-    }
-    
-    private byte[] ConstructRegTopicMessage()
-    {
-        throw new NotImplementedException();
-    }
 
-    private byte[] ConstructTicketMessage()
+    private byte[] ConstructTalkReqMessage(byte[] destNodeId)
     {
-        throw new NotImplementedException();
-    }
-    
-    private byte[] ConstructRegConfirmationMessage()
-    {
-        throw new NotImplementedException();
-    }
-    
-    private byte[] ConstructTopicQueryMessage()
-    {
-        throw new NotImplementedException();
+        if(_talkRequester == null)
+        {
+            throw new Exception("Talk requester is null");
+        }
+        
+        var protocol = _talkRequester.GetProtocol();
+        var request = _talkRequester.GetTalkRequest();
+        var talkReqMessage = new TalkReqMessage(protocol, request);
+        var result = _pendingRequests.AddPendingRequest(talkReqMessage.RequestId, new PendingRequest(destNodeId, talkReqMessage));
+        
+        if(result == false)
+        {
+            Console.WriteLine("Failed to add pending request. Request id: " + Convert.ToHexString(talkReqMessage.RequestId));
+        }
+
+        return talkReqMessage.EncodeMessage();
     }
 }
