@@ -1,10 +1,11 @@
 using Lantern.Discv5.Rlp;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Types;
 
-public class HandshakePacket : Packet
+public class HandshakePacketBase : PacketBase
 {
-    public HandshakePacket(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null) : base(PreparePacketBase(idSignature, ephPubkey, srcId, record))
+    public HandshakePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null) : base(PreparePacketBase(idSignature, ephPubkey, srcId, record))
     {
         IdSignature = idSignature;
         EphPubkey = ephPubkey;
@@ -39,8 +40,9 @@ public class HandshakePacket : Packet
         return packetBase;
     }
     
-    public static HandshakePacket DecodeAuthData(byte[] authData)
+    public static HandshakePacketBase CreateFromStaticHeader(StaticHeader header)
     {
+        var authData = header.AuthData;
         var index = 0;
         var srcId = authData[..PacketConstants.NodeIdSize];
         index += PacketConstants.NodeIdSize;
@@ -58,6 +60,6 @@ public class HandshakePacket : Packet
         index += ephKeySize;
         
         var record = authData[index..];
-        return new HandshakePacket(idSignature, ephPubkey, srcId, record);
+        return new HandshakePacketBase(idSignature, ephPubkey, srcId, record);
     }
 }

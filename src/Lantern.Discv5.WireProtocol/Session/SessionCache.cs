@@ -31,12 +31,12 @@ public class SessionCache
         return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
     }
     
-    public CryptoSession CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint, byte[] challengeData)
+    public SessionMain CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint)
     {
         var key = ValueTuple.Create(nodeId, endPoint);
         var newNode = _sessions.GetOrAdd(key, _ =>
         {
-            var newSession = _sessionManager.CreateSession(sessionType, challengeData);
+            var newSession = _sessionManager.CreateSession(sessionType);
             var node = new LinkedListNode<CacheItem>(new CacheItem(key, newSession));
 
             lock (_lruList)
@@ -48,10 +48,10 @@ public class SessionCache
             return node;
         });
 
-        return newNode.Value.Session;
+        return newNode.Value.SessionMain;
     }
     
-    public CryptoSession? GetSession(byte[] nodeId, IPEndPoint endPoint)
+    public SessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint)
     {
         var key = (nodeId, endPoint);
 
@@ -61,12 +61,12 @@ public class SessionCache
         lock (_lruList)
         {
             if (node.Previous == null) 
-                return node.Value.Session;
+                return node.Value.SessionMain;
             
             _lruList.Remove(node);
             _lruList.AddFirst(node);
         }
-        return node.Value.Session;
+        return node.Value.SessionMain;
     }
     
     private void EnsureCacheSize()
@@ -89,12 +89,12 @@ public class SessionCache
     private class CacheItem
     {
         public (byte[], IPEndPoint) Key { get; }
-        public CryptoSession Session { get; }
+        public SessionMain SessionMain { get; }
 
-        public CacheItem((byte[], IPEndPoint) key, CryptoSession session)
+        public CacheItem((byte[], IPEndPoint) key, SessionMain sessionMain)
         {
             Key = key;
-            Session = session;
+            SessionMain = sessionMain;
         }
     }
     

@@ -23,7 +23,6 @@ public static class ConnectionUtility
     
     public static async Task<IPAddress> DetermineExternalIpAddress()
     {
-        
         var discoverer = new NatDiscoverer();
         var cts = new CancellationTokenSource(5000); // Set a timeout for the discovery process
         var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);

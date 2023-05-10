@@ -1,4 +1,5 @@
 using System.Net;
+using Lantern.Discv5.WireProtocol.Identity;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
@@ -6,31 +7,30 @@ public class SessionManager : ISessionManager
 {
     private readonly SessionCache _sessionCache;
     private readonly ISessionKeys _sessionKeys;
+    private readonly IAesUtility _aesUtility;
+    private readonly ISessionCrypto _sessionCrypto;
 
-    public SessionManager(SessionOptions options)
+    public SessionManager(SessionOptions options, IAesUtility aesUtility, ISessionCrypto sessionCrypto)
     {
         _sessionCache = new SessionCache(options.CacheSize, this);
         _sessionKeys = options.SessionKeys;
+        _aesUtility = aesUtility;
+        _sessionCrypto = sessionCrypto;
     }
 
-    public CryptoSession CreateSession(SessionType sessionType, byte[] challengeData)
+    public SessionMain CreateSession(SessionType sessionType)
     {
-        Span<byte> privateKey = stackalloc byte[32];
-        _sessionKeys.PrivateKey.WriteToSpan(privateKey);
-        var sessionKeys = new SessionKeys(privateKey.ToArray());
-        var cryptoSession = new CryptoSession(sessionKeys, sessionType)
-        {
-            ChallengeData = challengeData
-        };
+        var newSessionKeys = new SessionKeys(_sessionKeys.PrivateKey);
+        var cryptoSession = new SessionMain(newSessionKeys, _aesUtility, _sessionCrypto, sessionType);
         return cryptoSession;
     }
     
-    public CryptoSession CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint, byte[] challengeData)
+    public SessionMain CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint)
     {
-        return _sessionCache.CreateSession(sessionType, nodeId, endPoint, challengeData);
+        return _sessionCache.CreateSession(sessionType, nodeId, endPoint);
     }
     
-    public CryptoSession? GetSession(byte[] nodeId, IPEndPoint endPoint)
+    public SessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint)
     {
         return _sessionCache.GetSession(nodeId, endPoint);
     }

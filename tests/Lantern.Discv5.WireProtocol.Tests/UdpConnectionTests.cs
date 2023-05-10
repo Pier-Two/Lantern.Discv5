@@ -59,7 +59,7 @@ public class UdpConnectionTests
         var data = new byte[1281];
         var destination = new IPEndPoint(_receiverOptions.LocalIpAddress, _receiverOptions.Port);
         var ex = Assert.ThrowsAsync<InvalidPacketException>(() => _sender.SendAsync(data, destination));
-        Assert.AreEqual("Packet is too large", ex!.Message);
+        Assert.AreEqual("PacketMain is too large", ex!.Message);
     }
 
     [Test]
@@ -68,7 +68,7 @@ public class UdpConnectionTests
         var data = new byte[62];
         var destination = new IPEndPoint(_receiverOptions.LocalIpAddress, _receiverOptions.Port);
         var ex = Assert.ThrowsAsync<InvalidPacketException>(() => _sender.SendAsync(data, destination));
-        Assert.AreEqual("Packet is too small", ex!.Message);
+        Assert.AreEqual("PacketMain is too small", ex!.Message);
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class UdpConnectionTests
         var udpClient = new UdpClient(1236);
         await udpClient.SendAsync(data, destination);
         var ex = Assert.ThrowsAsync<InvalidPacketException>(() => _receiver.ReceiveAsync());
-        Assert.AreEqual("Packet is too large", ex!.Message);
+        Assert.AreEqual("PacketMain is too large", ex!.Message);
     }
 
     [Test]
@@ -90,7 +90,7 @@ public class UdpConnectionTests
         var udpClient = new UdpClient(1237);
         await udpClient.SendAsync(data, destination);
         var ex = Assert.ThrowsAsync<InvalidPacketException>(() => _receiver.ReceiveAsync());
-        Assert.AreEqual("Packet is too small", ex!.Message);
+        Assert.AreEqual("PacketMain is too small", ex!.Message);
     }
 
     [Test]

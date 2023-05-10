@@ -10,6 +10,8 @@ public interface IIdentityManager
     
     EnrRecord Record { get; }
     
+    byte[] NodeId { get; }
+    
     public bool IsIpAddressAndPortSet();
 
     public void UpdateIpAddressAndPort(IPEndPoint endpoint);

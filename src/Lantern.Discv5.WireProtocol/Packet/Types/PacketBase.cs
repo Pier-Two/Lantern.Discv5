@@ -1,8 +1,8 @@
 namespace Lantern.Discv5.WireProtocol.Packet.Types;
 
-public abstract class Packet
+public abstract class PacketBase
 {
-    protected Packet(byte[] authData)
+    protected PacketBase(byte[] authData)
     {
         AuthData = authData;
     }

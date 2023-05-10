@@ -31,7 +31,7 @@ public sealed class ConnectionService : IConnectionService
         var refreshTask = RefreshBucketsAsync(_serviceCts.Token);
         var handleTask = HandleIncomingPacketsAsync(_serviceCts.Token);
 
-        await Task.WhenAny(listenTask, discoveryTask, refreshTask, pingTask, handleTask ).ConfigureAwait(false);
+        await Task.WhenAny(listenTask, discoveryTask, refreshTask, pingTask, handleTask).ConfigureAwait(false);
         _udpConnection.CompleteMessageChannel();
     }
 

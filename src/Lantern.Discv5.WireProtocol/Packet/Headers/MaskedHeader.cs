@@ -16,10 +16,10 @@ public class MaskedHeader
         MaskingKey = destNodeId[..MaskingKeyLength];
         MaskingIv = maskingIv ?? new byte[MaskingKeyLength];
     }
-    
-    public byte[] MaskingKey { get; }
-    
-    public byte[] MaskingIv { get; }
 
-    public byte[] GetMaskedHeader(byte[] header) => AESUtility.AesCtrEncrypt(MaskingKey, MaskingIv, header);
+    private byte[] MaskingKey { get; }
+
+    private byte[] MaskingIv { get; }
+
+    public byte[] GetMaskedHeader(byte[] header, IAesUtility aesUtility) => aesUtility.AesCtrEncrypt(MaskingKey, MaskingIv, header);
 }

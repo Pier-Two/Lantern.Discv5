@@ -4,9 +4,13 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public interface ISessionKeys
 {
-    ECPrivKey PrivateKey { get; }
+    byte[] PrivateKey { get; }
     
-    ECPrivKey EphemeralPrivateKey { get; }
+    byte[] EphemeralPrivateKey { get; }
+    
+    byte[] PublicKey { get; }
+    
+    byte[] EphemeralPublicKey { get; }
     
     Context CryptoContext { get; }
 }

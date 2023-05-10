@@ -39,7 +39,8 @@ public class StaticHeader
 
         return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
     }
-
+    
+    
     public static StaticHeader DecodeFromBytes(byte[] decryptedData)
     {
         var index = 0;

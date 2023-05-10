@@ -135,4 +135,14 @@ public class EnrTests
         var identityVerifier = new IdentitySchemeV4Verifier();
         Assert.AreEqual(nodeId, identityVerifier.GetNodeIdFromRecord(enr));
     }
+
+    [Test]
+    public void Test()
+    {
+        var enr = new EnrRecordFactory().CreateFromString(
+            "enr:-IS4QG2DYxrXLMCBUfwSILwsl9O2Jilgr5S_WkB8q-pamZgQWPMOC_-ExlATyOW84PGQXn2BK5lw4Yk9J62fyxEF5bEDgmlkgnY0gmlwhHibxBmJc2VjcDI1NmsxoQJsSNVRIY9Ie2d2ZAXOwRTXJMRtbLiyMVYn429yF-Qjf4N1ZHCCFXw");
+        var identityVerifier = new IdentitySchemeV4Verifier();
+        var result = identityVerifier.VerifyRecord(enr);
+        Console.WriteLine(result);
+    }
 }

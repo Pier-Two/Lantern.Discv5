@@ -19,6 +19,7 @@ public class RoutingTable
     {
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
+        
         return bucket.GetNodeById(nodeId);
     }
 
@@ -119,7 +120,8 @@ public class RoutingTable
     private int GetBucketIndex(byte[] nodeId)
     {
         var distance = TableUtility.Log2Distance(_localNodeId, nodeId);
-        return (int)Math.Floor(Math.Log(distance, 2));
+        
+        return distance == 256 ? 255 : distance;
     }
     
     private bool IsNodeConsideredLive(NodeTableEntry nodeEntry)

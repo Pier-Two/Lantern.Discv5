@@ -104,10 +104,10 @@ public class UdpConnection : IUdpConnection
     private static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
         if (data.Count < MinPacketSize) 
-            throw new InvalidPacketException("Packet is too small");
+            throw new InvalidPacketException("PacketMain is too small");
         
         if (data.Count > MaxPacketSize) 
-            throw new InvalidPacketException("Packet is too large");
+            throw new InvalidPacketException("PacketMain is too large");
     }
 
     private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken cancellationToken = default)

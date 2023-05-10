@@ -13,11 +13,13 @@ namespace Lantern.Discv5.WireProtocol.Identity;
 
 public class IdentityManager: IIdentityManager
 {
-    public IIdentitySchemeSigner Signer { get; }
+    private IIdentitySchemeSigner Signer { get; }
     
     public IIdentitySchemeVerifier Verifier { get; }
 
     public EnrRecord Record { get; }
+    
+    public byte[] NodeId => Verifier.GetNodeIdFromRecord(Record);
     
     public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions)
     {
@@ -35,13 +37,13 @@ public class IdentityManager: IIdentityManager
     {
         if (endpoint.AddressFamily == AddressFamily.InterNetwork)
         {
-            Record.SetEntry(EnrContentKey.Ip, new EntryIp(endpoint.Address));
-            Record.SetEntry(EnrContentKey.Udp, new EntryUdp(endpoint.Port));
+            Record.UpdateEntry(EnrContentKey.Ip, new EntryIp(endpoint.Address));
+            Record.UpdateEntry(EnrContentKey.Udp, new EntryUdp(endpoint.Port));
         }
         else if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
         {
-            Record.SetEntry(EnrContentKey.Ip6, new EntryIp6(endpoint.Address));
-            Record.SetEntry(EnrContentKey.Udp6, new EntryUdp6(endpoint.Port));
+            Record.UpdateEntry(EnrContentKey.Ip6, new EntryIp6(endpoint.Address));
+            Record.UpdateEntry(EnrContentKey.Udp6, new EntryUdp6(endpoint.Port));
         }
         
         Record.UpdateSignature(Signer);

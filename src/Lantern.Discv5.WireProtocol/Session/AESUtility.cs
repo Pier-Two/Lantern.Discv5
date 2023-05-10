@@ -1,3 +1,5 @@
+using Lantern.Discv5.WireProtocol.Identity;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -8,21 +10,20 @@ namespace Lantern.Discv5.WireProtocol.Session;
 /// <summary>
 /// Provides utility methods for handling AES cryptography operations.
 /// </summary>
-public static class AESUtility
+public class AesUtility : IAesUtility
 {
     private const int AesBlockSize = 16;
     private const int GcmTagSize = 128;
-    
-    public static byte[] AesCtrEncrypt(byte[] maskingKey, byte[] maskingIv, byte[] header)
+
+    public byte[] AesCtrEncrypt(byte[] maskingKey, byte[] maskingIv, byte[] header)
     {
         if (maskingKey.Length != AesBlockSize || maskingIv.Length != AesBlockSize)
         {
-            throw new ArgumentException("Invalid key or IV length.");
+            throw new ArgumentException($"Invalid {nameof(maskingKey)} or {nameof(maskingIv)} length.");
         }
 
         var cipher = CipherUtilities.GetCipher("AES/CTR/NoPadding");
-        var keyParam = new KeyParameter(maskingKey);
-        var parameters = new ParametersWithIV(keyParam, maskingIv);
+        var parameters = CreateAesCtrCipherParameters(maskingKey, maskingIv);
 
         cipher.Init(true, parameters);
 
@@ -33,20 +34,22 @@ public static class AESUtility
         return cipherText;
     }
 
-    public static byte[] AesCtrDecrypt(byte[] maskingKey, byte[] maskingIv, byte[] maskedHeader)
+    public byte[] AesCtrDecrypt(byte[] maskingKey, byte[] maskingIv, byte[] maskedHeader)
     {
         if (maskingKey.Length != AesBlockSize || maskingIv.Length != AesBlockSize)
         {
-            throw new ArgumentException("Invalid key or IV length.");
+            throw new ArgumentException($"Invalid {nameof(maskingKey)} or {nameof(maskingIv)} length.");
         }
-        
+
         var cipher = CipherUtilities.GetCipher("AES/CTR/NoPadding");
-        cipher.Init(false, new ParametersWithIV(new KeyParameter(maskingKey), maskingIv));
+        var parameters = CreateAesCtrCipherParameters(maskingKey, maskingIv);
+
+        cipher.Init(false, parameters);
 
         return cipher.DoFinal(maskedHeader);
     }
     
-    public static byte[] AesGcmEncrypt(byte[] key, byte[] nonce, byte[] plaintext, byte[] ad)
+    public byte[] AesGcmEncrypt(byte[] key, byte[] nonce, byte[] plaintext, byte[] ad)
     {
         var cipher = new GcmBlockCipher(new AesEngine());
         var parameters = new AeadParameters(new KeyParameter(key), GcmTagSize, nonce, ad);
@@ -61,7 +64,7 @@ public static class AESUtility
         return ciphertext;
     }
     
-    public static byte[] AesGcmDecrypt(byte[] key, byte[] nonce, byte[] ciphertext, byte[] ad)
+    public byte[] AesGcmDecrypt(byte[] key, byte[] nonce, byte[] ciphertext, byte[] ad)
     {
         var cipher = new GcmBlockCipher(new AesEngine());
         var parameters = new AeadParameters(new KeyParameter(key), GcmTagSize, nonce, ad);
@@ -73,5 +76,11 @@ public static class AESUtility
         cipher.DoFinal(plaintext, len);
 
         return plaintext;
+    }
+    
+    private static ICipherParameters CreateAesCtrCipherParameters(byte[] maskingKey, byte[] maskingIv)
+    {
+        var keyParam = new KeyParameter(maskingKey);
+        return new ParametersWithIV(keyParam, maskingIv);
     }
 }

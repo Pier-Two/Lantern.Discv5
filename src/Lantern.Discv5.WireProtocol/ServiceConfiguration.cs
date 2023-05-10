@@ -18,12 +18,14 @@ public static class ServiceConfiguration
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
-
+        
         services.AddSingleton<ILookupManager, LookupManager>();
         services.AddSingleton<IPacketService, PacketService>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
         services.AddSingleton<ConnectionService>();
-
+        services.AddSingleton<ISessionCrypto, SessionCrypto>();
+        services.AddSingleton<IPacketBuilder, PacketBuilder>();
+        services.AddSingleton<IAesUtility, AesUtility>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<ISessionManager, SessionManager>();

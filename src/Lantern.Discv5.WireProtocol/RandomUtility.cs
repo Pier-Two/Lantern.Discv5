@@ -4,6 +4,11 @@ namespace Lantern.Discv5.WireProtocol;
 
 public static class RandomUtility
 {
+    public static byte[] GeneratePrivateKey(int privateKeyLength)
+    {
+        return GenerateRandomBytes(privateKeyLength);
+    }
+
     public static byte[] GenerateNodeId(int nodeIdLength)
     {
         return GenerateRandomBytes(nodeIdLength);

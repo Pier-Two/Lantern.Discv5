@@ -19,12 +19,13 @@ public class LookupManager : ILookupManager
     private readonly ITableManager _tableManager;
     private readonly IUdpConnection _udpConnection;
     private readonly IMessageRequester _messageRequester;
+    private readonly IPacketBuilder _packetBuilder;
     private readonly ConcurrentBag<NodeTableEntry> _receivedNodes = new();
     private readonly int _concurrency;
     private readonly object _nodeLock = new();
 
     public LookupManager(IIdentityManager identityManager, ISessionManager sessionManager,
-        IMessageRequester messageRequester, IUdpConnection udpConnection, ITableManager tableManager,
+        IMessageRequester messageRequester, IUdpConnection udpConnection, ITableManager tableManager, IPacketBuilder packetBuilder,
         int concurrency = 3)
     {
         _identityManager = identityManager;
@@ -32,6 +33,7 @@ public class LookupManager : ILookupManager
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
         _tableManager = tableManager;
+        _packetBuilder = packetBuilder;
         _concurrency = concurrency;
     }
 
@@ -149,40 +151,47 @@ public class LookupManager : ILookupManager
 
     private async Task SendPacket(MessageType messageType, EnrRecord record)
     {
-        var sourceNodeId = _identityManager.Verifier.GetNodeIdFromRecord(_identityManager.Record);
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(record);
-        var destEndPoint = new IPEndPoint(record.GetEntry<EntryIp>(EnrContentKey.Ip).Value,
-            record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var packetNonce = RandomUtility.GenerateNonce(PacketConstants.NonceSize);
+        var destEndPoint = new IPEndPoint(record.GetEntry<EntryIp>(EnrContentKey.Ip).Value, record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-
+        
         if (cryptoSession is { IsEstablished: true })
         {
-            var sessionKeys = cryptoSession.CurrentSessionKeys;
-            var encryptionKey = cryptoSession.SessionType switch
-            {
-                SessionType.Initiator => sessionKeys.InitiatorKey,
-                SessionType.Recipient => sessionKeys.RecipientKey,
-                _ => throw new InvalidOperationException("Invalid session type")
-            };
-            
-            var ordinaryPacket = PacketConstructor.ConstructOrdinaryPacket(sourceNodeId, destNodeId, maskingIv);
-            var message = _messageRequester.ConstructMessage(messageType, destNodeId);
-            var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, ordinaryPacket.Result.Item2.GetHeader());
-            var encryptedMessage =
-                AESUtility.AesGcmEncrypt(encryptionKey, ordinaryPacket.Result.Item2.Nonce, message, messageAd);
-            var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Result.Item1, encryptedMessage);
-            await _udpConnection.SendAsync(finalPacket, destEndPoint);
-            Console.WriteLine("Sent FINDNODES request to " + destEndPoint);
+            await SendOrdinaryPacketAsync(messageType, cryptoSession, destEndPoint, destNodeId);
+            return;
         }
-        else
+
+        await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+    }
+    
+    private async Task SendOrdinaryPacketAsync(MessageType messageType, Session.SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
+    {
+        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv);
+        var message = _messageRequester.ConstructMessage(messageType, destNodeId);
+
+        if (message == null)
         {
-            _sessionManager.SaveHandshakeInteraction(packetNonce, destNodeId);
-            var constructedOrdinaryPacket =
-                PacketConstructor.ConstructRandomOrdinaryPacket(sourceNodeId, destNodeId, packetNonce, maskingIv);
-            await _udpConnection.SendAsync(constructedOrdinaryPacket.Result.Item1, destEndPoint);
-            Console.WriteLine("Sent RANDOM packet to initiate handshake with " + destEndPoint);
+            Console.WriteLine("Unable to construct PING message. Cannot send PING packet.");
+            return;
         }
+        
+        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
+        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
+        
+        await _udpConnection.SendAsync(finalPacket, destEndPoint);
+        Console.WriteLine("Sent FINDNODES request to " + destEndPoint);
+    }
+
+    private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
+    {
+        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var packetNonce = RandomUtility.GenerateNonce(PacketConstants.NonceSize);
+            
+        _sessionManager.SaveHandshakeInteraction(packetNonce, destNodeId);
+            
+        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId, packetNonce, maskingIv);
+        await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
+        Console.WriteLine("Sent RANDOM packet to initiate handshake with " + destEndPoint);
     }
 }

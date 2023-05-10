@@ -24,10 +24,13 @@ public class EnrRecord
 
     public void SetEntry<T>(string key, T value) where T : class, IContentEntry
     {
-        if (_entries.ContainsKey(key))
-            SequenceNumber++;
-
         _entries[key] = value;
+    }
+    
+    public void UpdateEntry<T>(string key, T value) where T : class, IContentEntry
+    {
+        _entries[key] = value;
+        SequenceNumber++;
     }
     
     public bool HasKey(string key)

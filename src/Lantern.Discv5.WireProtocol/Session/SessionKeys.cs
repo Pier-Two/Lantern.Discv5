@@ -6,13 +6,19 @@ public class SessionKeys : ISessionKeys
 {
     public SessionKeys(byte[] privateKey, byte[]? ephemeralPubkey = null)
     {
-        PrivateKey = CryptoContext.CreateECPrivKey(privateKey);
-        EphemeralPrivateKey = CryptoContext.CreateECPrivKey(ephemeralPubkey ?? SessionUtility.GenerateRandomPrivateKey());
+        PrivateKey = privateKey;
+        EphemeralPrivateKey = ephemeralPubkey ?? RandomUtility.GeneratePrivateKey(SessionConstants.EcPrivateKeySize);
+        PublicKey = CryptoContext.CreateECPrivKey(PrivateKey).CreatePubKey().ToBytes();
+        EphemeralPublicKey = CryptoContext.CreateECPrivKey(EphemeralPrivateKey).CreatePubKey().ToBytes();
     }
 
-    public ECPrivKey PrivateKey { get; } 
+    public byte[] PrivateKey { get; } 
     
-    public ECPrivKey EphemeralPrivateKey { get; }
-    
+    public byte[] EphemeralPrivateKey { get; }
+
+    public byte[] PublicKey { get; }
+
+    public byte[] EphemeralPublicKey { get; }
+        
     public Context CryptoContext { get; } = Context.Instance;
 }

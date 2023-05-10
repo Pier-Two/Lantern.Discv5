@@ -28,13 +28,13 @@ public class MessageResponder : IMessageResponder
         _talkResponder = talkResponder;
     }
     
-    public byte[]? HandleMessage(byte[] message)
+    public byte[]? HandleMessage(byte[] message, IPEndPoint endPoint)
     {
         var messageType = (MessageType)message[0];
 
         return messageType switch
         {
-            MessageType.Ping => HandlePingMessage(message),
+            MessageType.Ping => HandlePingMessage(message, endPoint),
             MessageType.Pong => HandlePongMessage(message),
             MessageType.FindNode => HandleFindNodeMessage(message),
             MessageType.Nodes => HandleNodesMessage(message),
@@ -44,14 +44,12 @@ public class MessageResponder : IMessageResponder
         };
     }
     
-    private byte[] HandlePingMessage(byte[] message)
+    private byte[] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
         Console.Write("Received message type => " + MessageType.Ping);
         var decodedMessage = new PingDecoder().DecodeMessage(message);
         var localEnrSeq = _identityManager.Record.SequenceNumber;
-        var ipAddress = _identityManager.Record.GetEntry<EntryIp>(EnrContentKey.Ip).Value;
-        var port = _identityManager.Record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value;
-        var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, ipAddress, port);
+        var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
         return pongMessage.EncodeMessage();
     }
     
@@ -116,7 +114,6 @@ public class MessageResponder : IMessageResponder
         var distances = decodedMessage.Distances.Take(RecordLimit);
         var closestNodes = _tableManager.GetEnrRecordsAtDistances(distances).ToArray();
         var nodesMessage = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, closestNodes);
-
         return nodesMessage.EncodeMessage();
     }
     
