@@ -37,7 +37,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
         Console.Write("\nReceived WHOAREYOU packet from " + returnedResult.RemoteEndPoint.Address + " => ");
-        var packet = new PacketMain(_identityManager, _aesUtility, returnedResult.Buffer);
+        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
         var destNodeId = _sessionManager.GetHandshakeInteraction(packet.StaticHeader.Nonce);
         
         if (destNodeId == null)
@@ -73,7 +73,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         Console.Write(" => Sent HANDSHAKE packet with encrypted message. " + "\n");
     }
 
-    private SessionMain GenerateOrUpdateSession(PacketMain packet, byte[] destNodeId, IPEndPoint destEndPoint)
+    private SessionMain GenerateOrUpdateSession(PacketProcessor packet, byte[] destNodeId, IPEndPoint destEndPoint)
     {
         var session = _sessionManager.GetSession(destNodeId, destEndPoint);
 

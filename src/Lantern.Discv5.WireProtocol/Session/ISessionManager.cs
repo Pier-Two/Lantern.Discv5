@@ -8,7 +8,7 @@ public interface ISessionManager
 
     public SessionMain? CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint);
 
-    public bool SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
+    public void SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
     
     public byte[]? GetHandshakeInteraction(byte[] packetNonce);
 }

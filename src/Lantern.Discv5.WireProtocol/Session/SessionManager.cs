@@ -30,9 +30,9 @@ public class SessionManager : ISessionManager
         _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
     }
     
-    public bool SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
-    {
-        return _cachedHandshakeInteractions.TryAdd(packetNonce, destNodeId);
+    public void SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
+    { 
+        _cachedHandshakeInteractions.TryAdd(packetNonce, destNodeId);
     }
     
     public byte[]? GetHandshakeInteraction(byte[] packetNonce)

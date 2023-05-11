@@ -28,7 +28,7 @@ public class MessageDecoder : IMessageDecoder
         };
     }
     
-    private Message DecodePingMessage(byte[] message)
+    private static Message DecodePingMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new PingMessage(RlpExtensions.ByteArrayToInt32(decodedMessage[1]))
@@ -37,14 +37,14 @@ public class MessageDecoder : IMessageDecoder
         };
     }
     
-    private Message DecodePongMessage(byte[] message)
+    private static Message DecodePongMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new PongMessage(decodedMessage[0], (int)RlpExtensions.ByteArrayToInt64(decodedMessage[1]),
             new IPAddress(decodedMessage[2]), RlpExtensions.ByteArrayToInt32(decodedMessage[3]));
     }
     
-    private Message DecodeFindNodeMessage(byte[] message)
+    private static Message DecodeFindNodeMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         var distances = new List<int>(decodedMessage.Count - 1);
@@ -58,7 +58,7 @@ public class MessageDecoder : IMessageDecoder
         };
     }
 
-    private Message DecodeNodesMessage(byte[] message)
+    private static Message DecodeNodesMessage(byte[] message)
     {
         var rawMessage = message[1..];
         var decodedMessage = RlpDecoder.Decode(rawMessage);
@@ -100,7 +100,7 @@ public class MessageDecoder : IMessageDecoder
         return subList;
     }
     
-    private Message DecodeTalkReqMessage(byte[] message)
+    private static Message DecodeTalkReqMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TalkReqMessage(decodedMessage[1], decodedMessage[2])
@@ -109,13 +109,13 @@ public class MessageDecoder : IMessageDecoder
         };
     }
     
-    private Message DecodeTalkRespMessage(byte[] message)
+    private static Message DecodeTalkRespMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TalkRespMessage(decodedMessage[0], decodedMessage[1]);
     }
     
-    private Message DecodeRegTopicMessage(byte[] message)
+    private static Message DecodeRegTopicMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         var decodedTopic = decodedMessage[1];
@@ -128,20 +128,20 @@ public class MessageDecoder : IMessageDecoder
         };
     }
     
-    private Message DecodeRegConfirmationMessage(byte[] message)
+    private static Message DecodeRegConfirmationMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new RegConfirmationMessage(decodedMessage[0], decodedMessage[1]);
     }
     
-    private Message DecodeTicketMessage(byte[] message)
+    private static Message DecodeTicketMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TicketMessage(decodedMessage[0], decodedMessage[1],
             RlpExtensions.ByteArrayToInt32(decodedMessage[2]));
     } 
     
-    private Message DecodeTopicQueryMessage(byte[] message)
+    private static Message DecodeTopicQueryMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TopicQueryMessage(decodedMessage[1])

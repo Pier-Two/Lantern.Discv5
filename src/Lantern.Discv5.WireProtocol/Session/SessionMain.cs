@@ -82,7 +82,7 @@ public class SessionMain
         return _aesUtility.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
 
-    public byte[]? DecryptMessageWithNewKeys(PacketMain packet, HandshakePacketBase handshakePacket, byte[] selfNodeId)
+    public byte[]? DecryptMessageWithNewKeys(PacketProcessor packet, HandshakePacketBase handshakePacket, byte[] selfNodeId)
     {
         var sharedSecret = GenerateSharedSecret(_sessionKeys.PrivateKey, handshakePacket.EphPubkey);
         
@@ -124,7 +124,7 @@ public class SessionMain
         return encryptedMessage;
     }
     
-    public byte[]? DecryptMessage(PacketMain packet)
+    public byte[]? DecryptMessage(PacketProcessor packet)
     {
         if(_currentSharedKeys == null)
         {

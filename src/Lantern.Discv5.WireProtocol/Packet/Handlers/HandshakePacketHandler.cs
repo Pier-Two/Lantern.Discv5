@@ -38,7 +38,7 @@ public class HandshakePacketHandler : PacketHandlerBase
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
         Console.Write("\nReceived HANDSHAKE packet from " + returnedResult.RemoteEndPoint.Address + " => ");
-        var packet = new PacketMain(_identityManager, _aesUtility, returnedResult.Buffer);
+        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packet.StaticHeader);
         var result = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!, out var publicKey);
 

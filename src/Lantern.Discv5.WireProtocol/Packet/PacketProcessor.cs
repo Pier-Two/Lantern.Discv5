@@ -4,13 +4,13 @@ using Lantern.Discv5.WireProtocol.Session;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
-public class PacketMain
+public class PacketProcessor
 {
     private readonly IIdentityManager _identityManager;
     private readonly IAesUtility _aesUtility;
     private readonly byte[] _rawPacket;
 
-    public PacketMain(IIdentityManager identityManager, IAesUtility aesUtility, byte[] rawPacket)
+    public PacketProcessor(IIdentityManager identityManager, IAesUtility aesUtility, byte[] rawPacket)
     {
         _identityManager = identityManager;
         _aesUtility = aesUtility;

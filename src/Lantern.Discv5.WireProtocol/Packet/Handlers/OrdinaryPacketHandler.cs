@@ -38,7 +38,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
         Console.Write("\nReceived ORDINARY packet from " + returnedResult.RemoteEndPoint.Address + " => ");
-        var packet = new PacketMain(_identityManager, _aesUtility, returnedResult.Buffer);
+        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
         var nodeEntry = _tableManager.GetNodeEntry(packet.StaticHeader.AuthData);
         
         if(nodeEntry == null)
@@ -74,7 +74,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         }
     }
 
-    private async Task SendWhoAreYouPacketWithoutEnrAsync(PacketMain packet, IPEndPoint destEndPoint, IUdpConnection connection)
+    private async Task SendWhoAreYouPacketWithoutEnrAsync(PacketProcessor packet, IPEndPoint destEndPoint, IUdpConnection connection)
     {
         Console.Write("Could not find record in the table for node: " + Convert.ToHexString(packet.StaticHeader.AuthData));
         
@@ -90,7 +90,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         Console.Write(" => Sent WHOAREYOU packet.\n");
     }
 
-    private async Task SendWhoAreYouPacketAsync(PacketMain packet, EnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
+    private async Task SendWhoAreYouPacketAsync(PacketProcessor packet, EnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
     {
         Console.WriteLine("Cannot decrypt ORDINARY packet. No sessionMain found.");
         
@@ -106,7 +106,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         Console.WriteLine("Sent WHOAREYOU packet.");
     }
     
-    private async Task SendResponseToOrdinaryPacketAsync(PacketMain packet, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
+    private async Task SendResponseToOrdinaryPacketAsync(PacketProcessor packet, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(packet.StaticHeader.AuthData, maskingIv, sessionMain.MessageCount);
