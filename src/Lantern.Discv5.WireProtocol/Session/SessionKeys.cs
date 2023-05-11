@@ -1,3 +1,4 @@
+using Lantern.Discv5.WireProtocol.Utility;
 using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.WireProtocol.Session;

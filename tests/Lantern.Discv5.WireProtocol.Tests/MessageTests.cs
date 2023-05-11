@@ -2,7 +2,6 @@ using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.WireProtocol.Message;
-using Lantern.Discv5.WireProtocol.Message.Decoders;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Table;
@@ -13,6 +12,8 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class MessageTests
 {
+    private static readonly IMessageDecoder MessageDecoder = new MessageDecoder();
+    
     [Test]
     public void Test_PingMessage_ShouldEncodeCorrectly()
     {
@@ -28,7 +29,7 @@ public class MessageTests
     public void Test_PingMessage_ShouldDecodeCorrectly()
     {
         var pingMessage = new PingMessage(12);
-        var newPingMessage = new PingDecoder().DecodeMessage(pingMessage.EncodeMessage());
+        var newPingMessage = (PingMessage)MessageDecoder.DecodeMessage(pingMessage.EncodeMessage());
         Assert.AreEqual(pingMessage.RequestId, newPingMessage.RequestId);
         Assert.AreEqual(pingMessage.EnrSeq, newPingMessage.EnrSeq);
     }
@@ -52,7 +53,7 @@ public class MessageTests
     {
         var recipientIp = IPAddress.Loopback;
         var pongMessage = new PongMessage(12, recipientIp, 3402);
-        var newPongMessage = new PongDecoder().DecodeMessage(pongMessage.EncodeMessage());
+        var newPongMessage = (PongMessage)MessageDecoder.DecodeMessage(pongMessage.EncodeMessage());
         Assert.AreEqual(pongMessage.RequestId, newPongMessage.RequestId);
         Assert.AreEqual(pongMessage.EnrSeq, newPongMessage.EnrSeq);
         Assert.AreEqual(pongMessage.RecipientIp, newPongMessage.RecipientIp);
@@ -89,7 +90,7 @@ public class MessageTests
         var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
         var findNodeMessage = new FindNodeMessage(distances);
-        var newFindNodeMessage = new FindNodeDecoder().DecodeMessage(findNodeMessage.EncodeMessage());
+        var newFindNodeMessage = (FindNodeMessage)MessageDecoder.DecodeMessage(findNodeMessage.EncodeMessage());
         Assert.AreEqual(findNodeMessage.Distances, newFindNodeMessage.Distances);
     }
 
@@ -137,8 +138,7 @@ public class MessageTests
         var enrs = new[]
             { new EnrRecordFactory().CreateFromString(firstEnrString), new EnrRecordFactory().CreateFromString(secondEnrString) };
         var nodesMessage = new NodesMessage(2, enrs);
-        var decodedMessage = new NodesDecoder()
-            .DecodeMessage(nodesMessage.EncodeMessage());
+        var decodedMessage = (NodesMessage)MessageDecoder.DecodeMessage(nodesMessage.EncodeMessage());
         
         Assert.AreEqual(decodedMessage.RequestId, nodesMessage.RequestId);
         Assert.AreEqual(decodedMessage.Total, nodesMessage.Total);
@@ -169,7 +169,7 @@ public class MessageTests
         var protocol = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var request = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var talkReqMessage = new TalkReqMessage(protocol, request);
-        var decodedMessage = new TalkReqDecoder().DecodeMessage(talkReqMessage.EncodeMessage());
+        var decodedMessage = (TalkReqMessage)MessageDecoder.DecodeMessage(talkReqMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Protocol, talkReqMessage.Protocol);
         Assert.AreEqual(decodedMessage.Request, talkReqMessage.Request);
     }
@@ -192,7 +192,7 @@ public class MessageTests
     {
         var response = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var talkRespMessage = new TalkRespMessage(response);
-        var decodedMessage = new TalkRespDecoder().DecodeMessage(talkRespMessage.EncodeMessage());
+        var decodedMessage = (TalkRespMessage)MessageDecoder.DecodeMessage(talkRespMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Response, talkRespMessage.Response);
     }
 
@@ -234,7 +234,7 @@ public class MessageTests
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
         var encodedMessage = regTopicMessage.EncodeMessage();
-        var decodedMessage = new RegTopicDecoder().DecodeMessage(encodedMessage);
+        var decodedMessage = (RegTopicMessage)MessageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regTopicMessage.Topic);
         Assert.AreEqual(regTopicMessage.Enr.ToString(), decodedMessage.Enr.ToString());
         Assert.AreEqual(decodedMessage.Ticket, regTopicMessage.Ticket);
@@ -262,7 +262,7 @@ public class MessageTests
         var waitTime = 100;
         var ticketRespMessage = new TicketMessage(ticket, waitTime);
         var encodedMessage = ticketRespMessage.EncodeMessage();
-        var decodedMessage = new TicketDecoder().DecodeMessage(encodedMessage);
+        var decodedMessage = (TicketMessage)MessageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Ticket, ticketRespMessage.Ticket);
         Assert.AreEqual(decodedMessage.WaitTime, ticketRespMessage.WaitTime);
     }
@@ -286,7 +286,7 @@ public class MessageTests
         var topic = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regConfirmationMessage = new RegConfirmationMessage(topic);
         var encodedMessage = regConfirmationMessage.EncodeMessage();
-        var decodedMessage = new RegConfirmationDecoder().DecodeMessage(encodedMessage);
+        var decodedMessage = (RegConfirmationMessage)MessageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regConfirmationMessage.Topic);
     }
 
@@ -321,7 +321,7 @@ public class MessageTests
         };
         var topicQueryMessage = new TopicQueryMessage(topicHash);
         var encodedMessage = topicQueryMessage.EncodeMessage();
-        var decodedMessage = new TopicQueryDecoder().DecodeMessage(encodedMessage);
+        var decodedMessage = (TopicQueryMessage)MessageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, topicQueryMessage.Topic);
     }
 }

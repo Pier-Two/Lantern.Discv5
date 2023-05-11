@@ -31,6 +31,7 @@ public static class ServiceConfiguration
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
         services.AddSingleton<IPendingRequests, PendingRequests>();
+        services.AddSingleton<IMessageDecoder, MessageDecoder>();
         services.AddSingleton<IMessageRequester, MessageRequester>();
         services.AddSingleton<IMessageResponder, MessageResponder>();
 

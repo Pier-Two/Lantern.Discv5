@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
@@ -18,7 +19,7 @@ public class KBucket
         _replacementCaches = Enumerable.Range(0, TableConstants.NumberOfBuckets)
             .Select(_ => new LinkedList<NodeTableEntry>())
             .ToList();
-        _nodeLookup = new ConcurrentDictionary<byte[], LinkedListNode<NodeTableEntry>>(new ByteArrayComparer());
+        _nodeLookup = new ConcurrentDictionary<byte[], LinkedListNode<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
     }
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
@@ -113,17 +114,4 @@ public class KBucket
         _nodes.AddLast(leastRecentlySeenNode);
     }
 
-}
-
-public class ByteArrayComparer : IEqualityComparer<byte[]>
-{
-    public bool Equals(byte[] x, byte[] y)
-    {
-        return x.SequenceEqual(y);
-    }
-
-    public int GetHashCode(byte[] obj)
-    {
-        return obj.Aggregate(17, (current, b) => current * 31 + b.GetHashCode());
-    }
 }

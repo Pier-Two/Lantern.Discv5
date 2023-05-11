@@ -3,7 +3,6 @@ using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message.Decoders;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Table;
@@ -18,13 +17,15 @@ public class MessageResponder : IMessageResponder
     private readonly IPendingRequests _pendingRequests;
     private readonly ILookupManager _lookupManager;
     private readonly ITalkResponder? _talkResponder;
+    private readonly IMessageDecoder _messageDecoder;
 
-    public MessageResponder(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ILookupManager lookupManager, ITalkResponder? talkResponder = null)
+    public MessageResponder(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ILookupManager lookupManager, IMessageDecoder messageDecoder, ITalkResponder? talkResponder = null)
     {
         _identityManager = identityManager;
         _tableManager = tableManager;
         _pendingRequests = pendingRequests;
         _lookupManager = lookupManager;
+        _messageDecoder = messageDecoder;
         _talkResponder = talkResponder;
     }
     
@@ -47,7 +48,7 @@ public class MessageResponder : IMessageResponder
     private byte[] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
         Console.Write("Received message type => " + MessageType.Ping);
-        var decodedMessage = new PingDecoder().DecodeMessage(message);
+        var decodedMessage = _messageDecoder.DecodeMessage(message);
         var localEnrSeq = _identityManager.Record.SequenceNumber;
         var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
         return pongMessage.EncodeMessage();
@@ -56,7 +57,7 @@ public class MessageResponder : IMessageResponder
     private byte[]? HandlePongMessage(byte[] message)
     {
         Console.Write("Received message type => " + MessageType.Pong + "\n");
-        var decodedMessage = new PongDecoder().DecodeMessage(message);
+        var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
         var result = _pendingRequests.ContainsPendingRequest(decodedMessage.RequestId);
         
         if (result == false)
@@ -110,7 +111,7 @@ public class MessageResponder : IMessageResponder
     private byte[] HandleFindNodeMessage(byte[] message)
     {
         Console.Write("Received message type => " + MessageType.FindNode);
-        var decodedMessage = new FindNodeDecoder().DecodeMessage(message);
+        var decodedMessage = (FindNodeMessage)_messageDecoder.DecodeMessage(message);
         var distances = decodedMessage.Distances.Take(RecordLimit);
         var closestNodes = _tableManager.GetEnrRecordsAtDistances(distances).ToArray();
         var nodesMessage = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, closestNodes);
@@ -120,7 +121,7 @@ public class MessageResponder : IMessageResponder
     private byte[]? HandleNodesMessage(byte[] message)
     {
         Console.Write("Received message type => " + MessageType.Nodes);
-        var decodedMessage = new NodesDecoder().DecodeMessage(message);
+        var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
 
         if(decodedMessage.Enrs.Length == 0)
             return null;
@@ -130,7 +131,7 @@ public class MessageResponder : IMessageResponder
         if(pendingRequest == null)
             return null;
         
-        var findNodesRequest = new FindNodeDecoder().DecodeMessage(pendingRequest.Message.EncodeMessage());
+        var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var identityVerifier = new IdentitySchemeV4Verifier();
 
         Console.WriteLine();
@@ -167,7 +168,7 @@ public class MessageResponder : IMessageResponder
         }
         
         Console.Write("Received message type => " + MessageType.TalkReq);
-        var decodedMessage = new TalkReqDecoder().DecodeMessage(message);
+        var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = ValidateRequest(decodedMessage);
         
         if(pendingRequest == null)
@@ -192,7 +193,7 @@ public class MessageResponder : IMessageResponder
         }
 
         Console.Write("Received message type => " + MessageType.TalkResp);
-        var decodedMessage = new TalkRespDecoder().DecodeMessage(message);
+        var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = ValidateRequest(decodedMessage);
         
         if(pendingRequest == null)

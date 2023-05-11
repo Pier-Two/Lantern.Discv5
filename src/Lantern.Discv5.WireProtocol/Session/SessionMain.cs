@@ -17,6 +17,7 @@ public class SessionMain
     private readonly SessionType _sessionType;
     private byte[]? _challengeData;
     private SharedKeys? _currentSharedKeys;
+    private int _messageCount;
 
     public bool IsEstablished { get; private set; }
     
@@ -26,7 +27,10 @@ public class SessionMain
         _aesUtility = aesUtility;
         _sessionCrypto = sessionCrypto;
         _sessionType = sessionType;
+        _messageCount = 0;
     }
+
+    public byte[] MessageCount => BitConverter.GetBytes(_messageCount);
 
     public byte[] PublicKey => _sessionKeys.PublicKey;
 
@@ -71,9 +75,10 @@ public class SessionMain
             Console.WriteLine("Challenge data is not set. Cannot encrypt message.");
             return null;
         }
-        
-        _currentSharedKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, selfNodeId, destNodeId, _challengeData);
 
+        _currentSharedKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, selfNodeId, destNodeId, _challengeData);
+        _messageCount++;
+        
         return _aesUtility.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
 
@@ -98,7 +103,7 @@ public class SessionMain
         var decryptedResult = _aesUtility.AesGcmDecrypt(sharedKeys.InitiatorKey, packet.StaticHeader.Nonce, packet.EncryptedMessage, messageAd);
         
         _currentSharedKeys = sharedKeys;
-        
+
         return decryptedResult;
     }
 
@@ -106,13 +111,15 @@ public class SessionMain
     {
         if(_currentSharedKeys == null)
         {
-            Console.WriteLine("SessionMain keys are not available. Cannot encrypt message.");
+            Console.WriteLine("Session keys are not available. Cannot encrypt message.");
             return null;
         }
         
         var encryptionKey = _sessionType == SessionType.Initiator ? _currentSharedKeys.InitiatorKey : _currentSharedKeys.RecipientKey;
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         var encryptedMessage = _aesUtility.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
+        
+        _messageCount++;
         
         return encryptedMessage;
     }
@@ -121,7 +128,7 @@ public class SessionMain
     {
         if(_currentSharedKeys == null)
         {
-            Console.WriteLine("SessionMain keys are not available. Cannot decrypt message.");
+            Console.WriteLine("Session keys are not available. Cannot decrypt message.");
             return null;
         }
         
@@ -133,7 +140,7 @@ public class SessionMain
         {
             IsEstablished = true;
         }
-        
+
         return decryptedMessage;
     }
 

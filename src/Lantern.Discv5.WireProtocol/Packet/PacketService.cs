@@ -12,6 +12,7 @@ using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
@@ -138,10 +139,10 @@ public class PacketService : IPacketService
         await packetHandler.HandlePacket(_udpConnection, returnedResult);
     }
 
-    private async Task SendOrdinaryPacketAsync(MessageType messageType, Session.SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
+    private async Task SendOrdinaryPacketAsync(MessageType messageType, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
         var message = _messageRequester.ConstructMessage(messageType, destNodeId);
 
         if (message == null)

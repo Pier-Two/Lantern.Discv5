@@ -6,6 +6,7 @@ public static class PacketConstants
     public const int WhoAreYou = 24;
     public const int HeaderNonce = 12;
     public const int IdNonceSize = 16;
+    public const int PartialNonceSize = 8;
     public const int EnrSeqSize = 8;
     public const int SigSize = 1;
     public const int EphemeralKeySize = 1;

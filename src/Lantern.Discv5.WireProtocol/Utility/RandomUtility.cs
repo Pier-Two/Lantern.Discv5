@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Lantern.Discv5.WireProtocol;
+namespace Lantern.Discv5.WireProtocol.Utility;
 
 public static class RandomUtility
 {

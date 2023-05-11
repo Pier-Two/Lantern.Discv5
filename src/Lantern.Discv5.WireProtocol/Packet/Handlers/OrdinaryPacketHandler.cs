@@ -9,6 +9,7 @@ using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
@@ -105,10 +106,10 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         Console.WriteLine("Sent WHOAREYOU packet.");
     }
     
-    private async Task SendResponseToOrdinaryPacketAsync(PacketMain packet, Session.SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
+    private async Task SendResponseToOrdinaryPacketAsync(PacketMain packet, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(packet.StaticHeader.AuthData, maskingIv);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(packet.StaticHeader.AuthData, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
 

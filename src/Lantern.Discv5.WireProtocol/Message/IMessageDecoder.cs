@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public interface IMessageDecoder<out T> where T : Message
+public interface IMessageDecoder
 {
-    T DecodeMessage(byte[] message);
+    Message DecodeMessage(byte[] message);
 }

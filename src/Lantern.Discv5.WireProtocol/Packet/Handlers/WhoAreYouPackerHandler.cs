@@ -9,6 +9,7 @@ using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
@@ -64,7 +65,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         var idSignatureNew = session.GenerateIdSignature(destNodeId);
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignatureNew, session.EphemeralPublicKey, destNodeId, maskingIv);
+        var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignatureNew, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
         var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
         
@@ -72,7 +73,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         Console.Write(" => Sent HANDSHAKE packet with encrypted message. " + "\n");
     }
 
-    private Session.SessionMain GenerateOrUpdateSession(PacketMain packet, byte[] destNodeId, IPEndPoint destEndPoint)
+    private SessionMain GenerateOrUpdateSession(PacketMain packet, byte[] destNodeId, IPEndPoint destEndPoint)
     {
         var session = _sessionManager.GetSession(destNodeId, destEndPoint);
 

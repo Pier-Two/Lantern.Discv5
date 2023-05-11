@@ -10,7 +10,7 @@ using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
-using NBitcoin.Secp256k1;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
@@ -113,7 +113,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         return true;
     }
     
-    private byte[]? PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, Session.SessionMain sessionMain, IPEndPoint endPoint) 
+    private byte[]? PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, SessionMain sessionMain, IPEndPoint endPoint) 
     {
         var response = _messageResponder.HandleMessage(decryptedMessage, endPoint);
 
@@ -123,7 +123,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         }
         
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(senderNodeId, maskingIv);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(senderNodeId, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
         
         return ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
