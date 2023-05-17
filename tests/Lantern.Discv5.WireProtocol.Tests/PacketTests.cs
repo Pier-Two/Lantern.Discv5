@@ -7,6 +7,7 @@ using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Secp256k1;
 using NUnit.Framework;
 
@@ -18,6 +19,7 @@ public class PacketTests
     private static readonly SessionCrypto SessionCrypto = new();
     private static readonly AesUtility AesUtility = new();
     private static readonly IMessageDecoder MessageDecoder = new MessageDecoder();
+    private static readonly ILoggerFactory LoggerFactory = new LoggerFactory();
 
     [Test]
     public void Test_OrdinaryPacket_ShouldGeneratePacketCorrectly()
@@ -100,9 +102,9 @@ public class PacketTests
         var nodeAPrivKey = Convert.FromHexString("eef77acb6c6a6eebc5b363a475ac583ec7eccdb42b6481424c60f59aa326547f");
         var nodeAEphemeralPrivKey = Convert.FromHexString("0288ef00023598499cb6c940146d050d2b1fb914198c327f76aad590bead68b6");
         var nodeASessionkeys = new SessionKeys(nodeAPrivKey, nodeAEphemeralPrivKey);
-        var nodeACrypto = new SessionMain(nodeASessionkeys, AesUtility,SessionCrypto,SessionType.Recipient);
+        var nodeACrypto = new SessionMain(nodeASessionkeys, AesUtility,SessionCrypto, LoggerFactory,SessionType.Recipient);
         var nodeBPubkey =
-            new SessionMain(new SessionKeys(Convert.FromHexString("66fb62bfbd66b9177a138c1e5cddbe4f7c30c343e94e68df8769459cb1cde628")), AesUtility,SessionCrypto,SessionType.Recipient).PublicKey;
+            new SessionMain(new SessionKeys(Convert.FromHexString("66fb62bfbd66b9177a138c1e5cddbe4f7c30c343e94e68df8769459cb1cde628")), AesUtility,SessionCrypto, LoggerFactory,SessionType.Recipient).PublicKey;
         var nonce = Convert.FromHexString("ffffffffffffffffffffffff");
         var maskedIv = Convert.FromHexString("00000000000000000000000000000000");
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000001");

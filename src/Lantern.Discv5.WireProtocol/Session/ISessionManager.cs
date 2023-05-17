@@ -4,11 +4,13 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public interface ISessionManager
 {
-    public SessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint);
-
-    public SessionMain? CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint);
-
-    public void SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
+    int TotalSessionCount { get; }
     
-    public byte[]? GetHandshakeInteraction(byte[] packetNonce);
+    SessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint);
+    
+    SessionMain? CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint);
+
+    void SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
+    
+    byte[]? GetHandshakeInteraction(byte[] packetNonce);
 }

@@ -3,26 +3,31 @@ using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
 public class MessageRequester : IMessageRequester
 {
     private readonly IIdentityManager _identityManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IPendingRequests _pendingRequests;
     private readonly ITalkRequester? _talkRequester;
+    private readonly ILogger<MessageRequester> _logger;
 
-    public MessageRequester(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ITalkRequester? talkRequester = null)
+    public MessageRequester(IIdentityManager identityManager, IRoutingTable routingTable, IPendingRequests pendingRequests, ILoggerFactory loggerFactory, ITalkRequester? talkRequester = null)
     {
         _identityManager = identityManager;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _pendingRequests = pendingRequests;
         _talkRequester = talkRequester;
+        _logger = loggerFactory.CreateLogger<MessageRequester>();
     }
     
     public byte[] ConstructMessage(MessageType messageType, byte[] destNodeId)
     {
+        _logger.LogInformation("Constructing message of type {MessageType}", messageType);
+        
         return messageType switch
         {
             MessageType.Ping => ConstructPingMessage(destNodeId),
@@ -39,24 +44,26 @@ public class MessageRequester : IMessageRequester
 
         if(result == false)
         {
-            Console.WriteLine("Failed to add pending request. Request id: " + Convert.ToHexString(pingMessage.RequestId));
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(pingMessage.RequestId));
         }
         
+        _logger.LogDebug("Ping message constructed: {PingMessage}", pingMessage.RequestId);
         return pingMessage.EncodeMessage();
     }
     
     private byte[] ConstructFindNodeMessage(byte[] destNodeId)
     {
         var randomNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-        var distances = _tableManager.GetClosestNeighbours(randomNodeId);
+        var distances = _routingTable.GetClosestNeighbours(randomNodeId);
         var findNodesMessage = new FindNodeMessage(distances);
         var result = _pendingRequests.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(destNodeId, findNodesMessage));
 
         if(result == false)
         {
-            Console.WriteLine("Failed to add pending request. Request id: " + Convert.ToHexString(findNodesMessage.RequestId));
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
         }
-
+        
+        _logger.LogDebug("FindNode message constructed: {FindNodeMessage}", findNodesMessage.RequestId);
         return findNodesMessage.EncodeMessage();
     }
 
@@ -74,9 +81,10 @@ public class MessageRequester : IMessageRequester
         
         if(result == false)
         {
-            Console.WriteLine("Failed to add pending request. Request id: " + Convert.ToHexString(talkReqMessage.RequestId));
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkReqMessage.RequestId));
         }
 
+        _logger.LogDebug("TalkReq message constructed: {TalkReqMessage}", talkReqMessage.RequestId);
         return talkReqMessage.EncodeMessage();
     }
 }

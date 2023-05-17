@@ -47,10 +47,10 @@ public class HandshakePacketBase : PacketBase
         var srcId = authData[..PacketConstants.NodeIdSize];
         index += PacketConstants.NodeIdSize;
         
-        var sigSize = RlpExtensions.ByteArrayToInt32(authData[index..(index + PacketConstants.SigSize)]);
+        var sigSize = RlpExtensions.ByteArrayToInt32(authData[index..(index + PacketConstants.SigSize)].ToArray());
         index += PacketConstants.SigSize;
         
-        var ephKeySize = RlpExtensions.ByteArrayToInt32(authData[index..(index + PacketConstants.EphemeralKeySize)]);
+        var ephKeySize = RlpExtensions.ByteArrayToInt32(authData[index..(index + PacketConstants.EphemeralKeySize)].ToArray());
         index += PacketConstants.EphemeralKeySize;
         
         var idSignature = authData[index..(index + sigSize)];
@@ -60,6 +60,7 @@ public class HandshakePacketBase : PacketBase
         index += ephKeySize;
         
         var record = authData[index..];
+        
         return new HandshakePacketBase(idSignature, ephPubkey, srcId, record);
     }
 }

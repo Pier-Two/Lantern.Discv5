@@ -8,11 +8,11 @@ using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet.Handlers;
-using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
@@ -21,44 +21,39 @@ public class PacketService : IPacketService
     private readonly IPacketHandlerFactory _packetHandlerFactory;
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IMessageRequester _messageRequester;
+    private readonly IPendingRequests _pendingRequests;
     private readonly IUdpConnection _udpConnection;
     private readonly ILookupManager _lookupManager;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
+    private readonly ILogger<PacketService> _logger;
 
     public PacketService(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
-        ISessionManager sessionManager, ITableManager tableManager, IMessageRequester messageRequester,
-        IUdpConnection udpConnection, ILookupManager lookupManager, IAesUtility aesUtility, IPacketBuilder packetBuilder)
+        ISessionManager sessionManager, IRoutingTable routingTable, IMessageRequester messageRequester,
+        IUdpConnection udpConnection, ILookupManager lookupManager, IAesUtility aesUtility, IPacketBuilder packetBuilder, 
+        ILoggerFactory loggerFactory, IPendingRequests pendingRequests)
     {
         _packetHandlerFactory = packetHandlerFactory;
         _identityManager = identityManager;
         _sessionManager = sessionManager;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
         _lookupManager = lookupManager;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
-        LogIdentityManagerDetails(); // For debugging purposes only (ignore for now)
+        _pendingRequests = pendingRequests;
+        _logger = loggerFactory.CreateLogger<PacketService>();
     }
 
-    private void LogIdentityManagerDetails()
+    public async Task InitialiseDiscoveryAsync()
     {
-        Console.WriteLine("\nIDENTITY DETAILS");
-        Console.WriteLine("================");
-        Console.WriteLine("Ethereum Node Record: " + _identityManager.Record);
-        Console.WriteLine("\nCOMMUNICATION LOGS");
-        Console.WriteLine("==================");
-    }
-
-    public async Task RunDiscoveryAsync()
-    {
-        if (_tableManager.RecordCount == 0)
+        if (_routingTable.GetTotalEntriesCount() == 0)
         {
-            Console.WriteLine("Initialising from bootstrap ENRs...\n");
-            var bootstrapEnrs = _tableManager.GetBootstrapEnrs();
+            _logger.LogInformation("Initialising from bootstrap ENRs");
+            var bootstrapEnrs = _routingTable.GetBootstrapEnrs();
 
             foreach (var bootstrapEnr in bootstrapEnrs)
             {
@@ -68,44 +63,40 @@ public class PacketService : IPacketService
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    _logger.LogError(ex, "Error sending packet to bootstrap ENR: {BootstrapEnr}", bootstrapEnr);
                 }
-               
             }
-            
-            return;
         }
-        
-        await PerformDiscovery();
     }
 
     public async Task PingNodeAsync()
     {
-        if (_tableManager.RecordCount > 0)
+        if (_routingTable.GetTotalEntriesCount() > 0)
         {
-            Console.WriteLine("Pinging node for checking liveness...");
+            _logger.LogInformation("Pinging node for checking liveness...");
             var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-            var nodeEntry = _tableManager.GetInitialNodesForLookup(targetNodeId).First();
+            var nodeEntry = _routingTable.GetInitialNodesForLookup(targetNodeId).First();
             await SendPacket(MessageType.Ping, nodeEntry.Record);
         }
     }
     
     public async Task PerformLookup(byte[] targetNodeId)
     {
-        Console.WriteLine("\nPerforming lookup...");
+        _logger.LogInformation("Performing lookup...");
         var closestNodes = await _lookupManager.PerformLookup(targetNodeId);
-        Console.WriteLine("Lookup completed. Closest nodes found:");
+        _logger.LogInformation("Lookup completed. Closest nodes found:");
+        
         foreach (var node in closestNodes)
         {
-            Console.WriteLine("Node ID: " + Convert.ToHexString(node.Id));
+            _logger.LogInformation("Node ID: {NodeId}", Convert.ToHexString(node.Id));
         }
     }
 
     private async Task PerformDiscovery()
     {
-        Console.WriteLine("\nPerforming discovery...");
+        _logger.LogInformation("Performing discovery...");
         var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-        var initialNodesForLookup = _tableManager.GetInitialNodesForLookup(targetNodeId);
+        var initialNodesForLookup = _routingTable.GetInitialNodesForLookup(targetNodeId);
         
         // Establish sessions with initial nodes
         foreach (var nodeEntry in initialNodesForLookup)
@@ -139,6 +130,24 @@ public class PacketService : IPacketService
         await packetHandler.HandlePacket(_udpConnection, returnedResult);
     }
 
+    private async Task CheckPendingRequests()
+    {
+        // asynchronously check pending requests
+        var currentRequests = _pendingRequests.GetPendingRequests();
+    
+        foreach (var request in currentRequests)
+        {
+            if(request.CreatedAt + TimeSpan.FromMilliseconds(500) < DateTime.UtcNow)
+            {
+                _logger.LogInformation("Request timed out. Removing from pending requests");
+                _pendingRequests.RemovePendingRequest(request.Message.RequestId);
+                
+                // What else should be done??
+            }
+        }
+
+    }
+
     private async Task SendOrdinaryPacketAsync(MessageType messageType, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
@@ -147,7 +156,7 @@ public class PacketService : IPacketService
 
         if (message == null)
         {
-            Console.WriteLine("Unable to construct PING message. Cannot send PING packet.");
+            _logger.LogWarning("Unable to construct {MessageType} message. Cannot send packet", messageType);
             return;
         }
         
@@ -155,7 +164,7 @@ public class PacketService : IPacketService
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
         
         await _udpConnection.SendAsync(finalPacket, destEndPoint);
-        Console.WriteLine("Sent FINDNODES request to " + destEndPoint);
+        _logger.LogInformation("Sent {MessageType} request to {Destination}", messageType, destEndPoint);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
@@ -167,6 +176,6 @@ public class PacketService : IPacketService
             
         var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId, packetNonce, maskingIv);
         await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
-        Console.WriteLine("Sent RANDOM packet to initiate handshake with " + destEndPoint);
+        _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
 }

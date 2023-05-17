@@ -11,6 +11,7 @@ using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
@@ -18,33 +19,35 @@ public class HandshakePacketHandler : PacketHandlerBase
 {
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
+    private readonly ILogger<HandshakePacketHandler> _logger;
 
-    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, ITableManager tableManager, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder)
+    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _messageResponder = messageResponder;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
+        _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
     }
 
     public override PacketType PacketType => PacketType.Handshake;
 
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
-        Console.Write("\nReceived HANDSHAKE packet from " + returnedResult.RemoteEndPoint.Address + " => ");
+        _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packet.StaticHeader);
         var result = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!, out var publicKey);
 
         if (!result)
         {
-            Console.WriteLine("Cannot obtain public key from record. Unable to verify ID signature from HANDSHAKE packet.");
+            _logger.LogWarning("Cannot obtain public key from record. Unable to verify ID signature from HANDSHAKE packet");
             return;
         }
         
@@ -52,7 +55,7 @@ public class HandshakePacketHandler : PacketHandlerBase
 
         if (session == null)
         {
-            Console.WriteLine("SessionMain not found. Cannot verify ID signature from HANDSHAKE packet.");
+            _logger.LogWarning("Session not found. Cannot verify ID signature from HANDSHAKE packet");
             return;
         }
         
@@ -65,11 +68,11 @@ public class HandshakePacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
-            Console.WriteLine("Cannot decrypt message in the HANDSHAKE packet.");
+            _logger.LogWarning("Cannot decrypt message in the HANDSHAKE packet");
             return;
         }
         
-        Console.Write("Successfully decrypted HANDSHAKE packet => ");
+        _logger.LogDebug("Successfully decrypted HANDSHAKE packet");
         
         var replyPacket = PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
         
@@ -77,7 +80,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         
         await connection.SendAsync(replyPacket, returnedResult.RemoteEndPoint);
-        Console.Write(" => Sent response to HANDSHAKE packet.\n");
+        _logger.LogDebug("Sent response to HANDSHAKE packet");
     }
 
     private bool ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId, out byte[] senderPublicKey)
@@ -91,7 +94,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         }
         else if (senderNodeId != null)
         {
-            var nodeEntry = _tableManager.GetNodeEntry(senderNodeId);
+            var nodeEntry = _routingTable.GetNodeEntry(senderNodeId);
             
             if (nodeEntry != null)
             {
@@ -107,7 +110,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return false;
         }
 
-        _tableManager.UpdateTable(senderRecord);
+        _routingTable.UpdateTable(senderRecord);
     
         senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>("secp256k1").Value;
         return true;

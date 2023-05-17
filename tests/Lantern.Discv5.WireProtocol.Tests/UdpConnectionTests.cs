@@ -3,6 +3,8 @@ using System.Net.Sockets;
 using System.Text;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -14,19 +16,35 @@ public class UdpConnectionTests
     private UdpConnection _receiver = null!;
     private ConnectionOptions _senderOptions = null!;
     private ConnectionOptions _receiverOptions = null!;
-    
+
     [SetUp]
     public void Setup()
     {
         _senderOptions = new ConnectionOptions.Builder()
             .WithPort(port: 1234)
             .Build();
+        
         _receiverOptions = new ConnectionOptions.Builder()
             .WithPort(port: 1235)
             .Build();
         
-        _sender = new UdpConnection(_senderOptions);
-        _receiver = new UdpConnection(_receiverOptions);
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder
+                .AddFilter("Microsoft", LogLevel.Warning)
+                .AddFilter("System", LogLevel.Warning)
+                .AddSimpleConsole(options =>
+                {
+                    options.ColorBehavior = LoggerColorBehavior.Enabled;
+                    options.IncludeScopes = false;
+                    options.SingleLine = true;
+                    options.TimestampFormat = "HH:mm:ss ";
+                    options.UseUtcTimestamp = true;
+                });
+        });
+
+        _sender = new UdpConnection(_senderOptions, loggerFactory);
+        _receiver = new UdpConnection(_receiverOptions, loggerFactory);
     }
 
     [TearDown]

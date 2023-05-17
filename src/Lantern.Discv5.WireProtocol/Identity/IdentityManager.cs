@@ -8,24 +8,27 @@ using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Identity;
 
 public class IdentityManager: IIdentityManager
 {
-    private IIdentitySchemeSigner Signer { get; }
-    
+    private readonly IIdentitySchemeSigner _signer;
+    private readonly ILogger<IdentityManager> _logger;
+
     public IIdentitySchemeVerifier Verifier { get; }
 
     public EnrRecord Record { get; }
     
     public byte[] NodeId => Verifier.GetNodeIdFromRecord(Record);
     
-    public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions)
+    public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions, ILoggerFactory loggerFactory)
     {
-        Signer = sessionOptions.Signer;
+        _signer = sessionOptions.Signer;
+        _logger = loggerFactory.CreateLogger<IdentityManager>();
         Verifier = sessionOptions.Verifier;
-        Record = CreateNewRecord(connectionOptions, Signer);
+        Record = CreateNewRecord(connectionOptions, _signer);
     }
 
     public bool IsIpAddressAndPortSet()
@@ -46,15 +49,17 @@ public class IdentityManager: IIdentityManager
             Record.UpdateEntry(EnrContentKey.Udp6, new EntryUdp6(endpoint.Port));
         }
         
-        Record.UpdateSignature(Signer);
-        Console.Write("\nSelf ENR record updated => " + Record);
+        Record.UpdateSignature(_signer);
+        _logger.LogInformation("Self ENR record updated => {Record}", Record);
     }
 
-    private static EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeSigner signer)
+    private EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeSigner signer)
     {
+        EnrRecord record;
+        
         if (options.ExternalIpAddress != null)
         {
-            return new EnrBuilder()
+            record = new EnrBuilder()
                 .WithSigner(signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
                 .WithEntry(EnrContentKey.Ip, new EntryIp(options.ExternalIpAddress)) // Should use external IP address
@@ -62,11 +67,16 @@ public class IdentityManager: IIdentityManager
                 .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();
         }
+        else
+        {
+            record = new EnrBuilder()
+                .WithSigner(signer)
+                .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
+                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
+                .Build();
+        }
         
-        return new EnrBuilder()
-            .WithSigner(signer)
-            .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-            .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
-            .Build();
+        _logger.LogInformation("New ENR record created => {Record}", record);
+        return record;
     }
 }

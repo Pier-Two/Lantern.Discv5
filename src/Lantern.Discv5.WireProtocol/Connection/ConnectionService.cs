@@ -1,141 +1,85 @@
 using Lantern.Discv5.WireProtocol.Packet;
-using Lantern.Discv5.WireProtocol.Table;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
 public sealed class ConnectionService : IConnectionService
 {
-    private readonly ITableManager _tableManager;
     private readonly IPacketService _packetService;
-    private readonly IUdpConnection _udpConnection;
-    private readonly CancellationTokenSource _serviceCts;
-    private readonly TaskCompletionSource _shutdownTcs;
-    private readonly ConnectionOptions _connectionOptions;
+    private readonly IUdpConnection _connection;
+    private readonly CancellationTokenSource _shutdownCts;
+    private readonly ILogger<ConnectionService> _logger;
+    private Task? _listenTask;
+    private Task? _handleTask;
 
-    public ConnectionService(ITableManager tableManager, IPacketService packetService, IUdpConnection udpConnection,
-        ConnectionOptions connectionOptions)
+    public ConnectionService(IPacketService packetService, IUdpConnection connection, ILoggerFactory loggerFactory)
     {
-        _tableManager = tableManager;
         _packetService = packetService;
-        _udpConnection = udpConnection;
-        _connectionOptions = connectionOptions;
-        _serviceCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        _shutdownTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _connection = connection;
+        _shutdownCts = new CancellationTokenSource();
+        _logger = loggerFactory.CreateLogger<ConnectionService>();
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartConnectionServiceAsync(CancellationToken token = default)
     {
-        var listenTask = _udpConnection.ListenAsync(_serviceCts.Token);
-        var pingTask = PingNodeAsync(_serviceCts.Token);
-        var discoveryTask = StartServiceAsync(_serviceCts.Token);
-        var refreshTask = RefreshBucketsAsync(_serviceCts.Token);
-        var handleTask = HandleIncomingPacketsAsync(_serviceCts.Token);
-
-        await Task.WhenAny(listenTask, discoveryTask, refreshTask, pingTask, handleTask).ConfigureAwait(false);
-        _udpConnection.CompleteMessageChannel();
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken = default)
-    {
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _serviceCts.Token);
-        cts.Cancel();
+        _logger.LogInformation("Starting ConnectionServicesAsync");
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _shutdownCts.Token);
 
         try
         {
-            await _shutdownTcs.Task.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // Handle the scenario when the StopAsync method itself is canceled
+            _listenTask = _connection.ListenAsync(linkedCts.Token);
+            _handleTask = HandleIncomingPacketsAsync(linkedCts.Token);
+
+            await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false);
         }
         finally
         {
-            _serviceCts.Dispose();
+            linkedCts.Dispose();
         }
     }
 
-    private async Task RefreshBucketsAsync(CancellationToken cancellationToken = default)
+    public async Task StopConnectionServiceAsync(CancellationToken token = default)
     {
+        _logger.LogInformation("Stopping ConnectionServicesAsync");
+        _shutdownCts.Cancel();
+
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            if (_listenTask != null && _handleTask != null)
             {
-                _tableManager.RefreshTable();
-                await Task.Delay(_connectionOptions.RefreshIntervalMilliseconds, cancellationToken)
-                    .ConfigureAwait(false);
+                await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false);
             }
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
         {
-            Console.WriteLine(ex);
+            _logger.LogInformation("ConnectionServicesAsync was canceled gracefully");
         }
         finally
         {
-            _shutdownTcs.TrySetResult();
-        }
-    }
-    
-    private async Task PingNodeAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await _packetService.PingNodeAsync().ConfigureAwait(false);
-                await Task.Delay(_connectionOptions.PingIntervalMilliseconds, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
-        finally
-        {
-            _shutdownTcs.TrySetResult();
-        }
-    }
-    
-    private async Task StartServiceAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await _packetService.RunDiscoveryAsync().ConfigureAwait(false);
-                await Task.Delay(_connectionOptions.LookupIntervalMilliseconds, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            _shutdownTcs.TrySetResult();
+            _connection.CompleteMessageChannel();
         }
     }
 
     private async Task HandleIncomingPacketsAsync(CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("Starting HandleIncomingPacketsAsync");
+
         try
         {
-            await foreach (var packet in _udpConnection.ReadMessagesAsync(cancellationToken).WithCancellation(cancellationToken))
+            await foreach (var packet in _connection.ReadMessagesAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                try
-                {
-                    await _packetService.HandleReceivedPacket(packet).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Do nothing, continue listening for incoming packets
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
+                await _packetService.HandleReceivedPacket(packet).ConfigureAwait(false);
             }
         }
-        finally
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
         {
-            _shutdownTcs.SetResult();
+            _logger.LogInformation("HandleIncomingPacketsAsync was canceled gracefully");
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in HandleIncomingPacketsAsync");
+        }
+
+        _logger.LogInformation("HandleIncomingPacketsAsync completed");
     }
 }

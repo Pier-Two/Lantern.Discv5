@@ -19,6 +19,7 @@ public class WhoAreYouPacketBase : PacketBase
         var enrSeqArray = new byte[PacketConstants.EnrSeqSize];
         var enrSeqBytes = ByteArrayUtils.ToBigEndianBytesTrimmed(enrSeq);
         Array.Copy(enrSeqBytes, 0, enrSeqArray, PacketConstants.EnrSeqSize - enrSeqBytes.Length, enrSeqBytes.Length);
+        
         return ByteArrayUtils.JoinByteArrays(idNonce, enrSeqArray);
     }
 

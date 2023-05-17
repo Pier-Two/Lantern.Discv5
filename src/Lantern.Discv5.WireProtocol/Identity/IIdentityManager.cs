@@ -12,7 +12,7 @@ public interface IIdentityManager
     
     byte[] NodeId { get; }
     
-    public bool IsIpAddressAndPortSet();
+    bool IsIpAddressAndPortSet();
 
-    public void UpdateIpAddressAndPort(IPEndPoint endpoint);
+    void UpdateIpAddressAndPort(IPEndPoint endpoint);
 }

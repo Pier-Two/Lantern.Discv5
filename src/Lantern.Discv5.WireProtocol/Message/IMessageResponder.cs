@@ -4,5 +4,5 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IMessageResponder
 {
-    public byte[]? HandleMessage(byte[] message, IPEndPoint endPoint);
+    byte[]? HandleMessage(byte[] message, IPEndPoint endPoint);
 }

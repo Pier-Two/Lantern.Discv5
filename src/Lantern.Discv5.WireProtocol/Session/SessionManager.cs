@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
@@ -11,14 +12,17 @@ public class SessionManager : ISessionManager
     private readonly ISessionCrypto _sessionCrypto;
     private readonly ISessionKeys _sessionKeys;
     private readonly IMemoryCache _sessions;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ConcurrentDictionary<byte[], byte[]> _cachedHandshakeInteractions;
+    private int _sessionCount;
     
-    public SessionManager(SessionOptions options, IAesUtility aesUtility, ISessionCrypto sessionCrypto)
+    public SessionManager(SessionOptions options, IAesUtility aesUtility, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory)
     {
         _sessionKeys = options.SessionKeys;
         _aesUtility = aesUtility;
         _sessionCrypto = sessionCrypto;
-
+        _loggerFactory = loggerFactory;
+        
         // Configure the MemoryCache with the desired size and eviction policy
         var cacheOptions = new MemoryCacheOptions
         {
@@ -26,9 +30,10 @@ public class SessionManager : ISessionManager
             CompactionPercentage = 0.1
         };
         _sessions = new MemoryCache(cacheOptions);
-        
         _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
     }
+    
+    public int TotalSessionCount => _sessionCount;
     
     public void SaveHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
     { 
@@ -51,6 +56,7 @@ public class SessionManager : ISessionManager
             entry.RegisterPostEvictionCallback((_, _, _, _) =>
             {
                 // Handle session eviction if necessary
+                Interlocked.Decrement(ref _sessionCount);
             });
 
             return CreateSession(sessionType);
@@ -67,13 +73,17 @@ public class SessionManager : ISessionManager
         {
             return session as SessionMain;
         }
+       
         return null;
     }
     
     private SessionMain CreateSession(SessionType sessionType)
     {
         var newSessionKeys = new SessionKeys(_sessionKeys.PrivateKey);
-        var cryptoSession = new SessionMain(newSessionKeys, _aesUtility, _sessionCrypto, sessionType);
+        var cryptoSession = new SessionMain(newSessionKeys, _aesUtility, _sessionCrypto, _loggerFactory, sessionType);
+
+        Interlocked.Increment(ref _sessionCount);
+        
         return cryptoSession;
     }
 }

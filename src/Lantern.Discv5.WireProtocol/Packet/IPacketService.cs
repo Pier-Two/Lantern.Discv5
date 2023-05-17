@@ -7,7 +7,7 @@ namespace Lantern.Discv5.WireProtocol.Packet;
 
 public interface IPacketService
 {
-    Task RunDiscoveryAsync();
+    Task InitialiseDiscoveryAsync();
     
     Task HandleReceivedPacket(UdpReceiveResult returnedResult);
 

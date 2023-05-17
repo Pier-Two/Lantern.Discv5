@@ -1,11 +1,10 @@
 using System.Net;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Table;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
@@ -13,20 +12,22 @@ public class MessageResponder : IMessageResponder
 {
     private const int RecordLimit = 16;
     private readonly IIdentityManager _identityManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IPendingRequests _pendingRequests;
     private readonly ILookupManager _lookupManager;
     private readonly ITalkResponder? _talkResponder;
     private readonly IMessageDecoder _messageDecoder;
+    private readonly ILogger<MessageResponder> _logger;
 
-    public MessageResponder(IIdentityManager identityManager, ITableManager tableManager, IPendingRequests pendingRequests, ILookupManager lookupManager, IMessageDecoder messageDecoder, ITalkResponder? talkResponder = null)
+    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IPendingRequests pendingRequests, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkResponder? talkResponder = null)
     {
         _identityManager = identityManager;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _pendingRequests = pendingRequests;
         _lookupManager = lookupManager;
         _messageDecoder = messageDecoder;
         _talkResponder = talkResponder;
+        _logger = loggerFactory.CreateLogger<MessageResponder>();
     }
     
     public byte[]? HandleMessage(byte[] message, IPEndPoint endPoint)
@@ -47,7 +48,7 @@ public class MessageResponder : IMessageResponder
     
     private byte[] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
-        Console.Write("Received message type => " + MessageType.Ping);
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.Ping);
         var decodedMessage = _messageDecoder.DecodeMessage(message);
         var localEnrSeq = _identityManager.Record.SequenceNumber;
         var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
@@ -56,13 +57,13 @@ public class MessageResponder : IMessageResponder
     
     private byte[]? HandlePongMessage(byte[] message)
     {
-        Console.Write("Received message type => " + MessageType.Pong + "\n");
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
         var result = _pendingRequests.ContainsPendingRequest(decodedMessage.RequestId);
         
         if (result == false)
         {
-            Console.WriteLine(" => Received pong message with unknown request id. Request id: " + Convert.ToHexString(decodedMessage.RequestId));
+            _logger.LogWarning("Received pong message with unknown request id. Request id: {RequestId}",Convert.ToHexString(decodedMessage.RequestId));
             return null;
         }
 
@@ -71,11 +72,11 @@ public class MessageResponder : IMessageResponder
         if(pendingRequest == null)
             return null;
         
-        var nodeEntry = _tableManager.GetNodeEntry(pendingRequest.NodeId);
+        var nodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
 
         if (nodeEntry == null)
         {
-            Console.WriteLine("ENR record is not known.");
+            _logger.LogWarning("ENR record is not known. Cannot handle PONG message from node. ENR: {Record}", Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
         
@@ -83,10 +84,10 @@ public class MessageResponder : IMessageResponder
         
         if (nodeEntry.IsLive == false)
         {
-            _tableManager.UpdateTable(enrRecord);
+            _routingTable.UpdateTable(enrRecord);
             _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
 
-            Console.WriteLine("\nAdded bootstrap enr record to table. ENR: " + Convert.ToHexString(new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord)));
+            _logger.LogInformation("Added bootstrap enr record to table. ENR: {Record}",Convert.ToHexString(new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord)));
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
@@ -110,17 +111,18 @@ public class MessageResponder : IMessageResponder
     
     private byte[] HandleFindNodeMessage(byte[] message)
     {
-        Console.Write("Received message type => " + MessageType.FindNode);
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.FindNode);
         var decodedMessage = (FindNodeMessage)_messageDecoder.DecodeMessage(message);
         var distances = decodedMessage.Distances.Take(RecordLimit);
-        var closestNodes = _tableManager.GetEnrRecordsAtDistances(distances).ToArray();
+        var closestNodes = _routingTable.GetEnrRecordsAtDistances(distances).ToArray();
         var nodesMessage = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, closestNodes);
+        
         return nodesMessage.EncodeMessage();
     }
     
     private byte[]? HandleNodesMessage(byte[] message)
     {
-        Console.Write("Received message type => " + MessageType.Nodes);
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.Nodes);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
 
         if(decodedMessage.Enrs.Length == 0)
@@ -133,8 +135,7 @@ public class MessageResponder : IMessageResponder
         
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var identityVerifier = new IdentitySchemeV4Verifier();
-
-        Console.WriteLine();
+        
         foreach (var enr in decodedMessage.Enrs)
         {
             var nodeId = identityVerifier.GetNodeIdFromRecord(enr);
@@ -145,8 +146,7 @@ public class MessageResponder : IMessageResponder
                 
                 if (distance == distanceToNode)
                 {
-                    _tableManager.UpdateTable(enr);
-                    Console.WriteLine("Added enr record to table. Node ID: " + Convert.ToHexString(identityVerifier.GetNodeIdFromRecord(enr)));
+                    _routingTable.UpdateTable(enr);
                     break;
                 }
             }
@@ -154,7 +154,7 @@ public class MessageResponder : IMessageResponder
 
         var nodes = decodedMessage.Enrs.Select(x => new NodeTableEntry(x, new IdentitySchemeV4Verifier())).ToList();
         _lookupManager.ReceiveNodesResponse(nodes);
-        _tableManager.MarkNodeAsQueried(pendingRequest.NodeId);
+        _routingTable.MarkNodeAsQueried(pendingRequest.NodeId);
 
         return null;
     }
@@ -163,11 +163,11 @@ public class MessageResponder : IMessageResponder
     {
         if (_talkResponder == null)
         {
-            Console.WriteLine("Talk responder is not set.");
+            _logger.LogWarning("Talk responder is not set. Cannot handle talk request message");
             return null;
         }
         
-        Console.Write("Received message type => " + MessageType.TalkReq);
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = ValidateRequest(decodedMessage);
         
@@ -188,11 +188,11 @@ public class MessageResponder : IMessageResponder
     {
         if (_talkResponder == null)
         {
-            Console.WriteLine("Talk responder is not set.");
+            _logger.LogWarning("Talk responder is not set. Cannot handle talk response message");
             return null;
         }
 
-        Console.Write("Received message type => " + MessageType.TalkResp);
+        _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
         var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = ValidateRequest(decodedMessage);
         
@@ -215,7 +215,7 @@ public class MessageResponder : IMessageResponder
         
         if (result == false)
         {
-            Console.WriteLine(" => Received message with unknown request id. Message Type: " + message.MessageType + " Request id: " + Convert.ToHexString(message.RequestId));
+            _logger.LogWarning("Received message with unknown request id. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
             return null;
         }
 
@@ -224,7 +224,7 @@ public class MessageResponder : IMessageResponder
         if (request != null) 
             return request;
         
-        Console.WriteLine("Pending request is null.");
+        _logger.LogWarning("Pending request is null. Cannot handle message. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
         return null;
     }
     

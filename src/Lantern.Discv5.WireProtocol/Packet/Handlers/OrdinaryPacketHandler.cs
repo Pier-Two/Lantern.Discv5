@@ -5,11 +5,11 @@ using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
-using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
@@ -17,29 +17,31 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 {
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
+    private readonly ILogger<OrdinaryPacketHandler> _logger;
 
     public OrdinaryPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager,
-        ITableManager tableManager, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder)
+        IRoutingTable routingTable, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _messageResponder = messageResponder;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
+        _logger = loggerFactory.CreateLogger<OrdinaryPacketHandler>();
     }
 
     public override PacketType PacketType => PacketType.Ordinary;
 
     public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
     {
-        Console.Write("\nReceived ORDINARY packet from " + returnedResult.RemoteEndPoint.Address + " => ");
+        _logger.LogInformation("Received ORDINARY packet from {Address}", returnedResult.RemoteEndPoint.Address);
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
-        var nodeEntry = _tableManager.GetNodeEntry(packet.StaticHeader.AuthData);
+        var nodeEntry = _routingTable.GetNodeEntry(packet.StaticHeader.AuthData);
         
         if(nodeEntry == null)
         {
@@ -63,7 +65,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
             return;
         }
         
-        Console.Write("Successfully decrypted ORDINARY packet" + " => ");
+        _logger.LogInformation("Successfully decrypted ORDINARY packet");
                     
         var response = _messageResponder.HandleMessage(decryptedMessage, returnedResult.RemoteEndPoint);
 
@@ -76,7 +78,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
     private async Task SendWhoAreYouPacketWithoutEnrAsync(PacketProcessor packet, IPEndPoint destEndPoint, IUdpConnection connection)
     {
-        Console.Write("Could not find record in the table for node: " + Convert.ToHexString(packet.StaticHeader.AuthData));
+        _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(packet.StaticHeader.AuthData));
         
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
         var whoAreYouPacket = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(packet.StaticHeader.AuthData, packet.StaticHeader.Nonce, maskingIv);
@@ -87,15 +89,15 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         session!.SetChallengeData(maskingIv, whoAreYouPacket.Item2.GetHeader()); 
         
         await connection.SendAsync(whoAreYouPacket.Item1, destEndPoint);
-        Console.Write(" => Sent WHOAREYOU packet.\n");
+        _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
 
     private async Task SendWhoAreYouPacketAsync(PacketProcessor packet, EnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
     {
-        Console.WriteLine("Cannot decrypt ORDINARY packet. No sessionMain found.");
+        _logger.LogWarning("Cannot decrypt ORDINARY packet. No sessionMain found");
         
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(packet.StaticHeader.AuthData, packet.StaticHeader.Nonce, destNodeRecord!, maskingIv);
+        var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(packet.StaticHeader.AuthData, packet.StaticHeader.Nonce, destNodeRecord, maskingIv);
        
         _sessionManager.CreateSession(SessionType.Recipient, packet.StaticHeader.AuthData, destEndPoint);
         
@@ -103,7 +105,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         session!.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());
 
         await connection.SendAsync(constructedWhoAreYouPacket.Item1, destEndPoint);
-        Console.WriteLine("Sent WHOAREYOU packet.");
+        _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
     
     private async Task SendResponseToOrdinaryPacketAsync(PacketProcessor packet, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
@@ -114,6 +116,6 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
 
         await connection.SendAsync(finalPacket, destEndPoint);
-        Console.Write(" => Sent response to ORDINARY packet.\n");
+        _logger.LogInformation("Sent response to ORDINARY packet to {RemoteEndPoint}", destEndPoint);
     }
 }

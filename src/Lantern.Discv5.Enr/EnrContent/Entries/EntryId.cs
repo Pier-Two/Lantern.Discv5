@@ -1,5 +1,4 @@
 using System.Text;
-using Lantern.Discv5.Enr.EnrContent.Interfaces;
 using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.EnrContent.Entries;

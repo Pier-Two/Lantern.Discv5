@@ -8,9 +8,6 @@ public class ConnectionOptions
     public IPAddress LocalIpAddress { get; }
     public IPAddress? ExternalIpAddress { get; }
     public int TimeoutMilliseconds { get; }
-    public int LookupIntervalMilliseconds { get; }
-    public int PingIntervalMilliseconds { get; }
-    public int RefreshIntervalMilliseconds { get; }
     public int MaxRetryCount { get; }
 
     private ConnectionOptions(Builder builder)
@@ -19,9 +16,6 @@ public class ConnectionOptions
         LocalIpAddress = builder.LocalIpAddress;
         ExternalIpAddress = builder.ExternalIpAddress;
         TimeoutMilliseconds = builder.TimeoutMilliseconds;
-        LookupIntervalMilliseconds = builder.LookupIntervalMilliseconds;
-        PingIntervalMilliseconds = builder.PingIntervalMilliseconds;
-        RefreshIntervalMilliseconds = builder.RefreshIntervalMilliseconds;
         MaxRetryCount = builder.MaxRetryCount;
     }
 
@@ -31,9 +25,6 @@ public class ConnectionOptions
         public IPAddress LocalIpAddress { get; private set; } = ConnectionUtility.GetLocalIpAddress();
         public IPAddress? ExternalIpAddress { get; private set; }
         public int TimeoutMilliseconds { get; private set; } = 2000;
-        public int LookupIntervalMilliseconds { get; private set; } = 3000;
-        public int PingIntervalMilliseconds { get; private set; } = 300000;
-        public int RefreshIntervalMilliseconds { get; private set; } = 5000;
         public int MaxRetryCount { get; private set; } = 3;
 
         public Builder WithPort(int port)
@@ -65,24 +56,6 @@ public class ConnectionOptions
         public Builder WithTimeoutMilliseconds(int timeoutMilliseconds)
         {
             TimeoutMilliseconds = timeoutMilliseconds;
-            return this;
-        }
-
-        public Builder WithLookupIntervalMilliseconds(int lookupIntervalMilliseconds)
-        {
-            LookupIntervalMilliseconds = lookupIntervalMilliseconds;
-            return this;
-        }
-        
-        public Builder WithPingIntervalMilliseconds(int pingIntervalMilliseconds)
-        {
-            PingIntervalMilliseconds = pingIntervalMilliseconds;
-            return this;
-        }
-        
-        public Builder WithRefreshIntervalMilliseconds(int refreshIntervalMilliseconds)
-        {
-            RefreshIntervalMilliseconds = refreshIntervalMilliseconds;
             return this;
         }
 

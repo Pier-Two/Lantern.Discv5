@@ -4,8 +4,8 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionCacheKey : IEquatable<SessionCacheKey>
 {
-    public byte[] NodeId { get; }
-    public IPEndPoint EndPoint { get; }
+    private byte[] NodeId { get; }
+    private IPEndPoint EndPoint { get; }
 
     public SessionCacheKey(byte[] nodeId, IPEndPoint endPoint)
     {

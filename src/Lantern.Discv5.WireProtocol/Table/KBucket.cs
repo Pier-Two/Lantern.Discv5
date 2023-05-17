@@ -113,5 +113,4 @@ public class KBucket
         _nodes.RemoveFirst();
         _nodes.AddLast(leastRecentlySeenNode);
     }
-
 }

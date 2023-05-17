@@ -19,7 +19,6 @@ public class PendingRequests : IPendingRequests
             return true;
         }
         
-        Console.WriteLine("Request already exists in pending requests list.");
         return false;
     }
     
@@ -34,6 +33,11 @@ public class PendingRequests : IPendingRequests
         return request;
     }
     
+    public List<PendingRequest> GetPendingRequests()
+    {
+        return _pendingRequests.Values.ToList();
+    }
+
     public bool RemovePendingRequest(byte[] requestId)
     {
         if (ContainsPendingRequest(requestId))
@@ -42,7 +46,6 @@ public class PendingRequests : IPendingRequests
             return true;
         }
         
-        Console.WriteLine("Request does not exist in pending requests list.");
         return false;
     }
     

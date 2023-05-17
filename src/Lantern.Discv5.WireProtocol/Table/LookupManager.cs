@@ -10,6 +10,7 @@ using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
@@ -17,31 +18,33 @@ public class LookupManager : ILookupManager
 {
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
-    private readonly ITableManager _tableManager;
+    private readonly IRoutingTable _routingTable;
     private readonly IUdpConnection _udpConnection;
     private readonly IMessageRequester _messageRequester;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ConcurrentBag<NodeTableEntry> _receivedNodes = new();
+    private readonly ILogger<LookupManager> _logger;
     private readonly int _concurrency;
     private readonly object _nodeLock = new();
 
     public LookupManager(IIdentityManager identityManager, ISessionManager sessionManager,
-        IMessageRequester messageRequester, IUdpConnection udpConnection, ITableManager tableManager, IPacketBuilder packetBuilder,
-        int concurrency = 3)
+        IMessageRequester messageRequester, IUdpConnection udpConnection, IRoutingTable routingTable, IPacketBuilder packetBuilder,
+        ILoggerFactory loggerFactory, int concurrency = 3)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
-        _tableManager = tableManager;
+        _routingTable = routingTable;
         _packetBuilder = packetBuilder;
         _concurrency = concurrency;
+        _logger = loggerFactory.CreateLogger<LookupManager>();
     }
 
     public async Task<List<NodeTableEntry>> PerformLookup(byte[] targetNodeId, int numberOfPaths = 3)
     {
         var pathQueries = new ConcurrentBag<Task<List<NodeTableEntry>>>();
-        var initialNodes = _tableManager.GetInitialNodesForLookup(targetNodeId).ToList();
+        var initialNodes = _routingTable.GetInitialNodesForLookup(targetNodeId).ToList();
         var pathBuckets = PartitionInitialNodes(initialNodes, numberOfPaths);
 
         foreach (var pathBucket in pathBuckets)
@@ -63,22 +66,6 @@ public class LookupManager : ILookupManager
             .ToList();
     }
 
-    private static List<List<NodeTableEntry>> PartitionInitialNodes(IReadOnlyList<NodeTableEntry> initialNodes, int numberOfPaths)
-    {
-        var pathBuckets = new List<List<NodeTableEntry>>(numberOfPaths);
-        for (var i = 0; i < numberOfPaths; i++)
-        {
-            pathBuckets.Add(new List<NodeTableEntry>());
-        }
-
-        for (var i = 0; i < initialNodes.Count; i++)
-        {
-            pathBuckets[i % numberOfPaths].Add(initialNodes[i]);
-        }
-
-        return pathBuckets;
-    }
-
     private async Task<List<NodeTableEntry>> PerformLookupForPath(byte[] targetNodeId, List<NodeTableEntry> pathBucket)
     {
         var closestNodes = new ConcurrentBag<NodeTableEntry>();
@@ -93,7 +80,7 @@ public class LookupManager : ILookupManager
             pathQueriedNodes.Add(node);
         }
 
-        while (pendingQueries.Count > 0)
+        while (!pendingQueries.IsEmpty)
         {
             var query = await Task.WhenAny(pendingQueries);
             pendingQueries.TryDequeue(out _);
@@ -173,7 +160,7 @@ public class LookupManager : ILookupManager
 
         if (message == null)
         {
-            Console.WriteLine("Unable to construct PING message. Cannot send PING packet.");
+            _logger.LogWarning("Unable to construct {MessageType} message. Cannot send packet", messageType);
             return;
         }
         
@@ -181,7 +168,7 @@ public class LookupManager : ILookupManager
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
         
         await _udpConnection.SendAsync(finalPacket, destEndPoint);
-        Console.WriteLine("Sent FINDNODES request to " + destEndPoint);
+        _logger.LogInformation("Sent {MessageType} request to {Destination}", messageType, destEndPoint);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
@@ -193,6 +180,22 @@ public class LookupManager : ILookupManager
             
         var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId, packetNonce, maskingIv);
         await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
-        Console.WriteLine("Sent RANDOM packet to initiate handshake with " + destEndPoint);
+        _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
+    }
+    
+    private static List<List<NodeTableEntry>> PartitionInitialNodes(IReadOnlyList<NodeTableEntry> initialNodes, int numberOfPaths)
+    {
+        var pathBuckets = new List<List<NodeTableEntry>>(numberOfPaths);
+        for (var i = 0; i < numberOfPaths; i++)
+        {
+            pathBuckets.Add(new List<NodeTableEntry>());
+        }
+
+        for (var i = 0; i < initialNodes.Count; i++)
+        {
+            pathBuckets[i % numberOfPaths].Add(initialNodes[i]);
+        }
+
+        return pathBuckets;
     }
 }

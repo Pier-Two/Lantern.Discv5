@@ -1,4 +1,4 @@
-namespace Lantern.Discv5.Enr.EnrContent.Interfaces;
+namespace Lantern.Discv5.Enr.EnrContent;
 
 public interface IContentEntry
 {

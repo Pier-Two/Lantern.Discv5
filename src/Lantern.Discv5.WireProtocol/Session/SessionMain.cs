@@ -6,6 +6,7 @@ using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
@@ -15,18 +16,20 @@ public class SessionMain
     private readonly IAesUtility _aesUtility;
     private readonly ISessionCrypto _sessionCrypto;
     private readonly SessionType _sessionType;
+    private readonly ILogger<SessionMain> _logger;
     private byte[]? _challengeData;
     private SharedKeys? _currentSharedKeys;
     private int _messageCount;
 
     public bool IsEstablished { get; private set; }
     
-    public SessionMain(ISessionKeys sessionKeys, IAesUtility aesUtility, ISessionCrypto sessionCrypto, SessionType sessionType)
+    public SessionMain(ISessionKeys sessionKeys, IAesUtility aesUtility, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory, SessionType sessionType)
     {
         _sessionKeys = sessionKeys;
         _aesUtility = aesUtility;
         _sessionCrypto = sessionCrypto;
         _sessionType = sessionType;
+        _logger = loggerFactory.CreateLogger<SessionMain>();
         _messageCount = 0;
     }
 
@@ -45,7 +48,7 @@ public class SessionMain
     {
         if (_challengeData == null)
         {
-            Console.WriteLine("Challenge data is not set. Cannot generate id signature.");
+            _logger.LogError("Challenge data is not set. Cannot generate id signature");
             return null;
         }
         
@@ -56,7 +59,7 @@ public class SessionMain
     {
         if (_challengeData == null)
         {
-            Console.WriteLine("Challenge data is not set. Cannot generate id signature.");
+            _logger.LogError("Challenge data is not set. Cannot verify id signature");
             return false;
         }
         
@@ -72,13 +75,14 @@ public class SessionMain
         
         if(_challengeData == null)
         {
-            Console.WriteLine("Challenge data is not set. Cannot encrypt message.");
+            _logger.LogError("Challenge data is not set. Cannot encrypt message");
             return null;
         }
 
         _currentSharedKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, selfNodeId, destNodeId, _challengeData);
         _messageCount++;
         
+        _logger.LogDebug("Encrypting message with new keys");
         return _aesUtility.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
 
@@ -88,18 +92,20 @@ public class SessionMain
         
         if (handshakePacket.SrcId == null)
         {
-            Console.WriteLine("Handshake packet does not contain a source node id. Cannot decrypt packet.");
+            _logger.LogError("Handshake packet does not contain a source node id. Cannot decrypt packet");
             return null;
         }
         
         if(_challengeData == null)
         {
-            Console.WriteLine("Challenge data is not set. Cannot decrypt message.");
+            _logger.LogError("Challenge data is not set. Cannot decrypt message");
             return null;
         }
         
         var sharedKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId, selfNodeId, _challengeData);
         var messageAd = ByteArrayUtils.JoinByteArrays(packet.MaskingIv, packet.StaticHeader.GetHeader());
+        
+        _logger.LogDebug("Decrypting message with new keys");
         var decryptedResult = _aesUtility.AesGcmDecrypt(sharedKeys.InitiatorKey, packet.StaticHeader.Nonce, packet.EncryptedMessage, messageAd);
         
         _currentSharedKeys = sharedKeys;
@@ -111,12 +117,14 @@ public class SessionMain
     {
         if(_currentSharedKeys == null)
         {
-            Console.WriteLine("Session keys are not available. Cannot encrypt message.");
+            _logger.LogError("Session keys are not available. Cannot encrypt message");
             return null;
         }
         
         var encryptionKey = _sessionType == SessionType.Initiator ? _currentSharedKeys.InitiatorKey : _currentSharedKeys.RecipientKey;
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
+        
+        _logger.LogDebug("Encrypting message");
         var encryptedMessage = _aesUtility.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
         
         _messageCount++;
@@ -128,17 +136,20 @@ public class SessionMain
     {
         if(_currentSharedKeys == null)
         {
-            Console.WriteLine("Session keys are not available. Cannot decrypt message.");
+            _logger.LogError("Session keys are not available. Cannot decrypt message");
             return null;
         }
         
         var messageAd = ByteArrayUtils.JoinByteArrays(packet.MaskingIv, packet.StaticHeader.GetHeader());
         var decryptionKey = _sessionType == SessionType.Initiator ? _currentSharedKeys.RecipientKey : _currentSharedKeys.InitiatorKey;
+        
+        _logger.LogDebug("Decrypting message");
         var decryptedMessage = _aesUtility.AesGcmDecrypt(decryptionKey, packet.StaticHeader.Nonce, packet.EncryptedMessage, messageAd);
 
         if (!IsEstablished)
         {
             IsEstablished = true;
+            _logger.LogInformation("Session established");
         }
 
         return decryptedMessage;
