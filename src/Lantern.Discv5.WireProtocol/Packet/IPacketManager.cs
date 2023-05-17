@@ -5,10 +5,8 @@ using Lantern.Discv5.WireProtocol.Message;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
-public interface IPacketService
+public interface IPacketManager
 {
-    Task InitialiseDiscoveryAsync();
-    
     Task HandleReceivedPacket(UdpReceiveResult returnedResult);
 
     Task PingNodeAsync();

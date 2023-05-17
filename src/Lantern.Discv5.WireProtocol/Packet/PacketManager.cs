@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
-public class PacketService : IPacketService
+public class PacketManager : IPacketManager
 {
     private readonly IPacketHandlerFactory _packetHandlerFactory;
     private readonly IIdentityManager _identityManager;
@@ -25,14 +25,13 @@ public class PacketService : IPacketService
     private readonly IMessageRequester _messageRequester;
     private readonly IPendingRequests _pendingRequests;
     private readonly IUdpConnection _udpConnection;
-    private readonly ILookupManager _lookupManager;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
-    private readonly ILogger<PacketService> _logger;
+    private readonly ILogger<PacketManager> _logger;
 
-    public PacketService(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
+    public PacketManager(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
         ISessionManager sessionManager, IRoutingTable routingTable, IMessageRequester messageRequester,
-        IUdpConnection udpConnection, ILookupManager lookupManager, IAesUtility aesUtility, IPacketBuilder packetBuilder, 
+        IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, 
         ILoggerFactory loggerFactory, IPendingRequests pendingRequests)
     {
         _packetHandlerFactory = packetHandlerFactory;
@@ -41,34 +40,12 @@ public class PacketService : IPacketService
         _routingTable = routingTable;
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
-        _lookupManager = lookupManager;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
         _pendingRequests = pendingRequests;
-        _logger = loggerFactory.CreateLogger<PacketService>();
+        _logger = loggerFactory.CreateLogger<PacketManager>();
     }
-
-    public async Task InitialiseDiscoveryAsync()
-    {
-        if (_routingTable.GetTotalEntriesCount() == 0)
-        {
-            _logger.LogInformation("Initialising from bootstrap ENRs");
-            var bootstrapEnrs = _routingTable.GetBootstrapEnrs();
-
-            foreach (var bootstrapEnr in bootstrapEnrs)
-            {
-                try
-                {
-                    await SendPacket(MessageType.Ping, bootstrapEnr);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error sending packet to bootstrap ENR: {BootstrapEnr}", bootstrapEnr);
-                }
-            }
-        }
-    }
-
+    
     public async Task PingNodeAsync()
     {
         if (_routingTable.GetTotalEntriesCount() > 0)
@@ -77,34 +54,6 @@ public class PacketService : IPacketService
             var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
             var nodeEntry = _routingTable.GetInitialNodesForLookup(targetNodeId).First();
             await SendPacket(MessageType.Ping, nodeEntry.Record);
-        }
-    }
-    
-    public async Task PerformLookup(byte[] targetNodeId)
-    {
-        _logger.LogInformation("Performing lookup...");
-        var closestNodes = await _lookupManager.PerformLookup(targetNodeId);
-        _logger.LogInformation("Lookup completed. Closest nodes found:");
-        
-        foreach (var node in closestNodes)
-        {
-            _logger.LogInformation("Node ID: {NodeId}", Convert.ToHexString(node.Id));
-        }
-    }
-
-    private async Task PerformDiscovery()
-    {
-        _logger.LogInformation("Performing discovery...");
-        var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-        var initialNodesForLookup = _routingTable.GetInitialNodesForLookup(targetNodeId);
-        
-        // Establish sessions with initial nodes
-        foreach (var nodeEntry in initialNodesForLookup)
-        {
-            if (!nodeEntry.IsQueried)
-            {
-                await SendPacket(MessageType.FindNode, nodeEntry.Record);
-            }
         }
     }
 
@@ -130,7 +79,7 @@ public class PacketService : IPacketService
         await packetHandler.HandlePacket(_udpConnection, returnedResult);
     }
 
-    private async Task CheckPendingRequests()
+    private async Task CheckPendingRequests(CancellationToken token)
     {
         // asynchronously check pending requests
         var currentRequests = _pendingRequests.GetPendingRequests();
@@ -145,7 +94,6 @@ public class PacketService : IPacketService
                 // What else should be done??
             }
         }
-
     }
 
     private async Task SendOrdinaryPacketAsync(MessageType messageType, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)

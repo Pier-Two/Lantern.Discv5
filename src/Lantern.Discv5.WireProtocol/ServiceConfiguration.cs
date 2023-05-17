@@ -1,4 +1,5 @@
 using Lantern.Discv5.WireProtocol.Connection;
+using Lantern.Discv5.WireProtocol.Discovery;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -20,17 +21,19 @@ public static class ServiceConfiguration
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
 
-        services.AddSingleton<ILoggerFactory>(loggerFactory);
-        services.AddSingleton<IRoutingTable, RoutingTable>();
+        services.AddSingleton(loggerFactory);
+
         services.AddSingleton<ILookupManager, LookupManager>();
-        services.AddSingleton<IPacketService, PacketService>();
+        services.AddSingleton<IPacketManager, PacketManager>();
+        services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
-        services.AddSingleton<ConnectionService>();
+        services.AddSingleton<IDiscoveryManager, DiscoveryManager>();
+        services.AddSingleton<IConnectionManager, ConnectionManager>();
+        services.AddSingleton<IRoutingTable, RoutingTable>();
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IAesUtility, AesUtility>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
-        services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
         services.AddSingleton<IPendingRequests, PendingRequests>();

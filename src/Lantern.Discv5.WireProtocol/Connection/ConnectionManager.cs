@@ -3,24 +3,24 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public sealed class ConnectionService : IConnectionService
+public sealed class ConnectionManager : IConnectionManager
 {
-    private readonly IPacketService _packetService;
+    private readonly IPacketManager _packetManager;
     private readonly IUdpConnection _connection;
     private readonly CancellationTokenSource _shutdownCts;
-    private readonly ILogger<ConnectionService> _logger;
+    private readonly ILogger<ConnectionManager> _logger;
     private Task? _listenTask;
     private Task? _handleTask;
 
-    public ConnectionService(IPacketService packetService, IUdpConnection connection, ILoggerFactory loggerFactory)
+    public ConnectionManager(IPacketManager packetManager, IUdpConnection connection, ILoggerFactory loggerFactory)
     {
-        _packetService = packetService;
+        _packetManager = packetManager;
         _connection = connection;
         _shutdownCts = new CancellationTokenSource();
-        _logger = loggerFactory.CreateLogger<ConnectionService>();
+        _logger = loggerFactory.CreateLogger<ConnectionManager>();
     }
 
-    public async Task StartConnectionServiceAsync(CancellationToken token = default)
+    public async Task StartConnectionManagerAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting ConnectionServicesAsync");
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _shutdownCts.Token);
@@ -38,7 +38,7 @@ public sealed class ConnectionService : IConnectionService
         }
     }
 
-    public async Task StopConnectionServiceAsync(CancellationToken token = default)
+    public async Task StopConnectionManagerAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Stopping ConnectionServicesAsync");
         _shutdownCts.Cancel();
@@ -68,7 +68,7 @@ public sealed class ConnectionService : IConnectionService
         {
             await foreach (var packet in _connection.ReadMessagesAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                await _packetService.HandleReceivedPacket(packet).ConfigureAwait(false);
+                await _packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _shutdownCts.IsCancellationRequested)

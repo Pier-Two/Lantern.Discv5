@@ -71,7 +71,7 @@ public class Discv5ProtocolTests
     [Test]
     public async Task Test()
     { 
-        await _discv5Protocol.StartDiscoveryAsync(_serviceCts.Token);
-        await _discv5Protocol.StopDiscoveryAsync(_serviceCts.Token);
+        await _discv5Protocol.StartProtocolAsync(_serviceCts.Token);
+        await _discv5Protocol.StopProtocolAsync(_serviceCts.Token);
     }
 } 

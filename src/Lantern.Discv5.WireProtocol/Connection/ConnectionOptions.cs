@@ -8,7 +8,7 @@ public class ConnectionOptions
     public IPAddress LocalIpAddress { get; }
     public IPAddress? ExternalIpAddress { get; }
     public int TimeoutMilliseconds { get; }
-    public int MaxRetryCount { get; }
+    public int MaxRetryCount { get; } // move to table options
 
     private ConnectionOptions(Builder builder)
     {
