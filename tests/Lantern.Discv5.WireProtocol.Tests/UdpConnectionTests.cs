@@ -20,6 +20,7 @@ public class UdpConnectionTests
     [SetUp]
     public void Setup()
     {
+        // Use random function to generate ports
         _senderOptions = new ConnectionOptions.Builder()
             .WithPort(port: 1234)
             .Build();

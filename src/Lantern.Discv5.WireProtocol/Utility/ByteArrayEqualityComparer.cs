@@ -4,16 +4,16 @@ namespace Lantern.Discv5.WireProtocol.Utility;
 
 public static class ByteArrayEqualityComparer
 {
-    public static readonly EqualityComparer<byte[]> Instance = new ByteArrayEqualityComparerImplementation();
+    public static readonly IEqualityComparer<byte[]> Instance = new ByteArrayEqualityComparerImplementation();
 
-    private class ByteArrayEqualityComparerImplementation : EqualityComparer<byte[]>
+    private class ByteArrayEqualityComparerImplementation : IEqualityComparer<byte[]>
     {
-        public override bool Equals(byte[]? x, byte[]? y)
+        public bool Equals(byte[]? x, byte[]? y)
         {
-            return x.SequenceEqual(y);
+            return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
         }
 
-        public override int GetHashCode(byte[] obj)
+        public int GetHashCode(byte[] obj)
         {
             return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
         }

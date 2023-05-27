@@ -56,17 +56,29 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         }
         
         var session = GenerateOrUpdateSession(packet, destNodeId, returnedResult.RemoteEndPoint);
-        var message = _messageRequester.ConstructMessage(MessageType.Ping, destNodeId);
+        
+        if(session == null)
+        {
+            return;
+        }
+
+        var message = CreateReplyMessage(destNodeId);
         
         if(message == null)
         {
-            _logger.LogWarning("Failed to construct PING message");
+            _logger.LogWarning("Failed to construct message in response to WHOAREYOU packet");
             return;
         }
         
-        var idSignatureNew = session.GenerateIdSignature(destNodeId);
+        var idSignature = session.GenerateIdSignature(destNodeId);
+        
+        if(idSignature == null)
+        {
+            return;
+        }
+        
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignatureNew, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
+        var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignature, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
         var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
         
@@ -80,7 +92,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
         if (session == null)
         {
-            _logger.LogInformation("Creating new session with node: {Node}", destEndPoint);
+            _logger.LogDebug("Creating new session with node: {Node}", destEndPoint);
             session = _sessionManager.CreateSession(SessionType.Initiator, destNodeId, destEndPoint);
         }
 
@@ -92,5 +104,22 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         _logger.LogWarning("Failed to create or update session with node: {Node}", destEndPoint);
         return null;
+    }
+
+    private byte[]? CreateReplyMessage(byte[] destNodeId)
+    {
+        var cachedRequest = _messageRequester.GetCachedRequest(destNodeId);
+        
+        if(cachedRequest == null)
+        {
+            _logger.LogWarning("Failed to get cached request for node id: {NodeId}", Convert.ToHexString(destNodeId));
+            return null;
+        }
+        
+        _messageRequester.RemoveCachedRequest(destNodeId);
+        
+        _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
+        
+        return _messageRequester.CreateFromCachedRequest(cachedRequest);
     }
 }

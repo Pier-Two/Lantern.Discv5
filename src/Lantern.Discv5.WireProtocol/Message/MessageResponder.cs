@@ -13,17 +13,17 @@ public class MessageResponder : IMessageResponder
     private const int RecordLimit = 16;
     private readonly IIdentityManager _identityManager;
     private readonly IRoutingTable _routingTable;
-    private readonly IPendingRequests _pendingRequests;
+    private readonly IRequestManager _requestManager;
     private readonly ILookupManager _lookupManager;
     private readonly ITalkResponder? _talkResponder;
     private readonly IMessageDecoder _messageDecoder;
     private readonly ILogger<MessageResponder> _logger;
 
-    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IPendingRequests pendingRequests, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkResponder? talkResponder = null)
+    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IRequestManager requestManager, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkResponder? talkResponder = null)
     {
         _identityManager = identityManager;
         _routingTable = routingTable;
-        _pendingRequests = pendingRequests;
+        _requestManager = requestManager;
         _lookupManager = lookupManager;
         _messageDecoder = messageDecoder;
         _talkResponder = talkResponder;
@@ -52,6 +52,7 @@ public class MessageResponder : IMessageResponder
         var decodedMessage = _messageDecoder.DecodeMessage(message);
         var localEnrSeq = _identityManager.Record.SequenceNumber;
         var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
+        
         return pongMessage.EncodeMessage();
     }
     
@@ -59,35 +60,29 @@ public class MessageResponder : IMessageResponder
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
-        var result = _pendingRequests.ContainsPendingRequest(decodedMessage.RequestId);
-        
-        if (result == false)
+        var pendingRequest = GetPendingRequest(decodedMessage);
+
+        if (pendingRequest == null)
         {
-            _logger.LogWarning("Received pong message with unknown request id. Request id: {RequestId}",Convert.ToHexString(decodedMessage.RequestId));
             return null;
         }
 
-        var pendingRequest = ValidateRequest(decodedMessage);
-        
-        if(pendingRequest == null)
-            return null;
-        
         var nodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
 
         if (nodeEntry == null)
         {
-            _logger.LogWarning("ENR record is not known. Cannot handle PONG message from node. ENR: {Record}", Convert.ToHexString(pendingRequest.NodeId));
+            _logger.LogWarning("ENR record is not known. Cannot handle PONG message from node. Node ID: {NodeId}", Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
         
         var enrRecord = nodeEntry.Record;
-        
+        var nodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord);
+
+        // This condition will actually need to be removed because bootnodes will be added to the routing table first and then pinged.
         if (nodeEntry.IsLive == false)
         {
             _routingTable.UpdateTable(enrRecord);
-            _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
-
-            _logger.LogInformation("Added bootstrap enr record to table. ENR: {Record}",Convert.ToHexString(new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord)));
+            _routingTable.MarkNodeAsLive(nodeId);
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
@@ -98,10 +93,12 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
-
-        if (decodedMessage.EnrSeq <= (int)enrRecord!.SequenceNumber) 
+        _routingTable.MarkNodeAsLive(nodeId);
+        
+        if (decodedMessage.EnrSeq <= (int)enrRecord.SequenceNumber)
+        {
             return null;
+        }
         
         var distance = new []{ 0 };
         var findNodeMessage = new FindNodeMessage(distance);
@@ -128,13 +125,24 @@ public class MessageResponder : IMessageResponder
         if(decodedMessage.Enrs.Length == 0)
             return null;
 
-        var pendingRequest = ValidateRequest(decodedMessage);
-        
-        if(pendingRequest == null)
+        var pendingRequest = GetPendingRequest(decodedMessage);
+
+        if (pendingRequest == null)
+        {
+            return null; 
+        }
+
+        if (pendingRequest.ResponsesReceived > decodedMessage.Total)
+        {
+            _logger.LogWarning("Received more responses than expected from node {NodeId}. Ignoring response", Convert.ToHexString(pendingRequest.NodeId));
             return null;
-        
+        }
+  
+
+        var senderNodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var identityVerifier = new IdentitySchemeV4Verifier();
+        var receivedNodes = new List<NodeTableEntry>();
         
         foreach (var enr in decodedMessage.Enrs)
         {
@@ -147,15 +155,31 @@ public class MessageResponder : IMessageResponder
                 if (distance == distanceToNode)
                 {
                     _routingTable.UpdateTable(enr);
+                    var nodeEntry = _routingTable.GetNodeEntry(nodeId);
+
+                    if (nodeEntry != null)
+                    {
+                        receivedNodes.Add(nodeEntry);
+                    }
+                    
                     break;
                 }
             }
         }
-
-        var nodes = decodedMessage.Enrs.Select(x => new NodeTableEntry(x, new IdentitySchemeV4Verifier())).ToList();
-        _lookupManager.ReceiveNodesResponse(nodes);
+        
+        if (senderNodeEntry is { IsLive: false })
+        {
+            _routingTable.MarkNodeAsLive(senderNodeEntry.Id);
+        }
+        
         _routingTable.MarkNodeAsQueried(pendingRequest.NodeId);
-
+        
+        var continueLookup = async () =>
+        {
+            await _lookupManager.ContinueLookup(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
+        };
+        
+        continueLookup.Invoke();
         return null;
     }
     
@@ -169,18 +193,13 @@ public class MessageResponder : IMessageResponder
         
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
-        var pendingRequest = ValidateRequest(decodedMessage);
+        var pendingRequest = GetPendingRequest(decodedMessage);
         
         if(pendingRequest == null)
             return null;
         
-        var result = _talkResponder.RespondToRequest(decodedMessage.Protocol, decodedMessage.Request);
+        _talkResponder.RespondToRequest(decodedMessage.Protocol, decodedMessage.Request);
 
-        if (result)
-        {
-            _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
-        }
-        
         return null;
     }
     
@@ -194,24 +213,19 @@ public class MessageResponder : IMessageResponder
 
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
         var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
-        var pendingRequest = ValidateRequest(decodedMessage);
+        var pendingRequest = GetPendingRequest(decodedMessage);
         
         if(pendingRequest == null)
             return null;
 
-        var result  = _talkResponder.HandleResponse(decodedMessage.Response);
-        
-        if (result)
-        {
-            _pendingRequests.RemovePendingRequest(decodedMessage.RequestId);
-        }
-        
+        _talkResponder.HandleResponse(decodedMessage.Response);
+
         return null;
     }
     
-    private PendingRequest? ValidateRequest(Message message)
+    private PendingRequest? GetPendingRequest(Message message)
     {
-        var result = _pendingRequests.ContainsPendingRequest(message.RequestId);
+        var result = _requestManager.ContainsPendingRequest(message.RequestId);
         
         if (result == false)
         {
@@ -219,13 +233,7 @@ public class MessageResponder : IMessageResponder
             return null;
         }
 
-        var request = _pendingRequests.GetPendingRequest(message.RequestId);
-
-        if (request != null) 
-            return request;
-        
-        _logger.LogWarning("Pending request is null. Cannot handle message. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
-        return null;
+        _requestManager.MarkRequestAsFulfilled(message.RequestId);
+        return _requestManager.GetPendingRequest(message.RequestId);
     }
-    
 }

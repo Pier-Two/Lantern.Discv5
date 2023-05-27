@@ -1,4 +1,5 @@
 using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
@@ -7,17 +8,17 @@ public class TableManager : ITableManager
 {
     private readonly IPacketManager _packetManager;
     private readonly IRoutingTable _routingTable;
-    private readonly TableOptions _options;
+    private readonly TableOptions _tableOptions;
     private readonly ILogger<TableManager> _logger;
     private readonly CancellationTokenSource _shutdownCts;
     private Task? _refreshTask;
     private Task? _pingTask;
-
-    public TableManager(IPacketManager packetManager, IRoutingTable routingTable, TableOptions options, ILoggerFactory loggerFactory)
+    
+    public TableManager(IPacketManager packetManager, IRoutingTable routingTable, ILoggerFactory loggerFactory, TableOptions tableOptions)
     {
         _packetManager = packetManager;
         _routingTable = routingTable;
-        _options = options;
+        _tableOptions = tableOptions;
         _logger = loggerFactory.CreateLogger<TableManager>();
         _shutdownCts = new CancellationTokenSource();
     }
@@ -32,7 +33,7 @@ public class TableManager : ITableManager
         {
             _refreshTask = RefreshBucketsAsync(linkedCts.Token);
             _pingTask = PingNodeAsync(linkedCts.Token);
-            
+
             await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
         }
         finally
@@ -68,7 +69,7 @@ public class TableManager : ITableManager
             while (!token.IsCancellationRequested)
             {
                 _routingTable.RefreshBuckets();
-                await Task.Delay(_options.RefreshIntervalMilliseconds, token)
+                await Task.Delay(_tableOptions.RefreshIntervalMilliseconds, token)
                     .ConfigureAwait(false);
             }
         }
@@ -92,9 +93,15 @@ public class TableManager : ITableManager
         {
             while (!token.IsCancellationRequested)
             {
-                await _packetManager.PingNodeAsync().ConfigureAwait(false);
-                await Task.Delay(_options.PingIntervalMilliseconds, token)
-                    .ConfigureAwait(false);
+                if (_routingTable.GetTotalEntriesCount() <= 0) 
+                    continue;
+                
+                await Task.Delay(_tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
+                
+                var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
+                var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).First();
+
+                await _packetManager.SendPingPacket(nodeEntry.Record);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
@@ -108,4 +115,6 @@ public class TableManager : ITableManager
         
         _logger.LogInformation("PingNodeAsync completed");
     }
+    
+    // Maybe move this to the RequestManager class. And rename RequestManager to PendingRequestManager
 }

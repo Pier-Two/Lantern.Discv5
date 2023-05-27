@@ -20,6 +20,6 @@ public class NodeTableEntry
     public bool IsQueried { get; set; }
     
     public bool IsLive { get; set; }
-
-    public int LivenessCounter { get; set; }
+    
+    public int FailureCounter { get; set; }
 }

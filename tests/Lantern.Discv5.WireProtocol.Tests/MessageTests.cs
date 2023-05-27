@@ -1,5 +1,4 @@
 using System.Net;
-using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;

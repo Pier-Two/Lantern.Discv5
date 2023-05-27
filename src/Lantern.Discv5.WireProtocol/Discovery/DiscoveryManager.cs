@@ -1,4 +1,3 @@
-using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -10,44 +9,41 @@ public class DiscoveryManager : IDiscoveryManager
 {
     private readonly IRoutingTable _routingTable;
     private readonly IPacketManager _packetManager;
+    private readonly ILookupManager _lookupManager;
     private readonly ILogger<DiscoveryManager> _logger;
     private readonly TableOptions _options;
     private readonly CancellationTokenSource _shutdownCts;
-    private Task? _discoveryTask;
+    private Task _initialiseTask;
+    private Task _discoveryTask;
     
-    public DiscoveryManager(IRoutingTable routingTable, IPacketManager packetManager, ILoggerFactory loggerFactory, TableOptions options)
+    public DiscoveryManager(IRoutingTable routingTable, IPacketManager packetManager, ILookupManager lookupManager, ILoggerFactory loggerFactory, TableOptions options)
     {
         _routingTable = routingTable;
         _packetManager = packetManager;
+        _lookupManager = lookupManager;
         _logger = loggerFactory.CreateLogger<DiscoveryManager>();
         _options = options;
         _shutdownCts = new CancellationTokenSource();
+        _initialiseTask = Task.CompletedTask;
+        _discoveryTask = Task.CompletedTask;
     }
     
     public async Task StartDiscoveryManagerAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting StartDiscoveryManagerAsync");
-        await InitialiseDiscoveryAsync().ConfigureAwait(false);
-        
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _shutdownCts.Token);
+
         try
         {
-            while (!token.IsCancellationRequested)
-            {
-                await PerformDiscoveryAsync(); 
-                await Task.Delay(_options.LookupIntervalMilliseconds, token)
-                    .ConfigureAwait(false);
-            }
+            _initialiseTask = InitialiseDiscoveryAsync();
+            _discoveryTask = DiscoverAsync(linkedCts.Token);
+
+            await Task.WhenAll(_initialiseTask, _discoveryTask).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
+        finally
         {
-            _logger.LogInformation("StartDiscoveryManagerAsync was canceled gracefully");
+            linkedCts.Dispose();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in StartDiscoveryManagerAsync");
-        }
-        
-        _logger.LogInformation("StartServiceAsync completed");
     }
     
     public async Task StopDiscoveryManagerAsync(CancellationToken token = default)
@@ -57,10 +53,7 @@ public class DiscoveryManager : IDiscoveryManager
         
         try
         {
-            if (_discoveryTask != null)
-            {
-                await _discoveryTask.ConfigureAwait(false);
-            }
+            await Task.WhenAll(_initialiseTask, _discoveryTask).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
         {
@@ -85,7 +78,7 @@ public class DiscoveryManager : IDiscoveryManager
             {
                 try
                 {
-                    await _packetManager.SendPacket(MessageType.Ping, bootstrapEnr);
+                    await _packetManager.SendPingPacket(bootstrapEnr);
                 }
                 catch (Exception ex)
                 {
@@ -95,19 +88,36 @@ public class DiscoveryManager : IDiscoveryManager
         }
     }
     
+    private async Task DiscoverAsync(CancellationToken token = default)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await PerformDiscoveryAsync(); 
+                await Task.Delay(_options.LookupIntervalMilliseconds, token)
+                    .ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
+        {
+            _logger.LogInformation("StartDiscoveryManagerAsync was canceled gracefully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in StartDiscoveryManagerAsync");
+        }
+        
+        _logger.LogInformation("StartServiceAsync completed");
+    }
+    
     private async Task PerformDiscoveryAsync()
     {
-        _logger.LogInformation("Performing discovery...");
-        var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-        var initialNodesForLookup = _routingTable.GetInitialNodesForLookup(targetNodeId);
-        
-        // Establish sessions with initial nodes
-        foreach (var nodeEntry in initialNodesForLookup)
+        if (_routingTable.GetTotalActiveNodesCount() > 0)
         {
-            if (!nodeEntry.IsQueried)
-            {
-                await _packetManager.SendPacket(MessageType.FindNode, nodeEntry.Record);
-            }
+            _logger.LogInformation("Performing discovery...");
+            var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
+            await _lookupManager.PerformLookup(targetNodeId);
         }
     }
 }

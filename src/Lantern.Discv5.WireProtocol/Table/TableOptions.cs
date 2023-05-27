@@ -8,7 +8,8 @@ public class TableOptions
     public int RefreshIntervalMilliseconds { get; }
     public int LookupIntervalMilliseconds { get; }
     public int MaxAllowedFailures { get; }
-    public int LookupConcurrency { get; }
+    public int ConcurrencyParameter { get; }
+    public int LookupParallelism { get; }
     public int MaxReplacementCacheSize { get; }
     public EnrRecord[] BootstrapEnrs { get; }
 
@@ -18,19 +19,21 @@ public class TableOptions
         RefreshIntervalMilliseconds = builder.RefreshIntervalMilliseconds;
         LookupIntervalMilliseconds = builder.LookupIntervalMilliseconds;
         MaxAllowedFailures = builder.MaxAllowedFailures;
-        LookupConcurrency = builder.LookupConcurrency;
+        ConcurrencyParameter = builder.ConcurrencyParameter;
+        LookupParallelism = builder.LookupParallelism;
         MaxReplacementCacheSize = builder.MaxReplacementCacheSize;
         BootstrapEnrs = builder.BootstrapEnrs;
     }
 
     public class Builder
     {
-        public int PingIntervalMilliseconds { get; private set; } = 300000;
+        public int PingIntervalMilliseconds { get; private set; } = 5000;
         public int RefreshIntervalMilliseconds { get; private set; } = 5000;
         public int LookupIntervalMilliseconds { get; private set; } = 3000;
         public int MaxAllowedFailures { get; private set; } = 3;
-        public int LookupConcurrency { get; private set; } = 3;
-        public int MaxReplacementCacheSize { get; private set; } = 3;
+        public int ConcurrencyParameter { get; private set; } = 3;
+        public int LookupParallelism { get; private set; } = 2;
+        public int MaxReplacementCacheSize { get; private set; } = 8;
         public EnrRecord[] BootstrapEnrs { get; private set; } = Array.Empty<EnrRecord>();
         
         public Builder WithPingIntervalMilliseconds(int pingIntervalMilliseconds)
@@ -57,9 +60,15 @@ public class TableOptions
             return this;
         }
         
-        public Builder WithLookupConcurrency(int lookupConcurrency)
+        public Builder WithConcurrencyParameter(int concurrencyParameter)
         {
-            LookupConcurrency = lookupConcurrency;
+            ConcurrencyParameter = concurrencyParameter;
+            return this;
+        }
+        
+        public Builder WithLookupParallelism(int lookupParallelism)
+        {
+            LookupParallelism = lookupParallelism; 
             return this;
         }
 

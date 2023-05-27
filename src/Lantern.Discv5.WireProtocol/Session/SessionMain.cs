@@ -149,7 +149,7 @@ public class SessionMain
         if (!IsEstablished)
         {
             IsEstablished = true;
-            _logger.LogInformation("Session established");
+            _logger.LogDebug("Session established");
         }
 
         return decryptedMessage;

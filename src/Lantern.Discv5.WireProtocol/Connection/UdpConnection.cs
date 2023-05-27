@@ -13,14 +13,13 @@ public class UdpConnection : IUdpConnection
 {
     private const int MaxPacketSize = 1280;
     private const int MinPacketSize = 63;
+    private const int UdpTimeoutMilliseconds = 2000;
     private readonly UdpClient _udpClient;
-    private readonly ConnectionOptions _connectionOptions;
     private readonly ILogger<UdpConnection> _logger;
     private readonly Channel<UdpReceiveResult> _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
 
     public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory)
     {
-        _connectionOptions = options;
         _logger = loggerFactory.CreateLogger<UdpConnection>(); // Use the loggerFactory to create the logger instance
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
         _logger.LogInformation("UdpConnection initialized on port {Port}", options.Port);
@@ -32,7 +31,7 @@ public class UdpConnection : IUdpConnection
         cancellationToken.ThrowIfCancellationRequested();
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(_connectionOptions.TimeoutMilliseconds);
+        cts.CancelAfter(UdpTimeoutMilliseconds);
 
         _logger.LogDebug("Sending packet to {Destination}", destination);
         await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
@@ -40,7 +39,7 @@ public class UdpConnection : IUdpConnection
     
     public async Task ListenAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting to listen for UDP packets");
+        _logger.LogInformation("Starting ListenAsync");
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -62,7 +61,7 @@ public class UdpConnection : IUdpConnection
         }
         finally
         {
-            _logger.LogInformation("Stopped listening for UDP packets");
+            _logger.LogInformation("Stopped ListenAsync");
             CompleteMessageChannel();
         }
     }
@@ -113,17 +112,17 @@ public class UdpConnection : IUdpConnection
     private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken cancellationToken = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(_connectionOptions.TimeoutMilliseconds);
+        cts.CancelAfter(UdpTimeoutMilliseconds);
 
         try
         {
             return await _udpClient.ReceiveAsync(cts.Token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException ex)
+        catch (OperationCanceledException)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                /*throw new OperationCanceledException("Receive operation was canceled", cancellationToken);*/
+                _logger.LogInformation("ReceiveAsync was cancelled gracefully");
             }
 
             throw new UdpTimeoutException("Receive timed out");

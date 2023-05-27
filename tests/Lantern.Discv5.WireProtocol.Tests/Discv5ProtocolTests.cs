@@ -24,8 +24,8 @@ public class Discv5ProtocolTests
         var sessionKeys = new SessionKeys(privateKey);
         var bootstrapEnrs = new[]
         {
-            "enr:-MK4QGpWUNblM2aPMh4OJfsMr-3Y7gASClzZHGMcCllUNvuqMsHDgng2PSrWXGZcTp662aojSVhlc5sSKmg_7QaoWMKGAYd1kr0jh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBiiUHvAwAQIP__________gmlkgnY0gmlwhANY2TSJc2VjcDI1NmsxoQIQ9k4vhofxXrxplaWjfwiojWGq7VLE2OelvabXkxjy14hzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A",
-            "enr:-LS4QEcq_vps6TP--K6eU0qZRVSGWODiSjtjD8Qsl4khrmoNPt9bqnlRQCgFfVtOjyL0XDXaliRtdEbr5Vh6kJEAcZOCF2CHYXR0bmV0c4hzSRGFSRFBiIRldGgykLuk2pYDAAAA__________-CaWSCdjSCaXCEqFvunYlzZWNwMjU2azGhAj8sxGQdGnkzcvnlxfViCHz9rqK96lWkubDaK957SZQdg3RjcIIjKIN1ZHCCIyg"
+            "enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA",
+            "enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
         };
 
         var bootstrapEnrsType = bootstrapEnrs

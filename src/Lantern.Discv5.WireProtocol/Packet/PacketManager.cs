@@ -10,7 +10,6 @@ using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet.Handlers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
-using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
@@ -21,57 +20,76 @@ public class PacketManager : IPacketManager
     private readonly IPacketHandlerFactory _packetHandlerFactory;
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
-    private readonly IRoutingTable _routingTable;
     private readonly IMessageRequester _messageRequester;
-    private readonly IPendingRequests _pendingRequests;
     private readonly IUdpConnection _udpConnection;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<PacketManager> _logger;
 
     public PacketManager(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
-        ISessionManager sessionManager, IRoutingTable routingTable, IMessageRequester messageRequester,
-        IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, 
-        ILoggerFactory loggerFactory, IPendingRequests pendingRequests)
+        ISessionManager sessionManager, IMessageRequester messageRequester, IUdpConnection udpConnection, 
+        IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _packetHandlerFactory = packetHandlerFactory;
         _identityManager = identityManager;
         _sessionManager = sessionManager;
-        _routingTable = routingTable;
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
-        _pendingRequests = pendingRequests;
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
-    
-    public async Task PingNodeAsync()
+
+    public async Task SendPingPacket(EnrRecord destRecord)
     {
-        if (_routingTable.GetTotalEntriesCount() > 0)
+        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
+        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
+
+        if (cryptoSession is { IsEstablished: true })
         {
-            _logger.LogInformation("Pinging node for checking liveness...");
-            var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-            var nodeEntry = _routingTable.GetInitialNodesForLookup(targetNodeId).First();
-            await SendPacket(MessageType.Ping, nodeEntry.Record);
+            var message = _messageRequester.ConstructPingMessage(destNodeId);
+
+            if (message == null)
+            {
+                _logger.LogWarning("Unable to construct message. Cannot send packet");
+                return;
+            }
+
+            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
+        }
+        else
+        {
+            _messageRequester.ConstructPingMessage(destNodeId, false);
+            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
     }
 
-    public async Task SendPacket(MessageType messageType, EnrRecord record)
+    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId)
     {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(record);
-        var destEndPoint = new IPEndPoint(record.GetEntry<EntryIp>(EnrContentKey.Ip).Value, record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
+        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
         
         if (cryptoSession is { IsEstablished: true })
         {
-            await SendOrdinaryPacketAsync(messageType, cryptoSession, destEndPoint, destNodeId);
-            return;
+            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId);
+            
+            if (message == null)
+            {
+                _logger.LogWarning("Unable to construct message. Cannot send packet");
+                return;
+            }
+            
+            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
         }
-
-        await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+        else
+        {
+            _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId, false);
+            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+        }
     }
-    
+
     public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
@@ -79,40 +97,16 @@ public class PacketManager : IPacketManager
         await packetHandler.HandlePacket(_udpConnection, returnedResult);
     }
 
-    private async Task CheckPendingRequests(CancellationToken token)
-    {
-        // asynchronously check pending requests
-        var currentRequests = _pendingRequests.GetPendingRequests();
-    
-        foreach (var request in currentRequests)
-        {
-            if(request.CreatedAt + TimeSpan.FromMilliseconds(500) < DateTime.UtcNow)
-            {
-                _logger.LogInformation("Request timed out. Removing from pending requests");
-                _pendingRequests.RemovePendingRequest(request.Message.RequestId);
-                
-                // What else should be done??
-            }
-        }
-    }
-
-    private async Task SendOrdinaryPacketAsync(MessageType messageType, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
+    private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
-        var message = _messageRequester.ConstructMessage(messageType, destNodeId);
-
-        if (message == null)
-        {
-            _logger.LogWarning("Unable to construct {MessageType} message. Cannot send packet", messageType);
-            return;
-        }
         
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
         
         await _udpConnection.SendAsync(finalPacket, destEndPoint);
-        _logger.LogInformation("Sent {MessageType} request to {Destination}", messageType, destEndPoint);
+        _logger.LogInformation("Sent request to {Destination}", destEndPoint);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)

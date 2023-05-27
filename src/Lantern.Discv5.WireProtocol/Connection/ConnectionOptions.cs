@@ -7,16 +7,18 @@ public class ConnectionOptions
     public int Port { get; }
     public IPAddress LocalIpAddress { get; }
     public IPAddress? ExternalIpAddress { get; }
-    public int TimeoutMilliseconds { get; }
-    public int MaxRetryCount { get; } // move to table options
+    public int RequestTimeoutMs { get; }
+    public int CheckPendingRequestsDelayMs { get; }
+    public int RemoveCompletedRequestsDelayMs { get; }
 
     private ConnectionOptions(Builder builder)
     {
         Port = builder.Port;
         LocalIpAddress = builder.LocalIpAddress;
         ExternalIpAddress = builder.ExternalIpAddress;
-        TimeoutMilliseconds = builder.TimeoutMilliseconds;
-        MaxRetryCount = builder.MaxRetryCount;
+        RequestTimeoutMs = builder.TimeoutMilliseconds;
+        CheckPendingRequestsDelayMs = builder.CheckPendingRequestsDelayMs;
+        RemoveCompletedRequestsDelayMs = builder.RemoveCompletedRequestsDelayMs;
     }
 
     public class Builder
@@ -24,9 +26,10 @@ public class ConnectionOptions
         public int Port { get; private set; } = 9000;
         public IPAddress LocalIpAddress { get; private set; } = ConnectionUtility.GetLocalIpAddress();
         public IPAddress? ExternalIpAddress { get; private set; }
-        public int TimeoutMilliseconds { get; private set; } = 2000;
-        public int MaxRetryCount { get; private set; } = 3;
-
+        public int TimeoutMilliseconds { get; private set; } = 500;
+        public int CheckPendingRequestsDelayMs { get; private set; } = 500;
+        public int RemoveCompletedRequestsDelayMs { get; private set; } = 3000;
+        
         public Builder WithPort(int port)
         {
             Port = port;
@@ -58,10 +61,16 @@ public class ConnectionOptions
             TimeoutMilliseconds = timeoutMilliseconds;
             return this;
         }
-
-        public Builder WithMaxRetryCount(int maxRetryCount)
+        
+        public Builder WithCheckPendingRequestsDelayMs(int checkPendingRequestsDelayMs)
         {
-            MaxRetryCount = maxRetryCount;
+            CheckPendingRequestsDelayMs = checkPendingRequestsDelayMs;
+            return this;
+        }
+        
+        public Builder WithRemoveFulfilledRequestsDelayMs(int removeFulfilledRequestsDelayMs)
+        {
+            RemoveCompletedRequestsDelayMs = removeFulfilledRequestsDelayMs;
             return this;
         }
 

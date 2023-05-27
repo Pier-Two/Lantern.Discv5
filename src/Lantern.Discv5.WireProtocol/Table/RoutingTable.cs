@@ -18,41 +18,37 @@ public class RoutingTable : IRoutingTable
         _localNodeId = identityManager.NodeId;
         _options = options;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
-        _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets)
-            .Select(_ => new KBucket(options, TableConstants.BucketSize))
-            .ToList();
+        _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory,options, TableConstants.BucketSize)).ToList();
     }
     
     public IEnumerable<EnrRecord> GetBootstrapEnrs() => _options.BootstrapEnrs;
+    
+    public int GetTotalEntriesCount() => _buckets.Sum(bucket => bucket.Nodes.Count());
 
+    public int GetTotalActiveNodesCount() => _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive));
+
+    public NodeTableEntry[] GetAllNodeEntries() => _buckets.SelectMany(bucket => bucket.Nodes).ToArray();
+    
     public void UpdateTable(EnrRecord enrRecord)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
-        var nodeEntry = new NodeTableEntry(enrRecord, _identityManager.Verifier);
+        var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enrRecord, _identityManager.Verifier);
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
-        
-        _buckets[bucketIndex].Update(nodeEntry, bucketIndex);
-        MarkNodeAsLive(nodeId);
-        
-        _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
-    }
 
-    public NodeTableEntry GetNodeForFindNode(byte[] targetId)
-    {
-        var bucketIndex = GetBucketIndex(targetId);
-        return _buckets[bucketIndex].GetLeastRecentlySeenNode();
+        _buckets[bucketIndex].Update(nodeEntry, bucketIndex);
+        _logger.LogInformation("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
     }
 
     public void RefreshBuckets()
     {
-        if (GetTotalEntriesCount() > 0)
-        {
-            _logger.LogInformation("Refreshing buckets...");
+        if (GetTotalEntriesCount() <= 0) 
+            return;
         
-            foreach (var bucket in _buckets)
-            {
-                bucket.RefreshLeastRecentlySeenNode();
-            }
+        _logger.LogInformation("Refreshing buckets...");
+        
+        foreach (var bucket in _buckets)
+        {
+            bucket.RefreshLeastRecentlySeenNode();
         }
     }
 
@@ -67,8 +63,34 @@ public class RoutingTable : IRoutingTable
             nodeEntry.IsQueried = true;
         }
     }
+    
+    public void MarkNodeAsLive(byte[] nodeId)
+    {
+        var bucketIndex = GetBucketIndex(nodeId);
+        var bucket = _buckets[bucketIndex];
+        var nodeEntry = bucket.GetNodeById(nodeId);
 
-    private void MarkNodeAsLive(byte[] nodeId)
+        if (nodeEntry == null) 
+            return;
+        
+        nodeEntry.IsLive = true;
+        nodeEntry.FailureCounter = 0;
+    }
+    
+    public void MarkNodeAsDead(byte[] nodeId)
+    {
+        var bucketIndex = GetBucketIndex(nodeId);
+        var bucket = _buckets[bucketIndex];
+        var nodeEntry = bucket.GetNodeById(nodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        nodeEntry.IsLive = false;
+        bucket.ReplaceDeadNode(nodeEntry, bucketIndex);
+    }
+
+    public void IncreaseFailureCounter(byte[] nodeId)
     {
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
@@ -76,10 +98,10 @@ public class RoutingTable : IRoutingTable
         
         if (nodeEntry != null)
         {
-            nodeEntry.IsLive = true;
+            nodeEntry.FailureCounter++;
         }
     }
-    
+
     public NodeTableEntry? GetNodeEntry(byte[] nodeId)
     {
         var nodeEntry = GetEntryFromTable(nodeId);
@@ -92,11 +114,11 @@ public class RoutingTable : IRoutingTable
             {
                 var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
 
-                if (nodeId.SequenceEqual(bootstrapNodeId))
-                {
-                    var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
-                    return bootstrapEntry;
-                }
+                if (!nodeId.SequenceEqual(bootstrapNodeId)) 
+                    continue;
+                
+                var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
+                return bootstrapEntry;
             }
         }
         else
@@ -120,41 +142,20 @@ public class RoutingTable : IRoutingTable
             else
             {
                 var nodesAtDistance = GetNodesAtDistance(distance);
-
-                foreach (var nodeAtDistance in nodesAtDistance)
-                {
-                    enrRecords.Add(nodeAtDistance.Record);
-                }
+                enrRecords.AddRange(nodesAtDistance.Select(nodeAtDistance => nodeAtDistance.Record));
             }
         }
 
         return enrRecords;
     }
 
-    public int GetTotalEntriesCount()
-    {
-        return _buckets.Sum(bucket => bucket.Nodes.Count());
-    }
-    
-    public List<NodeTableEntry> GetInitialNodesForLookup(byte[] targetId)
-    {
-        return GetClosestNodes(targetId, _options.LookupConcurrency);
-    }
-    
-    public int[] GetClosestNeighbours(byte[] targetNodeId)
-    {
-        var neighbours = GetInitialNodesForLookup(targetNodeId);
-        var distances = new int[neighbours.Count];
-
-        foreach (var neighbour in neighbours)
-        {
-            var neighbourNodeId = _identityManager.Verifier.GetNodeIdFromRecord(neighbour.Record);
-            var selfNodeId = _identityManager.Verifier.GetNodeIdFromRecord(_identityManager.Record);
-            var distance = TableUtility.Log2Distance(neighbourNodeId, selfNodeId);
-            distances[neighbours.IndexOf(neighbour)] = distance;
-        }
-        
-        return distances;
+    public List<NodeTableEntry> GetClosestNodes(byte[] targetId)
+    { 
+        return _buckets
+            .SelectMany(bucket => bucket.Nodes)
+            .Where(IsNodeConsideredLive)
+            .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
+            .ToList();
     }
 
     private NodeTableEntry? GetEntryFromTable(byte[] nodeId)
@@ -162,6 +163,12 @@ public class RoutingTable : IRoutingTable
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         return bucket.GetNodeById(nodeId);
+    }
+    
+    public bool IsNodeConsideredLive(NodeTableEntry nodeEntry)
+    {
+        // A node is considered live if it is marked as live or if its LivenessCounter is greater than the maximum allowed failures
+        return nodeEntry.IsLive && nodeEntry.FailureCounter < _options.MaxAllowedFailures;
     }
     
     private List<NodeTableEntry> GetNodesAtDistance(int distance)
@@ -194,26 +201,10 @@ public class RoutingTable : IRoutingTable
         return nodesAtDistance;
     }
     
-    private List<NodeTableEntry> GetClosestNodes(byte[] targetId, int k) // Added k parameter
-    {
-        return _buckets
-            .SelectMany(bucket => bucket.Nodes)
-            .Where(IsNodeConsideredLive)
-            .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
-            .Take(k)
-            .ToList();
-    }
-
     private int GetBucketIndex(byte[] nodeId)
     {
         var distance = TableUtility.Log2Distance(_localNodeId, nodeId);
         
         return distance == 256 ? 255 : distance;
-    }
-    
-    private bool IsNodeConsideredLive(NodeTableEntry nodeEntry)
-    {
-        // A node is considered live if it is marked as live or if its LivenessCounter is greater than the maximum allowed failures
-        return nodeEntry.IsLive || nodeEntry.LivenessCounter > _options.MaxAllowedFailures;
     }
 }

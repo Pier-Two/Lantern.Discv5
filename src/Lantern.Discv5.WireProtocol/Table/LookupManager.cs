@@ -1,199 +1,141 @@
-using System.Collections.Concurrent;
-using System.Net;
-using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Rlp;
-using Lantern.Discv5.WireProtocol.Connection;
-using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
-using Lantern.Discv5.WireProtocol.Session;
-using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
 public class LookupManager : ILookupManager
 {
-    private readonly IIdentityManager _identityManager;
-    private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
-    private readonly IUdpConnection _udpConnection;
-    private readonly IMessageRequester _messageRequester;
-    private readonly IPacketBuilder _packetBuilder;
-    private readonly ConcurrentBag<NodeTableEntry> _receivedNodes = new();
+    private readonly IPacketManager _packetManager;
+    private readonly TableOptions _tableOptions;
     private readonly ILogger<LookupManager> _logger;
-    private readonly int _concurrency;
-    private readonly object _nodeLock = new();
+    private readonly List<PathBucket> _pathBuckets;
 
-    public LookupManager(IIdentityManager identityManager, ISessionManager sessionManager,
-        IMessageRequester messageRequester, IUdpConnection udpConnection, IRoutingTable routingTable, IPacketBuilder packetBuilder,
-        ILoggerFactory loggerFactory, int concurrency = 3)
+    public LookupManager(IRoutingTable routingTable, IPacketManager packetManager, ILoggerFactory loggerFactory, TableOptions tableOptions)
     {
-        _identityManager = identityManager;
-        _sessionManager = sessionManager;
-        _messageRequester = messageRequester;
-        _udpConnection = udpConnection;
         _routingTable = routingTable;
-        _packetBuilder = packetBuilder;
-        _concurrency = concurrency;
+        _packetManager = packetManager;
+        _tableOptions = tableOptions;
         _logger = loggerFactory.CreateLogger<LookupManager>();
+        _pathBuckets = new List<PathBucket>();
     }
 
-    public async Task<List<NodeTableEntry>> PerformLookup(byte[] targetNodeId, int numberOfPaths = 3)
+    public async Task PerformLookup(byte[] targetNodeId)
     {
-        var pathQueries = new ConcurrentBag<Task<List<NodeTableEntry>>>();
-        var initialNodes = _routingTable.GetInitialNodesForLookup(targetNodeId).ToList();
-        var pathBuckets = PartitionInitialNodes(initialNodes, numberOfPaths);
+        _logger.LogInformation("Starting lookup for target node {NodeID}", Convert.ToHexString(targetNodeId));
 
-        foreach (var pathBucket in pathBuckets)
-        {
-            pathQueries.Add(PerformLookupForPath(targetNodeId, pathBucket));
-        }
-        
-        await Task.WhenAll(pathQueries);
-        
-        var resultSet = new HashSet<NodeTableEntry>(new NodeTableEntryComparer());
-        foreach (var query in pathQueries)
-        {
-            resultSet.UnionWith(await query);
-        }
-        
-        return resultSet
-            .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
-            .Take(_concurrency)
+        var initialNodes = _routingTable.GetClosestNodes(targetNodeId)
+            .Take(_tableOptions.ConcurrencyParameter)
             .ToList();
-    }
-
-    private async Task<List<NodeTableEntry>> PerformLookupForPath(byte[] targetNodeId, List<NodeTableEntry> pathBucket)
-    {
-        var closestNodes = new ConcurrentBag<NodeTableEntry>();
-        var queriedNodes = new ConcurrentBag<NodeTableEntry>();
-        var pendingQueries = new ConcurrentQueue<Task>();
-        var pathQueriedNodes = new HashSet<NodeTableEntry>(new NodeTableEntryComparer());
-
-        foreach (var node in pathBucket)
-        {
-            pendingQueries.Enqueue(SendPacket(MessageType.FindNode, node.Record));
-            queriedNodes.Add(node);
-            pathQueriedNodes.Add(node);
-        }
-
-        while (!pendingQueries.IsEmpty)
-        {
-            var query = await Task.WhenAny(pendingQueries);
-            pendingQueries.TryDequeue(out _);
-
-            await query;
-            var response = new List<NodeTableEntry>();
-            while (_receivedNodes.TryTake(out var node))
-            {
-                response.Add(node);
-            }
-
-            foreach (var node in response)
-            {
-                lock (_nodeLock)
-                {
-                    if (closestNodes.Count < _concurrency)
-                    {
-                        closestNodes.Add(node);
-                    }
-                    else
-                    {
-                        var farthestClosestNode = closestNodes
-                            .OrderByDescending(n => TableUtility.Log2Distance(n.Id, targetNodeId)).First();
-                        var newNodeDistance = TableUtility.Log2Distance(node.Id, targetNodeId);
-
-                        if (newNodeDistance < TableUtility.Log2Distance(farthestClosestNode.Id, targetNodeId))
-                        {
-                            closestNodes.TryTake(out farthestClosestNode);
-                            closestNodes.Add(node);
-                        }
-                    }
-
-                    if (!queriedNodes.Contains(node) && !pathQueriedNodes.Contains(node) &&
-                        pendingQueries.Count < _concurrency)
-                    {
-                        pendingQueries.Enqueue(SendPacket(MessageType.FindNode, node.Record));
-                        queriedNodes.Add(node);
-                        pathQueriedNodes.Add(node);
-                    }
-                }
-            }
-        }
-
-        return closestNodes.OrderByDescending(n => TableUtility.Log2Distance(n.Id, targetNodeId)).Take(_concurrency)
-            .ToList();
-    }
-
-
-    public void ReceiveNodesResponse(List<NodeTableEntry> nodes)
-    {
-        foreach (var node in nodes)
-        {
-            _receivedNodes.Add(node);
-        }
-    }
-
-    private async Task SendPacket(MessageType messageType, EnrRecord record)
-    {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(record);
-        var destEndPoint = new IPEndPoint(record.GetEntry<EntryIp>(EnrContentKey.Ip).Value, record.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
-        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
         
-        if (cryptoSession is { IsEstablished: true })
+        _logger.LogInformation("Initial nodes count {InitialNodesCount}", initialNodes.Count);
+        
+        var pathBuckets = PartitionInitialNodes(initialNodes, targetNodeId);
+        _pathBuckets.AddRange(pathBuckets);
+        _logger.LogInformation("Total number of path buckets {PathBucketCount}", pathBuckets.Count);
+        
+        foreach (var pathBucket in _pathBuckets)
         {
-            await SendOrdinaryPacketAsync(messageType, cryptoSession, destEndPoint, destNodeId);
-            return;
+            await QueryNodesInBucket(pathBucket);
         }
-
-        await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
     }
     
-    private async Task SendOrdinaryPacketAsync(MessageType messageType, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
+    public PathBucket GetBucketByNodeId(byte[] nodeId)
     {
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
-        var message = _messageRequester.ConstructMessage(messageType, destNodeId);
-
-        if (message == null)
-        {
-            _logger.LogWarning("Unable to construct {MessageType} message. Cannot send packet", messageType);
-            return;
-        }
-        
-        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
-        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
-        
-        await _udpConnection.SendAsync(finalPacket, destEndPoint);
-        _logger.LogInformation("Sent {MessageType} request to {Destination}", messageType, destEndPoint);
+        return _pathBuckets.First(bucket => bucket.TargetNodeId.SequenceEqual(nodeId));
     }
 
-    private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
+    public List<PathBucket> GetCompletedBuckets()
     {
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var packetNonce = RandomUtility.GenerateNonce(PacketConstants.NonceSize);
-            
-        _sessionManager.SaveHandshakeInteraction(packetNonce, destNodeId);
-            
-        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId, packetNonce, maskingIv);
-        await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
-        _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
+        return _pathBuckets.Where(bucket => bucket.IsComplete).ToList();
     }
     
-    private static List<List<NodeTableEntry>> PartitionInitialNodes(IReadOnlyList<NodeTableEntry> initialNodes, int numberOfPaths)
+    public async Task ContinueLookup(List<NodeTableEntry> nodes, byte[] senderNode, int expectedResponses)
     {
-        var pathBuckets = new List<List<NodeTableEntry>>(numberOfPaths);
-        for (var i = 0; i < numberOfPaths; i++)
+        foreach (var bucket in _pathBuckets.Where(bucket => bucket.QueriedNodes.Any(node => node.Id.SequenceEqual(senderNode))))
         {
-            pathBuckets.Add(new List<NodeTableEntry>());
+            await UpdatePathBucket(bucket, nodes, senderNode, expectedResponses);
+            return;
+        }
+    }
+    
+    private async Task QueryNodesInBucket(PathBucket bucket)
+    {
+        var nodesToQuery = bucket.NodesToQuery.Take(_tableOptions.ConcurrencyParameter).ToList();
+        
+        _logger.LogInformation("Nodes to query count {NodesCount} in path bucket {Index}", nodesToQuery.Count, bucket.Index);
+        
+        foreach (var node in nodesToQuery)
+        {
+            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
+            
+            bucket.NodesToQuery.Remove(node);
+            bucket.QueriedNodes.Add(node);
+        }
+        
+        _logger.LogInformation("Queried node count {QueriedNodeCount} in path bucket {Index}", bucket.QueriedNodes.Count, bucket.Index);
+    }
+    
+    private async Task UpdatePathBucket(PathBucket bucket, List<NodeTableEntry> nodes, byte[] senderNode, int expectedResponses)
+    {
+        _logger.LogInformation("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNode), bucket.Index);
+        var sortedNodes = nodes.OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, bucket.TargetNodeId)).ToList(); 
+            
+        foreach (var newNode in sortedNodes.Where(newNode => !bucket.DiscoveredNodes.Any(existingNode => existingNode.Id.SequenceEqual(newNode.Id))))
+        {
+            bucket.DiscoveredNodes.Add(newNode);
+        }
+        
+        
+        bucket.DiscoveredNodes.Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
+        bucket.NodesToQuery.AddRange(bucket.DiscoveredNodes);
+            
+        _logger.LogInformation("Discovered {DiscoveredNodesCount} nodes from node {NodeId} in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, Convert.ToHexString(senderNode), bucket.Index);
+
+        if (bucket.ExpectedResponses.ContainsKey(senderNode))
+        {
+            bucket.ExpectedResponses[senderNode]--;
+        }
+        else
+        {
+            bucket.ExpectedResponses[senderNode] = expectedResponses - 1;
+        }
+        
+        _logger.LogInformation("Expected count of responses {ExpectedResponsesCount} from node {NodeId} in bucket {BucketIndex}", bucket.ExpectedResponses[senderNode], Convert.ToHexString(senderNode), bucket.Index);
+
+        if (bucket.QueriedNodes.Count < TableConstants.BucketSize)
+        {
+            if(bucket.ExpectedResponses[senderNode] == 0)
+            {
+                _logger.LogInformation("No more responses expected. Continuing lookup for path bucket {Index} for target node {TargetNodeId}", bucket.Index, Convert.ToHexString(bucket.TargetNodeId));
+                await QueryNodesInBucket(bucket);
+            }
+        }
+        else
+        {
+            _logger.LogInformation("Lookup completed for path bucket {Index} with target node {TargetNodeId}", bucket.Index, Convert.ToHexString(bucket.TargetNodeId));
+            bucket.IsComplete = true;
+            
+            foreach (var node in bucket.DiscoveredNodes)
+            {
+                _logger.LogInformation("Found {ClosestNodeId} closest to target node {TargetNodeId}", Convert.ToHexString(node.Id), Convert.ToHexString(bucket.TargetNodeId));
+            }
+        }
+    }
+
+    private List<PathBucket> PartitionInitialNodes(IReadOnlyList<NodeTableEntry> initialNodes, byte[] targetNodeId)
+    {
+        var bucketCount = Math.Min(initialNodes.Count, _tableOptions.LookupParallelism);
+        var pathBuckets = new List<PathBucket>();
+
+        for (var i = 0; i < bucketCount; i++)
+        {
+            pathBuckets.Add(new PathBucket(targetNodeId, i));
         }
 
         for (var i = 0; i < initialNodes.Count; i++)
         {
-            pathBuckets[i % numberOfPaths].Add(initialNodes[i]);
+            pathBuckets[i % bucketCount].NodesToQuery.Add(initialNodes[i]);
         }
 
         return pathBuckets;

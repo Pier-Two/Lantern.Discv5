@@ -1,15 +1,13 @@
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.WireProtocol.Connection;
-using Lantern.Discv5.WireProtocol.Message;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
 public interface IPacketManager
 {
-    Task HandleReceivedPacket(UdpReceiveResult returnedResult);
+    Task SendPingPacket(EnrRecord destRecord);
 
-    Task PingNodeAsync();
+    Task SendFindNodePacket( EnrRecord destRecord, byte[] targetNodeId);
     
-    Task SendPacket(MessageType messageType, EnrRecord record);
+    Task HandleReceivedPacket(UdpReceiveResult returnedResult);
 }

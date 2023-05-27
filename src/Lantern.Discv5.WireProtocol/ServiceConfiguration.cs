@@ -29,6 +29,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IUdpConnection, UdpConnection>();
         services.AddSingleton<IDiscoveryManager, DiscoveryManager>();
         services.AddSingleton<IConnectionManager, ConnectionManager>();
+        services.AddSingleton<IRequestManager, RequestManager>();
         services.AddSingleton<IRoutingTable, RoutingTable>();
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
@@ -36,7 +37,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
-        services.AddSingleton<IPendingRequests, PendingRequests>();
+        services.AddSingleton<IRequestManager, RequestManager>();
         services.AddSingleton<IMessageDecoder, MessageDecoder>();
         services.AddSingleton<IMessageRequester, MessageRequester>();
         services.AddSingleton<IMessageResponder, MessageResponder>();
