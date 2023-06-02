@@ -96,7 +96,7 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendFindNodePacket(destinationRecord, nodeId);
+            await _packetManager.SendFindNodePacket(destinationRecord, nodeId, false);
         }
         catch (Exception ex)
         {

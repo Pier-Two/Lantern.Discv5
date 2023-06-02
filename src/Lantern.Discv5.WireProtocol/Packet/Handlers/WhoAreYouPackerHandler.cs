@@ -17,17 +17,17 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     private readonly IIdentityManager _identityManager;
     private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
-    private readonly IMessageRequester _messageRequester;
+    private readonly IRequestManager _requestManager;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<WhoAreYouPacketHandler> _logger;
 
-    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IMessageRequester messageRequester, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IRequestManager requestManager, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
-        _messageRequester = messageRequester;
+        _requestManager = requestManager;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<WhoAreYouPacketHandler>();
@@ -108,7 +108,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
     private byte[]? CreateReplyMessage(byte[] destNodeId)
     {
-        var cachedRequest = _messageRequester.GetCachedRequest(destNodeId);
+        var cachedRequest = _requestManager.GetCachedRequest(destNodeId);
         
         if(cachedRequest == null)
         {
@@ -116,10 +116,13 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return null;
         }
         
-        _messageRequester.RemoveCachedRequest(destNodeId);
-        
+        _requestManager.MarkCachedRequestAsFulfilled(destNodeId);
+
         _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
         
-        return _messageRequester.CreateFromCachedRequest(cachedRequest);
+        var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message);
+        _requestManager.AddPendingRequest(cachedRequest.Message.RequestId, pendingRequest);
+
+        return cachedRequest.Message.EncodeMessage();
     }
 }

@@ -1,6 +1,6 @@
-using Lantern.Discv5.Rlp;
+using Lantern.Discv5.WireProtocol.Table;
 
-namespace Lantern.Discv5.WireProtocol.Table;
+namespace Lantern.Discv5.WireProtocol.Utility;
 
 public class NodeTableEntryComparer : EqualityComparer<NodeTableEntry>
 {

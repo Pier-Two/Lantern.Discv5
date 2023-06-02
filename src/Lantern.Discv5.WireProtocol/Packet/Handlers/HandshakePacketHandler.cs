@@ -74,7 +74,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         
         _logger.LogDebug("Successfully decrypted HANDSHAKE packet");
         
-        var replyPacket = PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
+        var replyPacket = await PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
         
         if(replyPacket == null)
             return;
@@ -116,9 +116,9 @@ public class HandshakePacketHandler : PacketHandlerBase
         return true;
     }
     
-    private byte[]? PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, SessionMain sessionMain, IPEndPoint endPoint) 
+    private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, SessionMain sessionMain, IPEndPoint endPoint) 
     {
-        var response = _messageResponder.HandleMessage(decryptedMessage, endPoint);
+        var response = await _messageResponder.HandleMessage(decryptedMessage, endPoint);
 
         if (response == null)
         {

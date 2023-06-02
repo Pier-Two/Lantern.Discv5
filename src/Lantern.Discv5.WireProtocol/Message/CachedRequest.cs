@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Lantern.Discv5.WireProtocol.Message;
 
 public class CachedRequest
@@ -6,9 +8,14 @@ public class CachedRequest
     
     public Message Message { get; }
     
+    public bool IsFulfilled { get; set; }
+    
+    public Stopwatch ElapsedTime { get; } = Stopwatch.StartNew();
+    
     public CachedRequest(byte[] nodeId, Message message)
     {
         NodeId = nodeId;
         Message = message;
+        IsFulfilled = false;
     }
 }

@@ -25,6 +25,7 @@ public static class TableUtility
         }
 
         logDistance = TableConstants.NodeIdSize - firstMatch;
+
         return logDistance;
     }
 

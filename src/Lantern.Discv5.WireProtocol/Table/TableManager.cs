@@ -115,6 +115,4 @@ public class TableManager : ITableManager
         
         _logger.LogInformation("PingNodeAsync completed");
     }
-    
-    // Maybe move this to the RequestManager class. And rename RequestManager to PendingRequestManager
 }

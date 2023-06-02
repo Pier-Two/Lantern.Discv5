@@ -7,10 +7,10 @@ public class TableOptions
     public int PingIntervalMilliseconds { get; }
     public int RefreshIntervalMilliseconds { get; }
     public int LookupIntervalMilliseconds { get; }
+    public int LookupTimeoutMilliseconds { get; }
     public int MaxAllowedFailures { get; }
     public int ConcurrencyParameter { get; }
     public int LookupParallelism { get; }
-    public int MaxReplacementCacheSize { get; }
     public EnrRecord[] BootstrapEnrs { get; }
 
     private TableOptions(Builder builder)
@@ -18,10 +18,10 @@ public class TableOptions
         PingIntervalMilliseconds = builder.PingIntervalMilliseconds;
         RefreshIntervalMilliseconds = builder.RefreshIntervalMilliseconds;
         LookupIntervalMilliseconds = builder.LookupIntervalMilliseconds;
+        LookupTimeoutMilliseconds = builder.LookupTimeoutMilliseconds;
         MaxAllowedFailures = builder.MaxAllowedFailures;
         ConcurrencyParameter = builder.ConcurrencyParameter;
         LookupParallelism = builder.LookupParallelism;
-        MaxReplacementCacheSize = builder.MaxReplacementCacheSize;
         BootstrapEnrs = builder.BootstrapEnrs;
     }
 
@@ -30,10 +30,10 @@ public class TableOptions
         public int PingIntervalMilliseconds { get; private set; } = 5000;
         public int RefreshIntervalMilliseconds { get; private set; } = 5000;
         public int LookupIntervalMilliseconds { get; private set; } = 3000;
+        public int LookupTimeoutMilliseconds { get; private set; } = 5000;
         public int MaxAllowedFailures { get; private set; } = 3;
         public int ConcurrencyParameter { get; private set; } = 3;
         public int LookupParallelism { get; private set; } = 2;
-        public int MaxReplacementCacheSize { get; private set; } = 8;
         public EnrRecord[] BootstrapEnrs { get; private set; } = Array.Empty<EnrRecord>();
         
         public Builder WithPingIntervalMilliseconds(int pingIntervalMilliseconds)
@@ -51,6 +51,12 @@ public class TableOptions
         public Builder WithLookupIntervalMilliseconds(int lookupIntervalMilliseconds)
         {
             LookupIntervalMilliseconds = lookupIntervalMilliseconds;
+            return this;
+        }
+        
+        public Builder WithLookupTimeoutMilliseconds(int lookupTimeoutMilliseconds)
+        {
+            LookupTimeoutMilliseconds = lookupTimeoutMilliseconds;
             return this;
         }
         
@@ -72,12 +78,6 @@ public class TableOptions
             return this;
         }
 
-        public Builder WithMaxReplacementCacheSize(int maxReplacementCacheSize)
-        {
-            MaxReplacementCacheSize = maxReplacementCacheSize;
-            return this;
-        }
-        
         public Builder WithBootstrapEnrs(IEnumerable<EnrRecord> bootstrapEnrs)
         {
             BootstrapEnrs = bootstrapEnrs.ToArray();

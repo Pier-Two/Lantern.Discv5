@@ -115,9 +115,17 @@ public class DiscoveryManager : IDiscoveryManager
     {
         if (_routingTable.GetTotalActiveNodesCount() > 0)
         {
-            _logger.LogInformation("Performing discovery...");
             var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
-            await _lookupManager.PerformLookup(targetNodeId);
+            
+            if(_lookupManager.IsLookupInProgress)
+                return;
+            
+            var closestNodes = await _lookupManager.LookupAsync(targetNodeId);
+
+            foreach (var node in closestNodes)
+            {
+                _logger.LogInformation("Found node {NodeId} closest", Convert.ToHexString(node.Id));
+            }
         }
     }
 }

@@ -60,12 +60,19 @@ public class PacketManager : IPacketManager
         }
         else
         {
-            _messageRequester.ConstructPingMessage(destNodeId, false);
+            var message = _messageRequester.ConstructCachedPingMessage(destNodeId);
+            
+            if(message == null)
+            {
+                _logger.LogWarning("No message constructed. Cannot send packet");
+                return;
+            }
+            
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
     }
 
-    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId)
+    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId, bool varyDistance)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
         var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
@@ -73,7 +80,7 @@ public class PacketManager : IPacketManager
         
         if (cryptoSession is { IsEstablished: true })
         {
-            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId);
+            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId, varyDistance);
             
             if (message == null)
             {
@@ -85,7 +92,14 @@ public class PacketManager : IPacketManager
         }
         else
         {
-            _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId, false);
+            var message = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, targetNodeId, varyDistance);
+            
+            if(message == null)
+            {
+                _logger.LogWarning("No message constructed. Cannot send packet");
+                return;
+            }
+            
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
     }

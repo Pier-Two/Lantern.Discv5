@@ -30,7 +30,7 @@ public class MessageResponder : IMessageResponder
         _logger = loggerFactory.CreateLogger<MessageResponder>();
     }
     
-    public byte[]? HandleMessage(byte[] message, IPEndPoint endPoint)
+    public async Task<byte[]?> HandleMessage(byte[] message, IPEndPoint endPoint)
     {
         var messageType = (MessageType)message[0];
 
@@ -39,7 +39,7 @@ public class MessageResponder : IMessageResponder
             MessageType.Ping => HandlePingMessage(message, endPoint),
             MessageType.Pong => HandlePongMessage(message),
             MessageType.FindNode => HandleFindNodeMessage(message),
-            MessageType.Nodes => HandleNodesMessage(message),
+            MessageType.Nodes => await HandleNodesMessage(message),
             MessageType.TalkReq => HandleTalkReqMessage(message),
             MessageType.TalkResp => HandleTalkRespMessage(message),
             _ => throw new ArgumentOutOfRangeException(nameof(messageType), messageType, null)
@@ -117,41 +117,45 @@ public class MessageResponder : IMessageResponder
         return nodesMessage.EncodeMessage();
     }
     
-    private byte[]? HandleNodesMessage(byte[] message)
+    private async Task <byte[]?> HandleNodesMessage(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Nodes);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
 
-        if(decodedMessage.Enrs.Length == 0)
+        if (decodedMessage.Enrs.Length == 0)
+        {
+            _logger.LogWarning("Received NODES message with no ENRs. Ignoring message");
             return null;
+        }
 
         var pendingRequest = GetPendingRequest(decodedMessage);
-
+    
         if (pendingRequest == null)
         {
+            _logger.LogWarning("Received NODES message with no pending request. Ignoring message");
             return null; 
         }
+        
+        pendingRequest.MaxResponses = decodedMessage.Total;
 
         if (pendingRequest.ResponsesReceived > decodedMessage.Total)
         {
             _logger.LogWarning("Received more responses than expected from node {NodeId}. Ignoring response", Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
-  
-
+        
         var senderNodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var identityVerifier = new IdentitySchemeV4Verifier();
         var receivedNodes = new List<NodeTableEntry>();
-        
-        foreach (var enr in decodedMessage.Enrs)
-        {
-            var nodeId = identityVerifier.GetNodeIdFromRecord(enr);
 
-            foreach (var distance in findNodesRequest.Distances)
+        foreach (var distance in findNodesRequest.Distances)
+        {
+            foreach (var enr in decodedMessage.Enrs)
             {
+                var nodeId = identityVerifier.GetNodeIdFromRecord(enr);
                 var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
-                
+
                 if (distance == distanceToNode)
                 {
                     _routingTable.UpdateTable(enr);
@@ -161,25 +165,18 @@ public class MessageResponder : IMessageResponder
                     {
                         receivedNodes.Add(nodeEntry);
                     }
-                    
-                    break;
                 }
             }
         }
-        
+
         if (senderNodeEntry is { IsLive: false })
         {
             _routingTable.MarkNodeAsLive(senderNodeEntry.Id);
         }
         
         _routingTable.MarkNodeAsQueried(pendingRequest.NodeId);
+        await _lookupManager.ContinueLookup(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
         
-        var continueLookup = async () =>
-        {
-            await _lookupManager.ContinueLookup(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
-        };
-        
-        continueLookup.Invoke();
         return null;
     }
     

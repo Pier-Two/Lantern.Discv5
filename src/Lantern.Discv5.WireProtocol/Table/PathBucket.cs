@@ -1,3 +1,5 @@
+using Lantern.Discv5.WireProtocol.Utility;
+
 namespace Lantern.Discv5.WireProtocol.Table;
 
 public class PathBucket
@@ -5,14 +7,16 @@ public class PathBucket
     public int Index { get; }
     
     public byte[] TargetNodeId { get; }
-    
-    public List<NodeTableEntry> NodesToQuery { get; }
-    
-    public List<NodeTableEntry> QueriedNodes { get; }
+
+    public List<byte[]> QueriedNodes { get; }
     
     public List<NodeTableEntry> DiscoveredNodes { get; }
+
+    public Dictionary<byte[], List<NodeTableEntry>> Responses { get; }
     
     public Dictionary<byte[], int> ExpectedResponses { get; }
+    
+    public TaskCompletionSource<bool> CompletionSource { get; }
 
     public bool IsComplete { get; set; }
 
@@ -20,9 +24,10 @@ public class PathBucket
     {
         Index = index;
         TargetNodeId = targetNodeId;
-        NodesToQuery = new List<NodeTableEntry>();
-        QueriedNodes = new List<NodeTableEntry>();
+        QueriedNodes = new List<byte[]>();
         DiscoveredNodes = new List<NodeTableEntry>();
+        Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
+        CompletionSource = new TaskCompletionSource<bool>();
         ExpectedResponses = new Dictionary<byte[], int>();
     }
 }

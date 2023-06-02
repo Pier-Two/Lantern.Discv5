@@ -1,20 +1,16 @@
-using Lantern.Discv5.WireProtocol.Packet.Headers;
-
 namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IMessageRequester
 {
-    byte[]? ConstructPingMessage(byte[] destNodeId, bool isRequest = true);
+    byte[]? ConstructPingMessage(byte[] destNodeId);
+    
+    byte[]? ConstructCachedPingMessage(byte[] destNodeId);
+    
+    byte[]? ConstructFindNodeMessage(byte[] destNodeId, byte[] targetNodeId, bool varyDistance);
 
-    byte[]? ConstructFindNodeMessage(byte[] destNodeId, byte[] targetNodeId, bool isRequest = true);
+    byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, byte[] targetNodeId, bool varyDistance);
 
     byte[]? ConstructTalkReqMessage(byte[] destNodeId, bool isRequest = true);
 
     byte[]? ConstructTalkRespMessage(byte[] data, bool isRequest = true);
-    
-    CachedRequest? GetCachedRequest(byte[] nodeId);
-    
-    void RemoveCachedRequest(byte[] nodeId);
-
-    byte[] CreateFromCachedRequest(CachedRequest request);
 }

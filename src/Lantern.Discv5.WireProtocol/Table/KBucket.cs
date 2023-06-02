@@ -26,6 +26,14 @@ public class KBucket
     }
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
+    
+    public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId, int bucketIndex)
+    {
+        var replacementCache = _replacementCaches[bucketIndex];
+        var nodeInReplacementCache = replacementCache.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, nodeId));
+
+        return nodeInReplacementCache;
+    }
 
     public NodeTableEntry? GetNodeById(byte[] nodeId)
     {
@@ -77,12 +85,8 @@ public class KBucket
     private void AddToReplacementCache(NodeTableEntry nodeEntry, int bucketIndex)
     {
         var replacementCache = _replacementCaches[bucketIndex];
-
-        // Check if the replacement cache has reached its maximum size before adding a node
-        if (replacementCache.Count < _options.MaxReplacementCacheSize)
-        {
-            replacementCache.AddLast(nodeEntry);
-        }
+        replacementCache.AddLast(nodeEntry);
+        _logger.LogDebug("Added node {NodeId} to replacement cache", Convert.ToHexString(nodeEntry.Id));
     }
 
     public void ReplaceDeadNode(NodeTableEntry nodeEntry, int bucketIndex)
@@ -104,7 +108,7 @@ public class KBucket
         _nodeLookup[replacementNode.Id] = newNode;
     }
 
-    public NodeTableEntry GetLeastRecentlySeenNode()
+    private NodeTableEntry GetLeastRecentlySeenNode()
     {
         return _nodes.First.Value;
     }

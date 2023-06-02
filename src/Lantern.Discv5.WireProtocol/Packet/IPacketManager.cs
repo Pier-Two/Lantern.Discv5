@@ -7,7 +7,7 @@ public interface IPacketManager
 {
     Task SendPingPacket(EnrRecord destRecord);
 
-    Task SendFindNodePacket( EnrRecord destRecord, byte[] targetNodeId);
+    Task SendFindNodePacket( EnrRecord destRecord, byte[] targetNodeId, bool varyDistance);
     
     Task HandleReceivedPacket(UdpReceiveResult returnedResult);
 }

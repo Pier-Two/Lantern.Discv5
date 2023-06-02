@@ -36,7 +36,7 @@ public class RoutingTable : IRoutingTable
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
 
         _buckets[bucketIndex].Update(nodeEntry, bucketIndex);
-        _logger.LogInformation("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
+        _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
     }
 
     public void RefreshBuckets()
@@ -106,27 +106,31 @@ public class RoutingTable : IRoutingTable
     {
         var nodeEntry = GetEntryFromTable(nodeId);
 
+        if (nodeEntry != null) 
+            return nodeEntry;
+        
+        var bootstrapEnrs = GetBootstrapEnrs();
+
+        foreach (var bootstrapEnr in bootstrapEnrs)
+        {
+            var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
+
+            if (!nodeId.SequenceEqual(bootstrapNodeId))
+                continue;
+
+            var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
+            return bootstrapEntry;
+        }
+
+        // If node entry is still null, try getting the node from the replacement cache.
         if (nodeEntry == null)
         {
-            var bootstrapEnrs = GetBootstrapEnrs();
-
-            foreach (var bootstrapEnr in bootstrapEnrs)
-            {
-                var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
-
-                if (!nodeId.SequenceEqual(bootstrapNodeId)) 
-                    continue;
-                
-                var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
-                return bootstrapEntry;
-            }
+            var bucketIndex = GetBucketIndex(nodeId);
+            var bucket = _buckets[bucketIndex];
+            nodeEntry = bucket.GetNodeFromReplacementCache(nodeId, bucketIndex);
         }
-        else
-        {
-            return nodeEntry;
-        }
-        
-        return null;
+
+        return nodeEntry;
     }
 
     public List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances)
@@ -165,7 +169,7 @@ public class RoutingTable : IRoutingTable
         return bucket.GetNodeById(nodeId);
     }
     
-    public bool IsNodeConsideredLive(NodeTableEntry nodeEntry)
+    private bool IsNodeConsideredLive(NodeTableEntry nodeEntry)
     {
         // A node is considered live if it is marked as live or if its LivenessCounter is greater than the maximum allowed failures
         return nodeEntry.IsLive && nodeEntry.FailureCounter < _options.MaxAllowedFailures;
@@ -204,7 +208,7 @@ public class RoutingTable : IRoutingTable
     private int GetBucketIndex(byte[] nodeId)
     {
         var distance = TableUtility.Log2Distance(_localNodeId, nodeId);
-        
+        // If the distance is 256, do not respond to the request
         return distance == 256 ? 255 : distance;
     }
 }

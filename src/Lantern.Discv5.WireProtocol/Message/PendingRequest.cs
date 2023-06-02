@@ -13,6 +13,8 @@ public class PendingRequest
     public bool IsFulfilled { get; set; }
     
     public int ResponsesReceived { get; set; }
+    
+    public int MaxResponses { get; set; }
 
     public PendingRequest(byte[] nodeId, Message message)
     {

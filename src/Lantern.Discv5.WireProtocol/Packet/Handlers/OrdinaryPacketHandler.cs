@@ -67,7 +67,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         _logger.LogDebug("Successfully decrypted ORDINARY packet");
                     
-        var response = _messageResponder.HandleMessage(decryptedMessage, returnedResult.RemoteEndPoint);
+        var response = await _messageResponder.HandleMessage(decryptedMessage, returnedResult.RemoteEndPoint);
 
         if (response != null)
         {
