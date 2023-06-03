@@ -3,6 +3,7 @@ using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -13,8 +14,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class Discv5ProtocolTests
 {
     private Discv5Protocol _discv5Protocol = null!;
-    private readonly CancellationTokenSource _serviceCts = new(TimeSpan.FromSeconds(10));
-    
+
     [SetUp]
     public void Setup()
     {
@@ -70,8 +70,20 @@ public class Discv5ProtocolTests
     
     [Test]
     public async Task Test()
-    { 
-        await _discv5Protocol.StartProtocolAsync(_serviceCts.Token);
-        await _discv5Protocol.StopProtocolAsync(_serviceCts.Token);
+    {
+        var token = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+         _discv5Protocol.StartProtocolAsync(token);
+
+        var closestNodes = await _discv5Protocol.PerformLookup(RandomUtility.GenerateNodeId(32));
+
+        if (closestNodes != null)
+        {
+            foreach (var node in closestNodes)
+            {
+                Console.WriteLine("Closest node: " + Convert.ToHexString(node.Id));
+            }
+        }
+        
+        await _discv5Protocol.StopProtocolAsync(token);
     }
 } 

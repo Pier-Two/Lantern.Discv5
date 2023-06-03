@@ -1,5 +1,4 @@
-using System.Diagnostics;
-using Lantern.Discv5.WireProtocol.Connection;
+using System.Collections.Concurrent;
 using Lantern.Discv5.WireProtocol.Packet;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +10,7 @@ public class LookupManager : ILookupManager
     private readonly IPacketManager _packetManager;
     private readonly TableOptions _tableOptions;
     private readonly ILogger<LookupManager> _logger;
-    private readonly List<PathBucket> _pathBuckets;
+    private readonly ConcurrentBag<PathBucket> _pathBuckets;
 
     public LookupManager(IRoutingTable routingTable, IPacketManager packetManager, ILoggerFactory loggerFactory, TableOptions tableOptions)
     {
@@ -19,46 +18,52 @@ public class LookupManager : ILookupManager
         _packetManager = packetManager;
         _logger = loggerFactory.CreateLogger<LookupManager>();
         _tableOptions = tableOptions;
-        _pathBuckets = new List<PathBucket>();
+        _pathBuckets = new ConcurrentBag<PathBucket>();
+        IsLookupInProgress = false;
     }
-    
-    public bool IsLookupInProgress => _pathBuckets.Any(bucket => !bucket.IsComplete);
 
-    public PathBucket GetBucketByNodeId(byte[] nodeId) => _pathBuckets.First(bucket => bucket.TargetNodeId.SequenceEqual(nodeId));
-    
-    public List<PathBucket> GetCompletedBuckets() => _pathBuckets.Where(bucket => bucket.IsComplete).ToList();
-    
-    public async Task<List<NodeTableEntry>> LookupAsync(byte[] targetNodeId)
+    public bool IsLookupInProgress { get; private set; }
+
+    public async Task<List<NodeTableEntry>?> LookupAsync(byte[] targetNodeId)
     {
+        if (IsLookupInProgress)
+        {
+            _logger.LogInformation("Lookup is currently in progress");
+            return null;
+        }
+
+        IsLookupInProgress = true;
         await StartLookup(targetNodeId);
 
         var bucketCompletionTasks = _pathBuckets.Select(async bucket =>
+        {
+            var completedTask = await Task.WhenAny(bucket.CompletionSource.Task,
+                Task.Delay(_tableOptions.LookupTimeoutMilliseconds));
+
+            if (completedTask == bucket.CompletionSource.Task)
             {
-                var completedTask = await Task.WhenAny(bucket.CompletionSource.Task, Task.Delay(_tableOptions.LookupTimeoutMilliseconds));
+                _logger.LogInformation("Bucket {BucketIndex} completed successfully", bucket.Index);
+            }
+            else
+            {
+                _logger.LogInformation("Bucket {BucketIndex} timed out", bucket.Index);
+            }
 
-                if (completedTask == bucket.CompletionSource.Task)
-                {
-                    _logger.LogInformation("Bucket {BucketIndex} completed successfully", bucket.Index);
-                }
-                else
-                {
-                    _logger.LogInformation("Bucket {BucketIndex} timed out", bucket.Index);
-                }
-
-                return completedTask == bucket.CompletionSource.Task;
-            })
-            .ToList();
+            return completedTask == bucket.CompletionSource.Task;
+        });
 
         await Task.WhenAll(bucketCompletionTasks);
     
-        var completedBuckets = GetCompletedBuckets();
-    
+        var completedBuckets = _pathBuckets.Where(bucket => bucket.IsComplete).ToList();
         var result = completedBuckets
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
             .Take(TableConstants.BucketSize)
             .ToList();
+
+        IsLookupInProgress = false;
+        _pathBuckets.Clear();
 
         return result;
     }
@@ -75,11 +80,11 @@ public class LookupManager : ILookupManager
         
         var pathBuckets = PartitionInitialNodesNew(initialNodes, targetNodeId);
         
-        _pathBuckets.AddRange(pathBuckets);
         _logger.LogInformation("Total number of path buckets {PathBucketCount}", pathBuckets.Count);
         
-        foreach (var pathBucket in _pathBuckets)
+        foreach (var pathBucket in pathBuckets)
         {
+            _pathBuckets.Add(pathBucket);
             foreach (var node in pathBucket.Responses)
             {
                 await QuerySelfNode(pathBucket, node.Key, false);
@@ -172,8 +177,6 @@ public class LookupManager : ILookupManager
         foreach (var node in nodesToQuery)
         {
             _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
-            
-            // It should first do a liveness check by sending a ping packet
             await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId, varyDistance);
         }
     }

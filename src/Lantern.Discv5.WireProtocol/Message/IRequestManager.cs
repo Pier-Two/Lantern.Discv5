@@ -2,7 +2,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IRequestManager
 {
-    Task StartRequestManagerAsync(CancellationToken token = default);
+    void StartRequestManagerAsync(CancellationToken token = default);
     
     Task StopRequestManagerAsync(CancellationToken token = default);
     

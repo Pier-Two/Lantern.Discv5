@@ -121,8 +121,7 @@ public class RoutingTable : IRoutingTable
             var bootstrapEntry = new NodeTableEntry(bootstrapEnr, _identityManager.Verifier);
             return bootstrapEntry;
         }
-
-        // If node entry is still null, try getting the node from the replacement cache.
+        
         if (nodeEntry == null)
         {
             var bucketIndex = GetBucketIndex(nodeId);

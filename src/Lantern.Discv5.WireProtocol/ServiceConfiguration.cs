@@ -27,7 +27,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IPacketManager, PacketManager>();
         services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
-        services.AddSingleton<IDiscoveryManager, DiscoveryManager>();
+        services.AddSingleton<IDiscoveryProtocol, DiscoveryProtocol>();
         services.AddSingleton<IConnectionManager, ConnectionManager>();
         services.AddSingleton<IRequestManager, RequestManager>();
         services.AddSingleton<IRoutingTable, RoutingTable>();

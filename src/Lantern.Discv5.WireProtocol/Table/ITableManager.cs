@@ -4,7 +4,7 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface ITableManager
 { 
-    Task StartTableManagerAsync(CancellationToken token = default);
+    void StartTableManagerAsync(CancellationToken token = default);
 
     Task StopTableManagerAsync(CancellationToken token = default);
 }

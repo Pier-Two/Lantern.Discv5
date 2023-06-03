@@ -10,7 +10,6 @@ public class TableManager : ITableManager
     private readonly IRoutingTable _routingTable;
     private readonly TableOptions _tableOptions;
     private readonly ILogger<TableManager> _logger;
-    private readonly CancellationTokenSource _shutdownCts;
     private Task? _refreshTask;
     private Task? _pingTask;
     
@@ -20,33 +19,19 @@ public class TableManager : ITableManager
         _routingTable = routingTable;
         _tableOptions = tableOptions;
         _logger = loggerFactory.CreateLogger<TableManager>();
-        _shutdownCts = new CancellationTokenSource();
     }
     
-    // Maybe move Lookup method here?
-    public async Task StartTableManagerAsync(CancellationToken token = default)
+    public void StartTableManagerAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting TableManagerAsync");
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _shutdownCts.Token);
-
-        try
-        {
-            _refreshTask = RefreshBucketsAsync(linkedCts.Token);
-            _pingTask = PingNodeAsync(linkedCts.Token);
-
-            await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
-        }
-        finally
-        {
-            linkedCts.Dispose();
-        }
+        _refreshTask = RefreshBucketsAsync(token);
+        _pingTask = PingNodeAsync(token);
     }
     
     public async Task StopTableManagerAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Stopping TableManagerAsync");
-        _shutdownCts.Cancel();
-        
+
         try
         {
             if (_refreshTask != null && _pingTask != null)
@@ -54,7 +39,7 @@ public class TableManager : ITableManager
                 await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             _logger.LogInformation("TableManagerAsync was canceled gracefully");
         }
@@ -73,7 +58,7 @@ public class TableManager : ITableManager
                     .ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             _logger.LogInformation("RefreshBucketsAsync was canceled gracefully");
         }
@@ -104,7 +89,7 @@ public class TableManager : ITableManager
                 await _packetManager.SendPingPacket(nodeEntry.Record);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested || _shutdownCts.IsCancellationRequested)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             _logger.LogInformation("PingNodeAsync was canceled gracefully");
         }

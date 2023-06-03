@@ -16,7 +16,7 @@ public class Discv5Protocol
     private readonly IConnectionManager _connectionManager;
     private readonly IIdentityManager _identityManager;
     private readonly ITableManager _tableManager;
-    private readonly IDiscoveryManager _discoveryManager;
+    private readonly IDiscoveryProtocol _discoveryProtocol;
     private readonly IRequestManager _requestManager;
     private readonly IPacketManager _packetManager;
     private readonly IRoutingTable _routingTable;
@@ -29,7 +29,7 @@ public class Discv5Protocol
         _connectionManager = serviceProvider.GetRequiredService<IConnectionManager>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _tableManager = serviceProvider.GetRequiredService<ITableManager>();
-        _discoveryManager = serviceProvider.GetRequiredService<IDiscoveryManager>();
+        _discoveryProtocol = serviceProvider.GetRequiredService<IDiscoveryProtocol>();
         _requestManager = serviceProvider.GetRequiredService<IRequestManager>();
         _packetManager = serviceProvider.GetRequiredService<IPacketManager>();
         _routingTable = serviceProvider.GetRequiredService<IRoutingTable>();
@@ -40,7 +40,7 @@ public class Discv5Protocol
     
     public EnrRecord SelfEnrRecord => _identityManager.Record;
     
-    public int TotalNodesCount() => _routingTable.GetTotalEntriesCount();
+    public int NodesCount() => _routingTable.GetTotalEntriesCount();
     
     public int PeerCount() => _routingTable.GetTotalActiveNodesCount();
     
@@ -50,34 +50,38 @@ public class Discv5Protocol
 
     public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodeEntries();
 
-    public async Task StartProtocolAsync(CancellationToken token = default)
+    public void StartProtocolAsync(CancellationToken token = default)
     {
-        var connectionTask = _connectionManager.StartConnectionManagerAsync(token);
-        var discoveryTask = _discoveryManager.StartDiscoveryManagerAsync(token);
-        var tableTask = _tableManager.StartTableManagerAsync(token);
-        var requestsTask = _requestManager.StartRequestManagerAsync(token);
-        
-        await Task.WhenAll(connectionTask, discoveryTask, tableTask, requestsTask).ConfigureAwait(false);
+        _connectionManager.StartConnectionManagerAsync(token);
+        _discoveryProtocol.StartInitialiseProtocolAsync(token);
+        _tableManager.StartTableManagerAsync(token);
+        _requestManager.StartRequestManagerAsync(token);
     }
     
     public async Task StopProtocolAsync(CancellationToken token = default)
     {
-        await _connectionManager.StopConnectionManagerAsync(token);
-        await _discoveryManager.StopDiscoveryManagerAsync(token);
-        await _tableManager.StopTableManagerAsync(token);
-        await _requestManager.StopRequestManagerAsync(token);
+        var stopConnectionTask = _connectionManager.StopConnectionManagerAsync(token);
+        var initialiseTask = _discoveryProtocol.StopInitialiseProtocolAsync(token);
+        var tableTask = _tableManager.StopTableManagerAsync(token);
+        var requestsTask = _requestManager.StopRequestManagerAsync(token);
+        
+        await Task.WhenAll(stopConnectionTask, initialiseTask, tableTask, requestsTask).ConfigureAwait(false);
     }
 
-    public async Task PerformLookup(byte[] targetNodeId)
+    public async Task<List<NodeTableEntry>?> PerformLookup(byte[] targetNodeId)
     {
-        _logger.LogInformation("Performing lookup...");
-        /*var closestNodes = await _lookupManager.PerformLookup(targetNodeId);
-        _logger.LogInformation("Lookup completed. Closest nodes found:");
-        
-        foreach (var node in closestNodes)
+        if (_routingTable.GetTotalActiveNodesCount() > 0)
         {
-            _logger.LogInformation("Node ID: {NodeId}", Convert.ToHexString(node.Id));
-        }*/
+            _logger.LogInformation("Performing lookup...");
+            var closestNodes = await _lookupManager.LookupAsync(targetNodeId);
+            
+            if (closestNodes != null)
+            {
+                return closestNodes;
+            }
+        }
+        
+        return null;
     }
     
     public async Task SendPingAsync(EnrRecord destinationRecord)
@@ -106,11 +110,25 @@ public class Discv5Protocol
     
     public async Task SendTalkReqAsync(byte[] data, EnrRecord destinationRecord)
     {
-        
+        try
+        {
+            
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destinationRecord);
+        }
     }
     
     public async Task SendTalkRespAsync(byte[] data, EnrRecord destinationRecord)
     {
-        
+        try
+        {
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destinationRecord);
+        }
     }
 }
