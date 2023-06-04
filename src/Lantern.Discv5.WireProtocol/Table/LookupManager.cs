@@ -19,7 +19,6 @@ public class LookupManager : ILookupManager
         _logger = loggerFactory.CreateLogger<LookupManager>();
         _tableOptions = tableOptions;
         _pathBuckets = new ConcurrentBag<PathBucket>();
-        IsLookupInProgress = false;
     }
 
     public bool IsLookupInProgress { get; private set; }
@@ -77,9 +76,7 @@ public class LookupManager : ILookupManager
             .ToList();
         
         _logger.LogInformation("Initial nodes count {InitialNodesCount}", initialNodes.Count);
-        
         var pathBuckets = PartitionInitialNodesNew(initialNodes, targetNodeId);
-        
         _logger.LogInformation("Total number of path buckets {PathBucketCount}", pathBuckets.Count);
         
         foreach (var pathBucket in pathBuckets)
@@ -87,7 +84,7 @@ public class LookupManager : ILookupManager
             _pathBuckets.Add(pathBucket);
             foreach (var node in pathBucket.Responses)
             {
-                await QuerySelfNode(pathBucket, node.Key, false);
+                await QuerySelfNode(pathBucket, node.Key);
             }
         }
     }
@@ -96,7 +93,7 @@ public class LookupManager : ILookupManager
     {
         foreach (var bucket in _pathBuckets.Where(bucket => bucket.Responses.Any(node => node.Key.SequenceEqual(senderNode))))
         {
-            if (bucket.QueriedNodes.Count < TableConstants.BucketSize)
+            if (bucket.QueriedNodes.Count <= TableConstants.BucketSize)
             {
                 if (bucket.ExpectedResponses.ContainsKey(senderNode))
                 {
@@ -108,30 +105,23 @@ public class LookupManager : ILookupManager
                 }
             
                 _logger.LogInformation("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNode], Convert.ToHexString(senderNode), bucket.Index);
-            
-                if (!bucket.QueriedNodes.Contains(senderNode))
-                {
-                    bucket.QueriedNodes.Add(senderNode);
-                }
-            
                 _logger.LogInformation("Queried {QueriedNodes} nodes so far in bucket {BucketIndex}", bucket.QueriedNodes.Count, bucket.Index);
                 _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
             
                 if (nodes.Count > 0)
                 {
-                    _logger.LogDebug("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNode), bucket.Index); 
-                    await UpdatePathBucketNew(bucket, nodes, senderNode, false);
+                    _logger.LogInformation("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNode), bucket.Index); 
+                    await UpdatePathBucketNew(bucket, nodes, senderNode);
                 }
                 else
                 {
                     // If node replies with 0 nodes, vary the distance and try again
                     _logger.LogDebug("Received no nodes from node {NodeId}. Varying distances", Convert.ToHexString(senderNode));
-                    await QuerySelfNode(bucket, senderNode, true);
+                    await QuerySelfNode(bucket, senderNode);
                 }
             }
             else
             {
-                // Move this into LookupAsync
                 bucket.IsComplete = true;
                 bucket.CompletionSource.TrySetResult(true);
                 _logger.LogInformation("Lookup in bucket {BucketIndex} is complete. ", bucket.Index);
@@ -139,33 +129,28 @@ public class LookupManager : ILookupManager
         }
     }
 
-    private async Task UpdatePathBucketNew(PathBucket bucket, List<NodeTableEntry> nodes, byte[] senderNodeId, bool varyDistance)
+    private async Task UpdatePathBucketNew(PathBucket bucket, List<NodeTableEntry> nodes, byte[] senderNodeId)
     {
         var sortedNodes = nodes.OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, bucket.TargetNodeId)).ToList();
         
         foreach (var node in sortedNodes)
         {
             bucket.Responses[senderNodeId].Add(node);
+            bucket.DiscoveredNodes.Add(node);
             
-            if (bucket.Responses.ContainsKey(node.Id))
-            {
-                bucket.Responses[node.Id] = new List<NodeTableEntry>();
-            }
-            else
+            if (!bucket.Responses.ContainsKey(node.Id))
             {
                 bucket.Responses.Add(node.Id, new List<NodeTableEntry>());
             }
-            
-            bucket.DiscoveredNodes.Add(node);
         }
 
         bucket.Responses[senderNodeId].Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
         bucket.DiscoveredNodes.Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
 
-        await QueryClosestNodes(bucket, senderNodeId, varyDistance);
+        await QueryClosestNodes(bucket, senderNodeId);
     }
 
-    private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId, bool varyDistance)
+    private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
     {
         var nodesToQuery = bucket.Responses[senderNodeId].Take(_tableOptions.ConcurrencyParameter).ToList();
         
@@ -176,19 +161,24 @@ public class LookupManager : ILookupManager
         
         foreach (var node in nodesToQuery)
         {
-            _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
-            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId, varyDistance);
+            _logger.LogInformation("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
+            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
+            if (!bucket.QueriedNodes.Contains(node.Id))
+            {
+                bucket.QueriedNodes.Add(node.Id);
+            }
+
         }
     }
     
-    private async Task QuerySelfNode(PathBucket bucket, byte[] senderNodeId, bool varyDistance)
+    private async Task QuerySelfNode(PathBucket bucket, byte[] senderNodeId)
     {
         var node = _routingTable.GetNodeEntry(senderNodeId);
             
         if(node == null)
             return;
 
-        if (bucket.ExpectedResponses[senderNodeId] != 0 && !varyDistance)
+        if (bucket.ExpectedResponses[senderNodeId] != 0)
         {
             _logger.LogDebug("Waiting for {ExpectedResponses} more responses from node {NodeId} in QuerySelfNode", bucket.ExpectedResponses[senderNodeId], Convert.ToHexString(senderNodeId));
             return;
@@ -196,7 +186,11 @@ public class LookupManager : ILookupManager
 
         if (bucket.QueriedNodes.Count < TableConstants.BucketSize)
         {
-            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId, varyDistance);
+            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
+            if (!bucket.QueriedNodes.Contains(node.Id))
+            {
+                bucket.QueriedNodes.Add(node.Id);
+            }
         }
     }
     

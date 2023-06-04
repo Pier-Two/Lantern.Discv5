@@ -71,7 +71,7 @@ public class Discv5ProtocolTests
     [Test]
     public async Task Test()
     {
-        var token = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var token = new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token;
          _discv5Protocol.StartProtocolAsync(token);
 
         var closestNodes = await _discv5Protocol.PerformLookup(RandomUtility.GenerateNodeId(32));

@@ -72,7 +72,7 @@ public class PacketManager : IPacketManager
         }
     }
 
-    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId, bool varyDistance)
+    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
         var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
@@ -80,7 +80,7 @@ public class PacketManager : IPacketManager
         
         if (cryptoSession is { IsEstablished: true })
         {
-            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId, varyDistance);
+            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId);
             
             if (message == null)
             {
@@ -92,7 +92,39 @@ public class PacketManager : IPacketManager
         }
         else
         {
-            var message = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, targetNodeId, varyDistance);
+            var message = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, targetNodeId);
+            
+            if(message == null)
+            {
+                _logger.LogWarning("No message constructed. Cannot send packet");
+                return;
+            }
+            
+            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+        }
+    }
+
+    public async Task SendTalkReqPacket(EnrRecord destRecord, byte[] protocol, byte[] request)
+    {
+        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
+        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
+        
+        if (cryptoSession is { IsEstablished: true })
+        {
+            var message = _messageRequester.ConstructTalkReqMessage(destNodeId, protocol, request);
+            
+            if (message == null)
+            {
+                _logger.LogWarning("Unable to construct message. Cannot send packet");
+                return;
+            }
+            
+            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
+        }
+        else
+        {
+            var message = _messageRequester.ConstructCachedTalkReqMessage(destNodeId, protocol, request);
             
             if(message == null)
             {

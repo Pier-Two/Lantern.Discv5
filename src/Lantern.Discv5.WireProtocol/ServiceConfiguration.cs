@@ -20,7 +20,6 @@ public static class ServiceConfiguration
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
-
         services.AddSingleton(loggerFactory);
 
         services.AddSingleton<ILookupManager, LookupManager>();

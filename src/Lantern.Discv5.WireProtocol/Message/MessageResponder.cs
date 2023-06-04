@@ -15,11 +15,11 @@ public class MessageResponder : IMessageResponder
     private readonly IRoutingTable _routingTable;
     private readonly IRequestManager _requestManager;
     private readonly ILookupManager _lookupManager;
-    private readonly ITalkResponder? _talkResponder;
+    private readonly ITalkReqAndRespHandler? _talkResponder;
     private readonly IMessageDecoder _messageDecoder;
     private readonly ILogger<MessageResponder> _logger;
 
-    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IRequestManager requestManager, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkResponder? talkResponder = null)
+    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IRequestManager requestManager, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkReqAndRespHandler? talkResponder = null)
     {
         _identityManager = identityManager;
         _routingTable = routingTable;
@@ -195,7 +195,7 @@ public class MessageResponder : IMessageResponder
         if(pendingRequest == null)
             return null;
         
-        _talkResponder.RespondToRequest(decodedMessage.Protocol, decodedMessage.Request);
+        _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
 
         return null;
     }

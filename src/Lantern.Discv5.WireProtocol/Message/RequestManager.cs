@@ -197,7 +197,7 @@ public class RequestManager : IRequestManager
     {
         if (request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.RequestTimeoutMs && !request.IsFulfilled)
         {
-            _logger.LogDebug("Request timed out. Removing from pending requests");
+            _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
             RemovePendingRequest(request.Message.RequestId);
 
             var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
@@ -222,7 +222,7 @@ public class RequestManager : IRequestManager
     {
         if(request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.RequestTimeoutMs && !request.IsFulfilled)
         {
-            _logger.LogInformation("Cached request timed out. Removing from cached requests");
+            _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
             RemoveCachedRequest(request.NodeId);
             
             var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);

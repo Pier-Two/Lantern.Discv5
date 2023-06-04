@@ -96,11 +96,11 @@ public class Discv5Protocol
         }
     }
 
-    public async Task SendFindNodeAsync(byte[] nodeId, EnrRecord destinationRecord)
+    public async Task SendFindNodeAsync(EnrRecord destinationRecord, byte[] nodeId)
     {
         try
         {
-            await _packetManager.SendFindNodePacket(destinationRecord, nodeId, false);
+            await _packetManager.SendFindNodePacket(destinationRecord, nodeId);
         }
         catch (Exception ex)
         {
@@ -108,27 +108,15 @@ public class Discv5Protocol
         }
     }
     
-    public async Task SendTalkReqAsync(byte[] data, EnrRecord destinationRecord)
+    public async Task SendTalkReqAsync(EnrRecord destinationRecord, byte[] protocol, byte[] request)
     {
         try
         {
-            
+            await _packetManager.SendTalkReqPacket(destinationRecord, protocol, request);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destinationRecord);
-        }
-    }
-    
-    public async Task SendTalkRespAsync(byte[] data, EnrRecord destinationRecord)
-    {
-        try
-        {
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destinationRecord);
         }
     }
 }
