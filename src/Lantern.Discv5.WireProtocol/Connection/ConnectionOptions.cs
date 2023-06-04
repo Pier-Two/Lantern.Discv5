@@ -26,7 +26,7 @@ public class ConnectionOptions
         public int Port { get; private set; } = 9000;
         public IPAddress LocalIpAddress { get; private set; } = ConnectionUtility.GetLocalIpAddress();
         public IPAddress? ExternalIpAddress { get; private set; }
-        public int TimeoutMilliseconds { get; private set; } = 500;
+        public int TimeoutMilliseconds { get; private set; } = 1000;
         public int CheckPendingRequestsDelayMs { get; private set; } = 500;
         public int RemoveCompletedRequestsDelayMs { get; private set; } = 3000;
         

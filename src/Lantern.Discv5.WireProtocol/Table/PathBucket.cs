@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Table;
@@ -17,8 +18,12 @@ public class PathBucket
     public Dictionary<byte[], int> ExpectedResponses { get; }
     
     public TaskCompletionSource<bool> CompletionSource { get; }
+    
+    public int ReceivedResponses { get; set; }
 
     public bool IsComplete { get; set; }
+    
+    public Stopwatch StartTime = Stopwatch.StartNew();
 
     public PathBucket(byte[] targetNodeId, int index) 
     {

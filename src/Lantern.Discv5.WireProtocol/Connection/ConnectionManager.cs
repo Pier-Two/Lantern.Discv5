@@ -20,7 +20,7 @@ public sealed class ConnectionManager : IConnectionManager
 
     public void StartConnectionManagerAsync(CancellationToken token = default)
     {
-        _logger.LogInformation("Starting ConnectionManager");
+        _logger.LogInformation("Starting ConnectionManagerAsync");
     
         _listenTask = _connection.ListenAsync(token);
         _handleTask = HandleIncomingPacketsAsync(token);
@@ -28,7 +28,7 @@ public sealed class ConnectionManager : IConnectionManager
 
     public async Task StopConnectionManagerAsync(CancellationToken token = default)
     {
-        _logger.LogInformation("Stopping ConnectionServicesAsync");
+        _logger.LogInformation("Stopping ConnectionManagerAsync");
 
         try
         {
@@ -39,7 +39,7 @@ public sealed class ConnectionManager : IConnectionManager
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            _logger.LogInformation("ConnectionServicesAsync was canceled gracefully");
+            _logger.LogInformation("ConnectionManagerAsync was canceled gracefully");
         }
         finally
         {
