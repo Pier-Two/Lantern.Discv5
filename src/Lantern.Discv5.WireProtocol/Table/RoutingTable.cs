@@ -28,8 +28,16 @@ public class RoutingTable : IRoutingTable
     public int GetTotalActiveNodesCount() => _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive));
 
     public NodeTableEntry[] GetAllNodeEntries() => _buckets.SelectMany(bucket => bucket.Nodes).ToArray();
+
+    public void UpdateFromEntry(NodeTableEntry nodeEntry)
+    {
+        var bucketIndex = GetBucketIndex(nodeEntry.Id);
+
+        _buckets[bucketIndex].Update(nodeEntry);
+        _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeEntry.Id));
+    }
     
-    public void UpdateTable(EnrRecord enrRecord)
+    public void UpdateFromEnr(EnrRecord enrRecord)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
         var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enrRecord, _identityManager.Verifier);
@@ -38,19 +46,14 @@ public class RoutingTable : IRoutingTable
         _buckets[bucketIndex].Update(nodeEntry);
         _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
     }
-
-    public void RefreshBuckets()
+    
+    public NodeTableEntry? GetLeastRecentlySeenNode()
     {
-        if (GetTotalEntriesCount() <= 0) 
-            return;
-    
-        _logger.LogInformation("Refreshing buckets...");
-    
         var leastRecentlyRefreshedBucket = _buckets
-            .Where(bucket => bucket.Nodes.Any())
-            .MinBy(bucket => bucket.Nodes.Min(node => node.LastSeen));
+                .Where(bucket => bucket.Nodes.Any())
+                .MinBy(bucket => bucket.Nodes.Min(node => node.LastSeen));
 
-        leastRecentlyRefreshedBucket?.RefreshLeastRecentlySeenNode();
+        return leastRecentlyRefreshedBucket?.GetLeastRecentlySeenNode();
     }
 
     public void MarkNodeAsQueried(byte[] nodeId)

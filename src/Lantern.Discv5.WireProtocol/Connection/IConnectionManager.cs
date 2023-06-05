@@ -2,7 +2,7 @@ namespace Lantern.Discv5.WireProtocol.Connection;
 
 public interface IConnectionManager
 {
-    void StartConnectionManagerAsync(CancellationToken token = default);
+    void StartConnectionManagerAsync();
 
-    Task StopConnectionManagerAsync(CancellationToken token = default);
+    Task StopConnectionManagerAsync();
 }

@@ -2,7 +2,7 @@ using System.Net;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public class SessionCacheKey : IEquatable<SessionCacheKey>
+public sealed class SessionCacheKey : IEquatable<SessionCacheKey>
 {
     private byte[] NodeId { get; }
     private IPEndPoint EndPoint { get; }

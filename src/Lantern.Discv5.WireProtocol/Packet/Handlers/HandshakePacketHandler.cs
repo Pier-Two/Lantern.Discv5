@@ -59,10 +59,13 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
         
-        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.NodeId); 
+        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.NodeId);
 
-        if(idSignatureVerificationResult == false)
-            throw new Exception("ID signature verification failed.");
+        if (idSignatureVerificationResult == false)
+        {
+            _logger.LogError("ID signature verification failed. Cannot decrypt message in the HANDSHAKE packet");
+            return;
+        }
 
         var decryptedMessage = session.DecryptMessageWithNewKeys(packet, handshakePacket, _identityManager.NodeId);
 
@@ -110,7 +113,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return false;
         }
 
-        _routingTable.UpdateTable(senderRecord);
+        _routingTable.UpdateFromEnr(senderRecord);
     
         senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>("secp256k1").Value;
         return true;

@@ -1,10 +1,8 @@
-using Lantern.Discv5.Enr;
-
 namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface ITableManager
 { 
-    void StartTableManagerAsync(CancellationToken token = default);
+    void StartTableManagerAsync();
 
-    Task StopTableManagerAsync(CancellationToken token = default);
+    Task StopTableManagerAsync();
 }

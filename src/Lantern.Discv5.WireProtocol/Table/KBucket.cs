@@ -70,18 +70,9 @@ public class KBucket
         _nodeLookup[replacementNode.Id] = newNode;
     }
     
-    public void RefreshLeastRecentlySeenNode()
+    public NodeTableEntry GetLeastRecentlySeenNode()
     {
-        var node = _nodes.First;
-
-        if (node == null)
-            return;
-
-        var leastRecentlySeenNode = node.Value;
-        _nodes.RemoveFirst();
-        
-        leastRecentlySeenNode.LastSeen = DateTime.UtcNow;
-        _nodes.AddLast(leastRecentlySeenNode);
+        return _nodes.First.Value;
     }
     
     private void UpdateExistingNode(NodeTableEntry nodeEntry, LinkedListNode<NodeTableEntry> node)
@@ -112,11 +103,6 @@ public class KBucket
     {
         _replacementCache.AddLast(nodeEntry);
         _logger.LogDebug("Added node {NodeId} to replacement cache", Convert.ToHexString(nodeEntry.Id));
-    }
-
-    private NodeTableEntry GetLeastRecentlySeenNode()
-    {
-        return _nodes.First.Value;
     }
 
     private void CheckLeastRecentlySeenNode(NodeTableEntry nodeEntry)

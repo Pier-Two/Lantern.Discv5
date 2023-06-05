@@ -6,7 +6,7 @@ public static class ByteArrayEqualityComparer
 {
     public static readonly IEqualityComparer<byte[]> Instance = new ByteArrayEqualityComparerImplementation();
 
-    private class ByteArrayEqualityComparerImplementation : IEqualityComparer<byte[]>
+    private sealed class ByteArrayEqualityComparerImplementation : IEqualityComparer<byte[]>
     {
         public bool Equals(byte[]? x, byte[]? y)
         {

@@ -78,10 +78,10 @@ public class MessageResponder : IMessageResponder
         var enrRecord = nodeEntry.Record;
         var nodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord);
 
-        // This condition will actually need to be removed because bootnodes will be added to the routing table first and then pinged.
-        if (nodeEntry.IsLive == false)
+        // This condition might need to be removed because bootnodes will be added to the routing table first and then pinged.
+        if (!nodeEntry.IsLive)
         {
-            _routingTable.UpdateTable(enrRecord);
+            _routingTable.UpdateFromEnr(enrRecord);
             _routingTable.MarkNodeAsLive(nodeId);
 
             if (!_identityManager.IsIpAddressAndPortSet())
@@ -105,7 +105,7 @@ public class MessageResponder : IMessageResponder
         
         var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(pendingRequest.NodeId, findNodesMessage));
 
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
@@ -167,7 +167,7 @@ public class MessageResponder : IMessageResponder
                 {
                     if (_routingTable.GetNodeEntry(nodeId) == null)
                     {
-                        _routingTable.UpdateTable(enr);
+                        _routingTable.UpdateFromEnr(enr);
                     }
                     
                     var nodeEntry = _routingTable.GetNodeEntry(nodeId);

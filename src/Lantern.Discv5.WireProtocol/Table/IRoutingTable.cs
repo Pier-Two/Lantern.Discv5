@@ -12,7 +12,11 @@ public interface IRoutingTable
     
     IEnumerable<EnrRecord> GetBootstrapEnrs();
 
-    void UpdateTable(EnrRecord enrRecord);
+    NodeTableEntry? GetLeastRecentlySeenNode();
+
+    void UpdateFromEntry(NodeTableEntry nodeEntry);
+    
+    void UpdateFromEnr(EnrRecord enrRecord);
 
     void MarkNodeAsQueried(byte[] nodeId);
     
@@ -21,8 +25,6 @@ public interface IRoutingTable
     void MarkNodeAsDead(byte[] nodeId);
 
     void IncreaseFailureCounter(byte[] nodeId);
-
-    void RefreshBuckets();
 
     NodeTableEntry? GetNodeEntry(byte[] nodeId);
 

@@ -8,6 +8,7 @@ public sealed class ConnectionManager : IConnectionManager
     private readonly IPacketManager _packetManager;
     private readonly IUdpConnection _connection;
     private readonly ILogger<ConnectionManager> _logger;
+    private readonly CancellationTokenSource _shutdownCts;
     private Task? _listenTask;
     private Task? _handleTask;
 
@@ -16,19 +17,21 @@ public sealed class ConnectionManager : IConnectionManager
         _packetManager = packetManager;
         _connection = connection;
         _logger = loggerFactory.CreateLogger<ConnectionManager>();
+        _shutdownCts = new CancellationTokenSource();
     }
 
-    public void StartConnectionManagerAsync(CancellationToken token = default)
+    public void StartConnectionManagerAsync()
     {
         _logger.LogInformation("Starting ConnectionManagerAsync");
     
-        _listenTask = _connection.ListenAsync(token);
-        _handleTask = HandleIncomingPacketsAsync(token);
+        _listenTask = _connection.ListenAsync(_shutdownCts.Token);
+        _handleTask = HandleIncomingPacketsAsync(_shutdownCts.Token);
     }
 
-    public async Task StopConnectionManagerAsync(CancellationToken token = default)
+    public async Task StopConnectionManagerAsync()
     {
         _logger.LogInformation("Stopping ConnectionManagerAsync");
+        _shutdownCts.Cancel();
 
         try
         {
@@ -37,7 +40,7 @@ public sealed class ConnectionManager : IConnectionManager
                 await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
             _logger.LogInformation("ConnectionManagerAsync was canceled gracefully");
         }
@@ -47,18 +50,18 @@ public sealed class ConnectionManager : IConnectionManager
         }
     }
 
-    private async Task HandleIncomingPacketsAsync(CancellationToken cancellationToken = default)
+    private async Task HandleIncomingPacketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting HandleIncomingPacketsAsync");
 
         try
         {
-            await foreach (var packet in _connection.ReadMessagesAsync(cancellationToken).WithCancellation(cancellationToken))
+            await foreach (var packet in _connection.ReadMessagesAsync(token).ConfigureAwait(false))
             {
                 await _packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
             _logger.LogInformation("HandleIncomingPacketsAsync was canceled gracefully");
         }

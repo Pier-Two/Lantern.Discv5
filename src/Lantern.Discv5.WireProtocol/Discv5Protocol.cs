@@ -50,20 +50,20 @@ public class Discv5Protocol
 
     public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodeEntries();
 
-    public void StartProtocolAsync(CancellationToken token = default)
+    public void StartProtocolAsync()
     {
-        _connectionManager.StartConnectionManagerAsync(token);
-        _discoveryProtocol.StartInitialiseProtocolAsync(token);
-        _tableManager.StartTableManagerAsync(token);
-        _requestManager.StartRequestManagerAsync(token);
+        _connectionManager.StartConnectionManagerAsync();
+        _discoveryProtocol.StartInitialiseProtocolAsync();
+        _tableManager.StartTableManagerAsync();
+        _requestManager.StartRequestManagerAsync();
     }
     
-    public async Task StopProtocolAsync(CancellationToken token = default)
+    public async Task StopProtocolAsync()
     {
-        var stopConnectionTask = _connectionManager.StopConnectionManagerAsync(token);
-        var initialiseTask = _discoveryProtocol.StopInitialiseProtocolAsync(token);
-        var tableTask = _tableManager.StopTableManagerAsync(token);
-        var requestsTask = _requestManager.StopRequestManagerAsync(token);
+        var stopConnectionTask = _connectionManager.StopConnectionManagerAsync();
+        var initialiseTask = _discoveryProtocol.StopInitialiseProtocolAsync();
+        var tableTask = _tableManager.StopTableManagerAsync();
+        var requestsTask = _requestManager.StopRequestManagerAsync();
         
         await Task.WhenAll(stopConnectionTask, initialiseTask, tableTask, requestsTask).ConfigureAwait(false);
     }

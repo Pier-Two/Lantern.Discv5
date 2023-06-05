@@ -103,8 +103,8 @@ public class LookupManager : ILookupManager
                 bucket.ExpectedResponses.Add(senderNode, expectedResponses - 1);
             }
             
-            _logger.LogInformation("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNode], Convert.ToHexString(senderNode), bucket.Index);
-            _logger.LogInformation("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
+            _logger.LogDebug("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNode], Convert.ToHexString(senderNode), bucket.Index);
+            _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
             
             if (nodes.Count > 0)
             {
@@ -114,8 +114,6 @@ public class LookupManager : ILookupManager
             }
             else
             {
-                // If node replies with 0 nodes, vary the distance and try again
-                _logger.LogDebug("Received no nodes from node {NodeId}. Varying distances", Convert.ToHexString(senderNode));
                 await QuerySelfNode(bucket, senderNode);
             }
         }
@@ -198,8 +196,8 @@ public class LookupManager : ILookupManager
             {
                 bucket.IsComplete = true;
                 bucket.CompletionSource.TrySetResult(true);
-                _logger.LogInformation("Queried {QueriedNodes} nodes so far in bucket {BucketIndex}", bucket.QueriedNodes.Count, bucket.Index);
-                _logger.LogInformation("Received {ReceivedResponses} responses so far in bucket {BucketIndex}", bucket.ReceivedResponses, bucket.Index);
+                _logger.LogDebug("Queried {QueriedNodes} nodes so far in bucket {BucketIndex}", bucket.QueriedNodes.Count, bucket.Index);
+                _logger.LogDebug("Received {ReceivedResponses} responses so far in bucket {BucketIndex}", bucket.ReceivedResponses, bucket.Index);
             }
             else
             {

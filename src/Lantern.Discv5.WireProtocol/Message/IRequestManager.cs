@@ -2,9 +2,9 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IRequestManager
 {
-    void StartRequestManagerAsync(CancellationToken token = default);
+    void StartRequestManagerAsync();
     
-    Task StopRequestManagerAsync(CancellationToken token = default);
+    Task StopRequestManagerAsync();
     
     bool AddPendingRequest(byte[] requestId, PendingRequest request);
 
@@ -17,8 +17,6 @@ public interface IRequestManager
     PendingRequest? GetPendingRequest(byte[] requestId);
 
     CachedRequest? GetCachedRequest(byte[] requestId);
-    
-    List<PendingRequest> GetPendingRequests();
 
     void MarkRequestAsFulfilled(byte[] requestId);
 

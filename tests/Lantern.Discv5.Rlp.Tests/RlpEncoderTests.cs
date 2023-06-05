@@ -77,7 +77,7 @@ public class RlpEncoderTests
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionOfBytesCorrectly()
     {
-        var bytes = new byte[] { };
+        var bytes = Array.Empty<byte>();
         var rlpEncoded = RlpEncoder.EncodeCollectionOfBytes(bytes);
         var rlpExpected = new byte[] { 192 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
@@ -86,7 +86,7 @@ public class RlpEncoderTests
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionsOfBytesCorrectly()
     {
-        var bytes = new byte[] { };
+        var bytes = Array.Empty<byte>();
         var rlpEncoded = RlpEncoder.EncodeCollectionsOfBytes(bytes);
         var rlpExpected = new byte[] { 193, 192 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));

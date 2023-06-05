@@ -71,8 +71,7 @@ public class Discv5ProtocolTests
     [Test]
     public async Task Test()
     {
-        var token = new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token;
-         _discv5Protocol.StartProtocolAsync(token);
+        _discv5Protocol.StartProtocolAsync();
 
         var closestNodes = await _discv5Protocol.PerformLookup(RandomUtility.GenerateNodeId(32));
 
@@ -82,8 +81,8 @@ public class Discv5ProtocolTests
             {
                 Console.WriteLine("Closest node: " + Convert.ToHexString(node.Id));
             }
-        }
-
-        await _discv5Protocol.StopProtocolAsync(token);
+        } 
+        
+        await _discv5Protocol.StopProtocolAsync();
     }
 } 

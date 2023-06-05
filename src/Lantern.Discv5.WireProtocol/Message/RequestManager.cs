@@ -13,6 +13,7 @@ public class RequestManager : IRequestManager
     private readonly ILogger<RequestManager> _logger;
     private readonly TableOptions _tableOptions;
     private readonly ConnectionOptions _connectionOptions;
+    private readonly CancellationTokenSource _shutdownCts;
     private Task? _checkRequestsTask;
     private Task? _removeFulfilledRequestsTask;
 
@@ -24,20 +25,22 @@ public class RequestManager : IRequestManager
         _logger = loggerFactory.CreateLogger<RequestManager>();
         _tableOptions = tableOptions;
         _connectionOptions = connectionOptions;
+        _shutdownCts = new CancellationTokenSource();
     }
     
-    public void StartRequestManagerAsync(CancellationToken token = default)
+    public void StartRequestManagerAsync()
     {
         _logger.LogInformation("Starting RequestManagerAsync");
         
-        _checkRequestsTask = CheckRequestsAsync(token);
-        _removeFulfilledRequestsTask = RemoveFulfilledRequestsAsync(token);
+        _checkRequestsTask = CheckRequestsAsync(_shutdownCts.Token);
+        _removeFulfilledRequestsTask = RemoveFulfilledRequestsAsync(_shutdownCts.Token);
     }
 
-    public async Task StopRequestManagerAsync(CancellationToken token = default)
+    public async Task StopRequestManagerAsync()
     {
         _logger.LogInformation("Stopping RequestManagerAsync");
-
+        _shutdownCts.Cancel();
+        
         try
         {
             if (_checkRequestsTask != null && _removeFulfilledRequestsTask != null)
@@ -45,7 +48,7 @@ public class RequestManager : IRequestManager
                 await Task.WhenAll(_checkRequestsTask, _removeFulfilledRequestsTask).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
             _logger.LogInformation("RequestManagerAsync was canceled gracefully");
         }
@@ -126,7 +129,7 @@ public class RequestManager : IRequestManager
 
         try
         {
-            while (!token.IsCancellationRequested)
+            while (!_shutdownCts.IsCancellationRequested)
             {
                 var currentPendingRequests = GetPendingRequests();
                 var currentCachedRequests = GetCachedRequests();
@@ -144,7 +147,7 @@ public class RequestManager : IRequestManager
                 await Task.Delay(_connectionOptions.RequestTimeoutMs, token).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
             _logger.LogInformation("CheckPendingRequestsAsync was canceled gracefully");
         }
@@ -162,7 +165,7 @@ public class RequestManager : IRequestManager
 
         try
         {
-            while (!token.IsCancellationRequested)
+            while (!_shutdownCts.IsCancellationRequested)
             {
                 var completedTasks = GetPendingRequests().Where(x => x.IsFulfilled).ToList();
                 
@@ -183,7 +186,7 @@ public class RequestManager : IRequestManager
                 await Task.Delay(_connectionOptions.RemoveCompletedRequestsDelayMs, token).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
             _logger.LogInformation("RemoveCompletedTasksAsync was canceled gracefully");
         }

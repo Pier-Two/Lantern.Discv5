@@ -24,7 +24,7 @@ public class MessageDecoder : IMessageDecoder
             MessageType.RegConfirmation => DecodeRegConfirmationMessage(message),
             MessageType.Ticket => DecodeTicketMessage(message),
             MessageType.TopicQuery => DecodeTopicQueryMessage(message),
-            _ => throw new ArgumentOutOfRangeException(nameof(messageType), messageType, null)
+            _ => throw new ArgumentOutOfRangeException()
         };
     }
     
