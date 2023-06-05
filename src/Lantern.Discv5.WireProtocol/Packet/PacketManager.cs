@@ -43,7 +43,16 @@ public class PacketManager : IPacketManager
     public async Task SendPingPacket(EnrRecord destRecord)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
+        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
+        
+        if(destIpKey == null || destUdpKey == null)
+        {
+            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
+            return;
+        }
+        
+        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
 
         if (cryptoSession is { IsEstablished: true })
@@ -75,7 +84,16 @@ public class PacketManager : IPacketManager
     public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
+        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
+        
+        if(destIpKey == null || destUdpKey == null)
+        {
+            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
+            return;
+        }
+        
+        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
         
         if (cryptoSession is { IsEstablished: true })
@@ -107,7 +125,16 @@ public class PacketManager : IPacketManager
     public async Task SendTalkReqPacket(EnrRecord destRecord, byte[] protocol, byte[] request)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destEndPoint = new IPEndPoint(destRecord.GetEntry<EntryIp>(EnrContentKey.Ip).Value, destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
+        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
+        
+        if(destIpKey == null || destUdpKey == null)
+        {
+            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
+            return;
+        }
+        
+        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
         
         if (cryptoSession is { IsEstablished: true })
@@ -138,9 +165,16 @@ public class PacketManager : IPacketManager
 
     public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
-        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
-        var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)packet.StaticHeader.Flag);
-        await packetHandler.HandlePacket(_udpConnection, returnedResult);
+        try
+        {
+            var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
+            var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)packet.StaticHeader.Flag);
+            await packetHandler.HandlePacket(_udpConnection, returnedResult);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Error handling received packet");
+        }
     }
 
     private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)

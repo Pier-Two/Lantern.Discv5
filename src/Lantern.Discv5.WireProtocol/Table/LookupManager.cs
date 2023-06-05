@@ -104,11 +104,11 @@ public class LookupManager : ILookupManager
             }
             
             _logger.LogInformation("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNode], Convert.ToHexString(senderNode), bucket.Index);
-            _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
+            _logger.LogInformation("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
             
             if (nodes.Count > 0)
             {
-                _logger.LogInformation("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNode), bucket.Index); 
+                _logger.LogDebug("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNode), bucket.Index); 
                 UpdatePathBucketNew(bucket, nodes, senderNode);
                 await QueryClosestNodes(bucket, senderNode);
             }
@@ -156,11 +156,12 @@ public class LookupManager : ILookupManager
             foreach (var node in nodesToQuery)
             {
                 _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
+
+                if (_pathBuckets.Any(pathBucket => pathBucket.QueriedNodes.Contains(node.Id))) 
+                    continue;
+                
+                bucket.QueriedNodes.Add(node.Id);
                 await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
-                if (!bucket.QueriedNodes.Contains(node.Id))
-                {
-                    bucket.QueriedNodes.Add(node.Id);
-                }
             }
         }
     }
@@ -181,10 +182,10 @@ public class LookupManager : ILookupManager
 
         if (bucket.QueriedNodes.Count < TableConstants.BucketSize)
         {
-            await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
-            if (!bucket.QueriedNodes.Contains(node.Id))
+            if (!_pathBuckets.Any(pathBucket => pathBucket.QueriedNodes.Contains(node.Id)))
             {
                 bucket.QueriedNodes.Add(node.Id);
+                await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
             }
         }
     }

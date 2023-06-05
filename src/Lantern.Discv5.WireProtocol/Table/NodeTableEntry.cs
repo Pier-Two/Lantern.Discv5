@@ -22,4 +22,6 @@ public class NodeTableEntry
     public bool IsLive { get; set; }
 
     public int FailureCounter { get; set; }
+    
+    public DateTime LastSeen { get; set; }
 }

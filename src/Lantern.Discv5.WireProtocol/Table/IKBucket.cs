@@ -4,7 +4,7 @@ public interface IKBucket
 {
     IEnumerable<NodeTableEntry> Nodes { get; }
 
-    NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId, int bucketIndex);
+    NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId);
     
     NodeTableEntry? GetNodeById(byte[] nodeId);
     

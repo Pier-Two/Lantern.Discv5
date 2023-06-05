@@ -56,6 +56,8 @@ public class RequestManager : IRequestManager
         if (ContainsPendingRequest(requestId)) 
             return false;
         
+        _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
+        
         _pendingRequests.Add(requestId, request);
         return true;
     }
@@ -107,14 +109,14 @@ public class RequestManager : IRequestManager
             return;
         
         _pendingRequests[requestId].IsFulfilled = true;
-        _pendingRequests[requestId].ResponsesReceived++;
+        _pendingRequests[requestId].ResponsesCount++;
     }
 
     public void MarkCachedRequestAsFulfilled(byte[] requestId)
     {
         if (ContainsCachedRequest(requestId))
         {
-            _cachedRequests[requestId].IsFulfilled = true;
+            _cachedRequests.Remove(requestId);
         }
     }
 
@@ -168,7 +170,7 @@ public class RequestManager : IRequestManager
                 {
                     if (task.Message.MessageType == MessageType.FindNode)
                     {
-                        if (task.ResponsesReceived == task.MaxResponses)
+                        if (task.ResponsesCount == task.MaxResponses)
                         {
                             RemovePendingRequest(task.Message.RequestId);
                         }
@@ -233,16 +235,7 @@ public class RequestManager : IRequestManager
                 return;
             }
             
-            if(nodeEntry.FailureCounter >= _tableOptions.MaxAllowedFailures)
-            {
-                _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
-                _routingTable.MarkNodeAsDead(request.NodeId);
-            }
-            else
-            {
-                _logger.LogDebug("Increasing failure counter for Node {NodeId}",Convert.ToHexString(request.NodeId));
-                _routingTable.IncreaseFailureCounter(request.NodeId);
-            }
+            _routingTable.MarkNodeAsDead(request.NodeId);
         }
     }
     

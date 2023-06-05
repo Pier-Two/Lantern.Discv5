@@ -18,7 +18,7 @@ public class Discv5ProtocolTests
     [SetUp]
     public void Setup()
     {
-        var privateKey = /*new SessionUtility().GenerateRandomPrivateKey();*/Convert.FromHexString("BAFA8BDEC1F4F02D227A2F99C5FD8F439B457942B466115A0FAB9FC3F9E97D67");
+        var privateKey = RandomUtility.GeneratePrivateKey(32);
         var signer = new IdentitySchemeV4Signer(privateKey);
         var verifier = new IdentitySchemeV4Verifier();
         var sessionKeys = new SessionKeys(privateKey);

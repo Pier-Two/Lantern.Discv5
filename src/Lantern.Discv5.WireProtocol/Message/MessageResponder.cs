@@ -101,9 +101,17 @@ public class MessageResponder : IMessageResponder
         }
         
         var distance = new []{ 0 };
-        var findNodeMessage = new FindNodeMessage(distance);
+        var findNodesMessage = new FindNodeMessage(distance);
         
-        return findNodeMessage.EncodeMessage();
+        var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(pendingRequest.NodeId, findNodesMessage));
+
+        if(result == false)
+        {
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
+            return null;
+        }
+
+        return findNodesMessage.EncodeMessage();
     }
     
     private byte[] HandleFindNodeMessage(byte[] message)
@@ -138,29 +146,31 @@ public class MessageResponder : IMessageResponder
         
         pendingRequest.MaxResponses = decodedMessage.Total;
 
-        if (pendingRequest.ResponsesReceived > decodedMessage.Total)
+        if (pendingRequest.ResponsesCount > decodedMessage.Total)
         {
-            _logger.LogWarning("Received more responses than expected from node {NodeId}. Ignoring response", Convert.ToHexString(pendingRequest.NodeId));
+            _logger.LogWarning("Received {ResponsesCount} responses so far. Expected {TotalResponses} from node {NodeId}. Ignoring response", pendingRequest.ResponsesCount, decodedMessage.Total, Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
         
         var senderNodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
-        var identityVerifier = new IdentitySchemeV4Verifier();
         var receivedNodes = new List<NodeTableEntry>();
 
         foreach (var distance in findNodesRequest.Distances)
         {
             foreach (var enr in decodedMessage.Enrs)
             {
-                var nodeId = identityVerifier.GetNodeIdFromRecord(enr);
+                var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
                 var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
 
                 if (distance == distanceToNode)
                 {
-                    _routingTable.UpdateTable(enr);
+                    if (_routingTable.GetNodeEntry(nodeId) == null)
+                    {
+                        _routingTable.UpdateTable(enr);
+                    }
+                    
                     var nodeEntry = _routingTable.GetNodeEntry(nodeId);
-
                     if (nodeEntry != null)
                     {
                         receivedNodes.Add(nodeEntry);

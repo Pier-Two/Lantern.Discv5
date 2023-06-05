@@ -18,7 +18,7 @@ public class RoutingTable : IRoutingTable
         _localNodeId = identityManager.NodeId;
         _options = options;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
-        _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory,options, TableConstants.BucketSize)).ToList();
+        _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory)).ToList();
     }
     
     public IEnumerable<EnrRecord> GetBootstrapEnrs() => _options.BootstrapEnrs;
@@ -35,7 +35,7 @@ public class RoutingTable : IRoutingTable
         var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enrRecord, _identityManager.Verifier);
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
 
-        _buckets[bucketIndex].Update(nodeEntry, bucketIndex);
+        _buckets[bucketIndex].Update(nodeEntry);
         _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
     }
 
@@ -43,13 +43,14 @@ public class RoutingTable : IRoutingTable
     {
         if (GetTotalEntriesCount() <= 0) 
             return;
-        
+    
         _logger.LogInformation("Refreshing buckets...");
-        
-        foreach (var bucket in _buckets)
-        {
-            bucket.RefreshLeastRecentlySeenNode();
-        }
+    
+        var leastRecentlyRefreshedBucket = _buckets
+            .Where(bucket => bucket.Nodes.Any())
+            .MinBy(bucket => bucket.Nodes.Min(node => node.LastSeen));
+
+        leastRecentlyRefreshedBucket?.RefreshLeastRecentlySeenNode();
     }
 
     public void MarkNodeAsQueried(byte[] nodeId)
@@ -87,7 +88,7 @@ public class RoutingTable : IRoutingTable
             return;
         
         nodeEntry.IsLive = false;
-        bucket.ReplaceDeadNode(nodeEntry, bucketIndex);
+        bucket.ReplaceDeadNode(nodeEntry);
     }
 
     public void IncreaseFailureCounter(byte[] nodeId)
@@ -126,7 +127,7 @@ public class RoutingTable : IRoutingTable
         {
             var bucketIndex = GetBucketIndex(nodeId);
             var bucket = _buckets[bucketIndex];
-            nodeEntry = bucket.GetNodeFromReplacementCache(nodeId, bucketIndex);
+            nodeEntry = bucket.GetNodeFromReplacementCache(nodeId);
         }
 
         return nodeEntry;

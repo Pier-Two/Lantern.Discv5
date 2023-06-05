@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Lantern.Discv5.WireProtocol.Utility;
 
@@ -8,8 +9,10 @@ public class PathBucket
     public int Index { get; }
     
     public byte[] TargetNodeId { get; }
+    
+    public readonly Stopwatch StartTime = Stopwatch.StartNew();
 
-    public List<byte[]> QueriedNodes { get; }
+    public ConcurrentBag<byte[]> QueriedNodes { get; }
     
     public List<NodeTableEntry> DiscoveredNodes { get; }
 
@@ -22,14 +25,12 @@ public class PathBucket
     public int ReceivedResponses { get; set; }
 
     public bool IsComplete { get; set; }
-    
-    public Stopwatch StartTime = Stopwatch.StartNew();
 
     public PathBucket(byte[] targetNodeId, int index) 
     {
         Index = index;
         TargetNodeId = targetNodeId;
-        QueriedNodes = new List<byte[]>();
+        QueriedNodes = new ConcurrentBag<byte[]>();
         DiscoveredNodes = new List<NodeTableEntry>();
         Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
         CompletionSource = new TaskCompletionSource<bool>();

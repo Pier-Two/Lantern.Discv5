@@ -12,7 +12,7 @@ public class PendingRequest
     
     public bool IsFulfilled { get; set; }
     
-    public int ResponsesReceived { get; set; }
+    public int ResponsesCount { get; set; }
     
     public int MaxResponses { get; set; }
 
