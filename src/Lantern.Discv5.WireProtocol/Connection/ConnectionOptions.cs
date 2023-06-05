@@ -48,11 +48,11 @@ public class ConnectionOptions
             {
                 ExternalIpAddress = await ConnectionUtility.DetermineExternalIpAddress();
             }
-            catch (Exception ex)
+            catch
             {
-                // Console.WriteLine("Failed to determine external IP address.");
+                // ignored
             }
-            
+
             return this;
         }
 

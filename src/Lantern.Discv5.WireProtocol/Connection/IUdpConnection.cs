@@ -5,11 +5,11 @@ namespace Lantern.Discv5.WireProtocol.Connection;
 
 public interface IUdpConnection
 {
-    Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken cancellationToken = default);
+    Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken token = default);
     
-    Task ListenAsync(CancellationToken cancellationToken);
+    Task ListenAsync(CancellationToken token = default);
     
-    IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync(CancellationToken cancellationToken = default);
+    IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync(CancellationToken token = default);
 
     void CompleteMessageChannel();
 }

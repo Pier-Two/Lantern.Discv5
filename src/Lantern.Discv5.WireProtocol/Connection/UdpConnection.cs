@@ -9,7 +9,7 @@ using OperationCanceledException = System.OperationCanceledException;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public class UdpConnection : IUdpConnection
+public class UdpConnection : IUdpConnection, IDisposable
 {
     private const int MaxPacketSize = 1280;
     private const int MinPacketSize = 63;
@@ -25,28 +25,28 @@ public class UdpConnection : IUdpConnection
         _logger.LogInformation("UdpConnection initialized on port {Port}", options.Port);
     }
 
-    public async Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken cancellationToken = default)
+    public async Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken token = default)
     {
         ValidatePacketSize(data);
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
         cts.CancelAfter(UdpTimeoutMilliseconds);
 
         _logger.LogDebug("Sending packet to {Destination}", destination);
         await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
     }
     
-    public async Task ListenAsync(CancellationToken cancellationToken = default)
+    public async Task ListenAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting ListenAsync");
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    var returnedResult = await ReceiveAsync(cancellationToken).ConfigureAwait(false);
+                    var returnedResult = await ReceiveAsync(token).ConfigureAwait(false);
                     _messageChannel.Writer.TryWrite(returnedResult);
                 }
                 catch (UdpTimeoutException)

@@ -42,7 +42,7 @@ public class MessageResponder : IMessageResponder
             MessageType.Nodes => await HandleNodesMessage(message),
             MessageType.TalkReq => HandleTalkReqMessage(message),
             MessageType.TalkResp => HandleTalkRespMessage(message),
-            _ => throw new ArgumentOutOfRangeException(nameof(messageType), messageType, null)
+            _ => throw new ArgumentOutOfRangeException()
         };
     }
     
