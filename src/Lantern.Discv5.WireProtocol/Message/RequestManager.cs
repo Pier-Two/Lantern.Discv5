@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -7,8 +8,8 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public class RequestManager : IRequestManager
 {
-    private readonly Dictionary<byte[], PendingRequest> _pendingRequests;
-    private readonly Dictionary<byte[], CachedRequest> _cachedRequests;
+    private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests;
+    private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests;
     private readonly IRoutingTable _routingTable;
     private readonly ILogger<RequestManager> _logger;
     private readonly TableOptions _tableOptions;
@@ -19,8 +20,8 @@ public class RequestManager : IRequestManager
 
     public RequestManager(IRoutingTable routingTable, ILoggerFactory loggerFactory, TableOptions tableOptions, ConnectionOptions connectionOptions)
     {
-        _pendingRequests = new Dictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
-        _cachedRequests = new Dictionary<byte[], CachedRequest>(ByteArrayEqualityComparer.Instance);
+        _pendingRequests = new ConcurrentDictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
+        _cachedRequests = new ConcurrentDictionary<byte[], CachedRequest>(ByteArrayEqualityComparer.Instance);
         _routingTable = routingTable;
         _logger = loggerFactory.CreateLogger<RequestManager>();
         _tableOptions = tableOptions;
@@ -61,7 +62,7 @@ public class RequestManager : IRequestManager
         
         _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
         
-        _pendingRequests.Add(requestId, request);
+        _pendingRequests.TryAdd(requestId, request);
         return true;
     }
     
@@ -70,7 +71,7 @@ public class RequestManager : IRequestManager
         if (ContainsCachedRequest(requestId)) 
             return false;
         
-        _cachedRequests.Add(requestId, request);
+        _cachedRequests.TryAdd(requestId, request);
         return true;
     }
     
@@ -119,7 +120,7 @@ public class RequestManager : IRequestManager
     {
         if (ContainsCachedRequest(requestId))
         {
-            _cachedRequests.Remove(requestId);
+            _cachedRequests.TryRemove(requestId, out _);
         }
     }
 
@@ -246,7 +247,7 @@ public class RequestManager : IRequestManager
     {
         if (ContainsPendingRequest(requestId))
         {
-            _pendingRequests.Remove(requestId);
+            _pendingRequests.TryRemove(requestId, out _);
         }
     }
 
@@ -254,7 +255,7 @@ public class RequestManager : IRequestManager
     {
         if (ContainsCachedRequest(requestId))
         {
-            _cachedRequests.Remove(requestId);
+            _cachedRequests.Remove(requestId, out _);
         }
     }
 }

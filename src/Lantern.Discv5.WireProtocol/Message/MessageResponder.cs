@@ -205,9 +205,9 @@ public class MessageResponder : IMessageResponder
         if(pendingRequest == null)
             return null;
         
-        _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
-
-        return null;
+        var result = _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
+        
+        return result;
     }
     
     private byte[]? HandleTalkRespMessage(byte[] message)
@@ -225,9 +225,9 @@ public class MessageResponder : IMessageResponder
         if(pendingRequest == null)
             return null;
 
-        _talkResponder.HandleResponse(decodedMessage.Response);
+        var result = _talkResponder.HandleResponse(decodedMessage.Response);
 
-        return null;
+        return result;
     }
     
     private PendingRequest? GetPendingRequest(Message message)
