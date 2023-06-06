@@ -9,8 +9,8 @@ public class TableTests
     [Test]
     public void Test1()
     {
-        var firstNodeId = Convert.FromHexString("4E477ADAB7430EFEDCC8570C7244A8324EBA9034878862A9BD4FE2B7D19E5E39");
-        var secondNodeId = Convert.FromHexString("4E46DE6028F1B6E80719F2067CCCA57D279C8247C9811A7C4A5B4CF54A9BD405");
+        var firstNodeId = Convert.FromHexString("4A2E2A02F3DE741C7DB65A4E431BBD7FFF02C9C2AA3AD7E4E2999D906483EC4A");
+        var secondNodeId = Convert.FromHexString("4A2E7054A27B7743D2200FC92080A468C1B352FE250886879E070BDEFDDA35CE");
         var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
         Console.WriteLine(firstDistance);
     }

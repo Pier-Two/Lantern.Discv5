@@ -73,7 +73,7 @@ public class Discv5ProtocolTests
     {
         _discv5Protocol.StartProtocolAsync();
 
-        var closestNodes = await _discv5Protocol.PerformLookup(RandomUtility.GenerateNodeId(32));
+        var closestNodes = await _discv5Protocol.PerformLookup(Convert.FromHexString("44b7533fcfbf28d4b005c70137adb1f7d49796669447dfbdee96a0cbd94f463b"));
 
         if (closestNodes != null)
         {

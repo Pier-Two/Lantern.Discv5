@@ -35,27 +35,9 @@ public class LookupManager : ILookupManager
         IsLookupInProgress = true;
         await StartLookup(targetNodeId);
 
-        var bucketCompletionTasks = _pathBuckets.Select(async bucket =>
-        {
-            var monitorTask = MonitorCompletionAsync(bucket);
-            var completedTask = await Task.WhenAny(bucket.CompletionSource.Task, monitorTask);
+        await Task.WhenAll(_pathBuckets.Select(MonitorCompletionAsync));
 
-            if (completedTask == bucket.CompletionSource.Task)
-            {
-                _logger.LogInformation("Bucket {BucketIndex} completed successfully", bucket.Index);
-            }
-            else
-            {
-                _logger.LogInformation("Bucket {BucketIndex} timed out", bucket.Index);
-            }
-
-            return completedTask == bucket.CompletionSource.Task;
-        });
-
-        await Task.WhenAll(bucketCompletionTasks);
-    
-        var completedBuckets = _pathBuckets.Where(bucket => bucket.IsComplete).ToList();
-        var result = completedBuckets
+        var result = _pathBuckets
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
@@ -67,6 +49,7 @@ public class LookupManager : ILookupManager
 
         return result;
     }
+
 
     public async Task StartLookup(byte[] targetNodeId)
     {
@@ -188,22 +171,32 @@ public class LookupManager : ILookupManager
         }
     }
     
-    private async Task MonitorCompletionAsync(PathBucket bucket)
+    private async Task<bool> MonitorCompletionAsync(PathBucket bucket)
     {
+        var cancellationTokenSource = new CancellationTokenSource(_tableOptions.LookupTimeoutMilliseconds);
+        var cancellationToken = cancellationTokenSource.Token;
+
         while (!bucket.IsComplete)
         {
-            if (bucket.ReceivedResponses == TableConstants.BucketSize || bucket.StartTime.ElapsedMilliseconds >= _tableOptions.LookupTimeoutMilliseconds)
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("Bucket {BucketIndex} timed out.", bucket.Index);
+                break;
+            }
+
+            if (bucket.ReceivedResponses == TableConstants.BucketSize)
             {
                 bucket.IsComplete = true;
                 bucket.CompletionSource.TrySetResult(true);
-                _logger.LogDebug("Queried {QueriedNodes} nodes so far in bucket {BucketIndex}", bucket.QueriedNodes.Count, bucket.Index);
-                _logger.LogDebug("Received {ReceivedResponses} responses so far in bucket {BucketIndex}", bucket.ReceivedResponses, bucket.Index);
+                _logger.LogInformation("Bucket {BucketIndex} completed successfully", bucket.Index);
             }
             else
             {
                 await Task.Delay(100);
             }
         }
+
+        return bucket.IsComplete;
     }
     
     private List<PathBucket> PartitionInitialNodesNew(IReadOnlyList<NodeTableEntry> initialNodes, byte[] targetNodeId)
