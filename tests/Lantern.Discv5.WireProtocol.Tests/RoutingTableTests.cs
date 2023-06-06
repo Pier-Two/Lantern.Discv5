@@ -4,8 +4,10 @@ using NUnit.Framework;
 namespace Lantern.Discv5.WireProtocol.Tests;
 
 [TestFixture]
-public class TableTests
+public class RoutingTableTests
 {
+    // Create a mock routing table to check if the management of the buckets is happening correctly
+    
     [Test]
     public void Test1()
     {

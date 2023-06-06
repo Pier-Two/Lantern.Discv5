@@ -56,11 +56,11 @@ public class Discv5Protocol
     
     public async Task StopProtocolAsync()
     {
-        var stopConnectionTask = _connectionManager.StopConnectionManagerAsync();
-        var tableTask = _tableManager.StopTableManagerAsync();
-        var requestsTask = _requestManager.StopRequestManagerAsync();
+        var stopConnectionManagerTask = _connectionManager.StopConnectionManagerAsync();
+        var stopTableManagerTask = _tableManager.StopTableManagerAsync();
+        var stopRequestManagerTask = _requestManager.StopRequestManagerAsync();
         
-        await Task.WhenAll(stopConnectionTask, tableTask, requestsTask).ConfigureAwait(false);
+        await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
     }
 
     public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
