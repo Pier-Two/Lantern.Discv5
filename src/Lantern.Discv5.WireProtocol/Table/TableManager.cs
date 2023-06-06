@@ -11,7 +11,8 @@ public class TableManager : ITableManager
     private readonly IRoutingTable _routingTable;
     private readonly TableOptions _tableOptions;
     private readonly ILogger<TableManager> _logger;
-    private readonly CancellationTokenSource _shutdownCts; 
+    private readonly CancellationTokenSource _shutdownCts;
+    private Task? _initializeTask;
     private Task? _refreshTask;
     private Task? _pingTask;
     
@@ -28,6 +29,7 @@ public class TableManager : ITableManager
     public void StartTableManagerAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
+        _initializeTask = InitialiseFromBootstrapAsync();
         _refreshTask = RefreshBucketsAsync(_shutdownCts.Token);
         _pingTask = PingNodeAsync(_shutdownCts.Token);
     }
@@ -39,9 +41,9 @@ public class TableManager : ITableManager
         
         try
         {
-            if (_refreshTask != null && _pingTask != null)
+            if (_initializeTask != null && _refreshTask != null && _pingTask != null)
             {
-                await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
+                await Task.WhenAll(_initializeTask, _refreshTask, _pingTask).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
@@ -50,6 +52,27 @@ public class TableManager : ITableManager
         }
     }
     
+    private async Task InitialiseFromBootstrapAsync()
+    {
+        if (_routingTable.GetTotalEntriesCount() == 0)
+        {
+            _logger.LogInformation("Initialising from bootstrap ENRs");
+            var bootstrapEnrs = _routingTable.GetBootstrapEnrs();
+
+            foreach (var bootstrapEnr in bootstrapEnrs)
+            {
+                try
+                {
+                    await _packetManager.SendPingPacket(bootstrapEnr);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending packet to bootstrap ENR: {BootstrapEnr}", bootstrapEnr);
+                }
+            }
+        }
+    }
+
     private async Task RefreshBucketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting RefreshBucketsAsync");

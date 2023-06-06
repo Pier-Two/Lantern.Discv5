@@ -97,16 +97,6 @@ public class RequestManager : IRequestManager
         return request;
     }
     
-    public List<PendingRequest> GetPendingRequests()
-    {
-        return _pendingRequests.Values.ToList();
-    }
-    
-    private List<CachedRequest> GetCachedRequests()
-    {
-        return _cachedRequests.Values.ToList();
-    }
-
     public void MarkRequestAsFulfilled(byte[] requestId)
     {
         if (!ContainsPendingRequest(requestId)) 
@@ -122,6 +112,16 @@ public class RequestManager : IRequestManager
         {
             _cachedRequests.TryRemove(requestId, out _);
         }
+    }
+    
+    private List<PendingRequest> GetPendingRequests()
+    {
+        return _pendingRequests.Values.ToList();
+    }
+    
+    private List<CachedRequest> GetCachedRequests()
+    {
+        return _cachedRequests.Values.ToList();
     }
 
     private async Task CheckRequestsAsync(CancellationToken token)

@@ -1,5 +1,4 @@
 using Lantern.Discv5.WireProtocol.Connection;
-using Lantern.Discv5.WireProtocol.Discovery;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -26,7 +25,6 @@ public static class ServiceConfiguration
         services.AddSingleton<IPacketManager, PacketManager>();
         services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
-        services.AddSingleton<IDiscoveryProtocol, DiscoveryProtocol>();
         services.AddSingleton<IConnectionManager, ConnectionManager>();
         services.AddSingleton<IRequestManager, RequestManager>();
         services.AddSingleton<IRoutingTable, RoutingTable>();

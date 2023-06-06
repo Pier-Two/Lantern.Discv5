@@ -33,7 +33,7 @@ public class LookupManager : ILookupManager
 
         await Task.Delay(1000);
         IsLookupInProgress = true;
-        await StartLookup(targetNodeId);
+        await StartLookupAsync(targetNodeId);
 
         await Task.WhenAll(_pathBuckets.Select(MonitorCompletionAsync));
 
@@ -51,7 +51,7 @@ public class LookupManager : ILookupManager
     }
 
 
-    public async Task StartLookup(byte[] targetNodeId)
+    public async Task StartLookupAsync(byte[] targetNodeId)
     {
         _logger.LogInformation("Starting lookup for target node {NodeID}", Convert.ToHexString(targetNodeId));
 
@@ -73,7 +73,7 @@ public class LookupManager : ILookupManager
         }
     }
 
-    public async Task ContinueLookup(List<NodeTableEntry> nodes, byte[] senderNode, int expectedResponses)
+    public async Task ContinueLookupAsync(List<NodeTableEntry> nodes, byte[] senderNode, int expectedResponses)
     {
         foreach (var bucket in _pathBuckets.Where(bucket => bucket.Responses.Any(node => node.Key.SequenceEqual(senderNode))))
         {

@@ -185,7 +185,7 @@ public class MessageResponder : IMessageResponder
         }
         
         _routingTable.MarkNodeAsQueried(pendingRequest.NodeId);
-        await _lookupManager.ContinueLookup(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
+        await _lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
         
         return null;
     }

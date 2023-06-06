@@ -1,6 +1,5 @@
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
-using Lantern.Discv5.WireProtocol.Discovery;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -16,7 +15,6 @@ public class Discv5Protocol
     private readonly IConnectionManager _connectionManager;
     private readonly IIdentityManager _identityManager;
     private readonly ITableManager _tableManager;
-    private readonly IDiscoveryProtocol _discoveryProtocol;
     private readonly IRequestManager _requestManager;
     private readonly IPacketManager _packetManager;
     private readonly IRoutingTable _routingTable;
@@ -29,7 +27,6 @@ public class Discv5Protocol
         _connectionManager = serviceProvider.GetRequiredService<IConnectionManager>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _tableManager = serviceProvider.GetRequiredService<ITableManager>();
-        _discoveryProtocol = serviceProvider.GetRequiredService<IDiscoveryProtocol>();
         _requestManager = serviceProvider.GetRequiredService<IRequestManager>();
         _packetManager = serviceProvider.GetRequiredService<IPacketManager>();
         _routingTable = serviceProvider.GetRequiredService<IRoutingTable>();
@@ -53,7 +50,6 @@ public class Discv5Protocol
     public void StartProtocolAsync()
     {
         _connectionManager.StartConnectionManagerAsync();
-        _discoveryProtocol.StartInitialiseProtocolAsync();
         _tableManager.StartTableManagerAsync();
         _requestManager.StartRequestManagerAsync();
     }
@@ -61,14 +57,13 @@ public class Discv5Protocol
     public async Task StopProtocolAsync()
     {
         var stopConnectionTask = _connectionManager.StopConnectionManagerAsync();
-        var initialiseTask = _discoveryProtocol.StopInitialiseProtocolAsync();
         var tableTask = _tableManager.StopTableManagerAsync();
         var requestsTask = _requestManager.StopRequestManagerAsync();
         
-        await Task.WhenAll(stopConnectionTask, initialiseTask, tableTask, requestsTask).ConfigureAwait(false);
+        await Task.WhenAll(stopConnectionTask, tableTask, requestsTask).ConfigureAwait(false);
     }
 
-    public async Task<List<NodeTableEntry>?> PerformLookup(byte[] targetNodeId)
+    public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
     {
         if (_routingTable.GetTotalActiveNodesCount() > 0)
         {

@@ -1,4 +1,3 @@
-using Lantern.Discv5.WireProtocol.Identity;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
