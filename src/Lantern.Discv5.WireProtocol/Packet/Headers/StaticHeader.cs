@@ -16,19 +16,19 @@ public class StaticHeader
         EncryptedMessageLength = encryptedMessageLength;
     }
 
-    public readonly string ProtocolId;
+    public string ProtocolId { get; }
 
-    public readonly byte[] Version;
+    public byte[] Version { get; }
 
-    public readonly byte[] AuthData;
+    public byte[] AuthData { get; }
 
-    public readonly int AuthDataSize;
+    public int AuthDataSize { get; }
 
-    public readonly byte Flag;
+    public byte Flag { get; }
 
-    public readonly byte[] Nonce;
+    public byte[] Nonce { get; }
 
-    public readonly int EncryptedMessageLength;
+    public int EncryptedMessageLength { get; }
 
     public byte[] GetHeader()
     {

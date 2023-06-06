@@ -10,9 +10,9 @@ public class WhoAreYouPacketBase : PacketBase
         EnrSeq = enrSeq;
     }
 
-    public readonly byte[] IdNonce;
+    public byte[] IdNonce { get; }
 
-    public readonly ulong EnrSeq;
+    public ulong EnrSeq { get; }
 
     private static byte[] PreparePacketBase(byte[] idNonce, ulong enrSeq)
     {

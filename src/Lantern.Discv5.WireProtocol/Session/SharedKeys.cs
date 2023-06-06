@@ -8,7 +8,7 @@ public class SharedKeys
         RecipientKey = keyData[16..];
     }
     
-    public readonly byte[] InitiatorKey;
+    public byte[] InitiatorKey { get; }
     
-    public readonly byte[] RecipientKey;
+    public byte[] RecipientKey { get; }
 }

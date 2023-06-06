@@ -7,5 +7,5 @@ public abstract class PacketBase
         AuthData = authData;
     }
 
-    public readonly byte[] AuthData;
+    public byte[] AuthData { get; }
 }
