@@ -27,6 +27,10 @@ public class RoutingTable : IRoutingTable
     public int GetTotalActiveNodesCount() => _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive) + bucket.ReplacementCache.Count(IsNodeConsideredLive));
 
     public NodeTableEntry[] GetAllNodeEntries() => _buckets.SelectMany(bucket => bucket.Nodes.Concat(bucket.ReplacementCache)).ToArray();
+    
+    public KBucket GetBucketFromIndex(int index) => _buckets[index];
+    
+    public KBucket GetBucketFromId(byte[] nodeId) => _buckets[GetBucketIndex(nodeId)];
 
     public void UpdateFromEntry(NodeTableEntry nodeEntry)
     {
@@ -45,7 +49,7 @@ public class RoutingTable : IRoutingTable
         _buckets[bucketIndex].Update(nodeEntry);
         _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeId));
     }
-    
+
     public NodeTableEntry? GetLeastRecentlySeenNode()
     {
         var leastRecentlyRefreshedBucket = _buckets

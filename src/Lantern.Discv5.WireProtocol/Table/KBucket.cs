@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
@@ -8,14 +7,12 @@ public class KBucket
 {
     private readonly LinkedList<NodeTableEntry> _nodes;
     private readonly LinkedList<NodeTableEntry> _replacementCache;
-    private readonly ConcurrentDictionary<byte[], LinkedListNode<NodeTableEntry>> _nodeLookup;
     private readonly ILogger<KBucket> _logger;
 
     public KBucket(ILoggerFactory loggerFactory)
     {
         _nodes = new LinkedList<NodeTableEntry>();
         _replacementCache = new LinkedList<NodeTableEntry>();
-        _nodeLookup = new ConcurrentDictionary<byte[], LinkedListNode<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
         _logger = loggerFactory.CreateLogger<KBucket>();
     }
 
@@ -32,19 +29,16 @@ public class KBucket
 
     public NodeTableEntry? GetNodeById(byte[] nodeId)
     {
-        if (_nodeLookup.TryGetValue(nodeId, out var node))
-        {
-            return node.Value;
-        }
-
-        return null;
+        return _nodes.FirstOrDefault(n => ByteArrayEqualityComparer.Instance.Equals(n.Id, nodeId));
     }
     
     public void Update(NodeTableEntry nodeEntry)
     {
-        if (_nodeLookup.TryGetValue(nodeEntry.Id, out var node))
+        var existingNode = GetNodeById(nodeEntry.Id);
+
+        if (existingNode != null)
         {
-            UpdateExistingNode(nodeEntry, node);
+            UpdateExistingNode(nodeEntry, existingNode);
         }
         else if (_nodes.Count >= TableConstants.BucketSize)
         {
@@ -55,38 +49,44 @@ public class KBucket
             AddNewNode(nodeEntry);
         }
     }
-    
-    public void ReplaceDeadNode(NodeTableEntry nodeEntry)
-    {
-        if (_replacementCache.Count <= 0)
-            return;
 
-        var replacementNode = _replacementCache.First.Value;
-        
-        _replacementCache.RemoveFirst();
-        _nodes.Remove(_nodeLookup[nodeEntry.Id]);
-        _nodeLookup.TryRemove(nodeEntry.Id, out _);
-        replacementNode.LastSeen = DateTime.UtcNow; 
-        
-        var newNode = _nodes.AddLast(replacementNode);
-        _nodeLookup[replacementNode.Id] = newNode;
-    }
-    
-    public NodeTableEntry GetLeastRecentlySeenNode()
+    public void ReplaceDeadNode(NodeTableEntry deadNodeEntry)
     {
-        return _nodes.First.Value;
+        if (_replacementCache.Count == 0 || _replacementCache.First == null)
+            return;
+        
+        var replacementNode = _replacementCache.First.Value;
+        _replacementCache.RemoveFirst();
+        
+        var deadNode = _nodes.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, deadNodeEntry.Id));
+        if(deadNode != null)
+        {
+            _nodes.Remove(deadNode);
+        }
+        
+        replacementNode.LastSeen = DateTime.UtcNow;
+        _nodes.AddLast(replacementNode);
+    }
+
+    public NodeTableEntry? GetLeastRecentlySeenNode()
+    {
+        return _nodes.First?.Value;
     }
     
-    private void UpdateExistingNode(NodeTableEntry nodeEntry, LinkedListNode<NodeTableEntry> node)
+    public void AddToReplacementCache(NodeTableEntry nodeEntry)
+    {
+        _replacementCache.AddLast(nodeEntry);
+        _logger.LogDebug("Added node {NodeId} to replacement cache", Convert.ToHexString(nodeEntry.Id));
+    }
+
+    private void UpdateExistingNode(NodeTableEntry nodeEntry, NodeTableEntry existingNode)
     {
         if (nodeEntry.IsLive)
         {
-            _nodes.Remove(node); 
-            
-            var newNode = new LinkedListNode<NodeTableEntry>(node.Value); 
-            newNode.Value.LastSeen = DateTime.UtcNow;
-            _nodes.AddLast(newNode); 
-            _nodeLookup[nodeEntry.Id] = newNode;
+            _nodes.Remove(existingNode);
+
+            existingNode.LastSeen = DateTime.UtcNow;
+            _nodes.AddLast(existingNode);
         }
         else
         {
@@ -96,21 +96,17 @@ public class KBucket
     
     private void AddNewNode(NodeTableEntry nodeEntry)
     {
-        nodeEntry.LastSeen = DateTime.UtcNow; 
-        var newNode = _nodes.AddLast(nodeEntry);
-        _nodeLookup[nodeEntry.Id] = newNode;
-    }
-
-    private void AddToReplacementCache(NodeTableEntry nodeEntry)
-    {
-        _replacementCache.AddLast(nodeEntry);
-        _logger.LogDebug("Added node {NodeId} to replacement cache", Convert.ToHexString(nodeEntry.Id));
+        nodeEntry.LastSeen = DateTime.UtcNow;
+        _nodes.AddLast(nodeEntry);
     }
 
     private void CheckLeastRecentlySeenNode(NodeTableEntry nodeEntry)
     {
         var leastRecentlySeenNode = GetLeastRecentlySeenNode();
-
+    
+        if(leastRecentlySeenNode == null)
+            return;
+    
         if (leastRecentlySeenNode.IsLive)
         {
             AddToReplacementCache(nodeEntry);
@@ -118,7 +114,7 @@ public class KBucket
         else
         {
             ReplaceDeadNode(leastRecentlySeenNode);
-            AddNewNode(nodeEntry);
+            AddToReplacementCache(nodeEntry);
         }
     }
 }
