@@ -16,24 +16,17 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class MessageResponderTests
 {
     private static IMessageResponder _messageResponder = null!;
-
-    [SetUp]
+    
     public void Setup()
     {
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        var serviceProvider =
-            ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, tableOptions).BuildServiceProvider();
+        //var serviceProvider = ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, tableOptions).BuildServiceProvider();
         
-        _messageResponder = serviceProvider.GetRequiredService<IMessageResponder>();
+        //_messageResponder = serviceProvider.GetRequiredService<IMessageResponder>();
     }
-
-    [Test]
-    public void Test_MessageResponder_ShouldHandlePingMessageCorrectly()
-    {
-        //TODO
-    }
+    
     
 }
