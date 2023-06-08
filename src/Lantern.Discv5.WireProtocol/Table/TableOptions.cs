@@ -1,4 +1,5 @@
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.EnrFactory;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
@@ -12,6 +13,8 @@ public class TableOptions
     public int ConcurrencyParameter { get; }
     public int LookupParallelism { get; }
     public EnrRecord[] BootstrapEnrs { get; }
+    
+    public static TableOptions Default => new Builder().Build();
 
     private TableOptions(Builder builder)
     {
@@ -84,9 +87,21 @@ public class TableOptions
             return this;
         }
 
-        public TableOptions Build()
+        public TableOptions Build(string[]? bootstrapEnrs = null)
         {
+            if (bootstrapEnrs != null)
+            {
+                BootstrapEnrs = GetBootstrapEnrRecords(bootstrapEnrs);
+            }
+
             return new TableOptions(this);
+        }
+        
+        private static EnrRecord[] GetBootstrapEnrRecords(string[] bootstrapEnrs)
+        {
+            return bootstrapEnrs
+                .Select(enr => new EnrRecordFactory().CreateFromString(enr))
+                .ToArray();
         }
     }
 }

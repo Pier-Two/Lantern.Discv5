@@ -1,4 +1,6 @@
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
@@ -17,11 +19,28 @@ public class SessionOptions
         CacheSize = builder.CacheSize;
     }
 
+    public static SessionOptions Default => CreateDefault();
+    
+    private static SessionOptions CreateDefault()
+    {
+        var privateKey = RandomUtility.GeneratePrivateKey(32);
+        var signer = new IdentitySchemeV4Signer(privateKey);
+        var verifier = new IdentitySchemeV4Verifier();
+        var sessionKeys = new SessionKeys(privateKey);
+        
+        return new Builder()
+            .WithSigner(signer)
+            .WithVerifier(verifier)
+            .WithSessionKeys(sessionKeys)
+            .WithCacheSize(100)
+            .Build();
+    }
+    
     public class Builder
     {
         public IIdentitySchemeSigner Signer { get; private set; }
         public IIdentitySchemeVerifier Verifier { get; private set; }
-        public ISessionKeys SessionKeys { get; private set; }
+        public ISessionKeys SessionKeys { get; private set; } 
         public int CacheSize { get; private set; }
 
         public Builder WithSigner(IIdentitySchemeSigner signer)

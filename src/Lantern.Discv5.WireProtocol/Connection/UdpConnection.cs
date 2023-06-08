@@ -22,7 +22,6 @@ public class UdpConnection : IUdpConnection, IDisposable
     {
         _logger = loggerFactory.CreateLogger<UdpConnection>(); 
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
-        _logger.LogInformation("UdpConnection initialized on port {Port}", options.Port);
     }
 
     public async Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken token = default)

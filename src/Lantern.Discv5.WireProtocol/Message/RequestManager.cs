@@ -145,7 +145,7 @@ public class RequestManager : IRequestManager
                     HandleCachedRequest(cachedRequest);
                 }
 
-                await Task.Delay(_connectionOptions.RequestTimeoutMs, token).ConfigureAwait(false);
+                await Task.Delay(_connectionOptions.CheckPendingRequestsDelayMs, token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)

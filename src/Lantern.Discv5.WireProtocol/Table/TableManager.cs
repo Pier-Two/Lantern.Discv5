@@ -57,7 +57,9 @@ public class TableManager : ITableManager
         if (_routingTable.GetTotalEntriesCount() == 0)
         {
             _logger.LogInformation("Initialising from bootstrap ENRs");
-            var bootstrapEnrs = _routingTable.GetBootstrapEnrs();
+            _routingTable.PopulateFromBootstrapEnrs();
+
+            var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs;
 
             foreach (var bootstrapEnr in bootstrapEnrs)
             {

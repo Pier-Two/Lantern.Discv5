@@ -21,6 +21,8 @@ public class KBucket
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
     
+    public IEnumerable<NodeTableEntry> ReplacementCache => _replacementCache;
+
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
         var nodeInReplacementCache = _replacementCache.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, nodeId));
