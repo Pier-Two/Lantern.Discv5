@@ -5,7 +5,6 @@ using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
 using Microsoft.Extensions.Logging;
@@ -57,12 +56,12 @@ public class IdentityManager: IIdentityManager
     {
         EnrRecord record;
         
-        if (options.ExternalIpAddress != null)
+        if (options.IpAddress != null)
         {
             record = new EnrBuilder()
                 .WithSigner(signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-                .WithEntry(EnrContentKey.Ip, new EntryIp(options.ExternalIpAddress)) // Should use external IP address
+                .WithEntry(EnrContentKey.Ip, new EntryIp(options.IpAddress)) 
                 .WithEntry(EnrContentKey.Udp, new EntryUdp(options.Port))
                 .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();

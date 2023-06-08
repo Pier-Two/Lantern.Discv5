@@ -4,13 +4,13 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface IRoutingTable
 {
+    TableOptions TableOptions { get; }
+    
     int GetTotalEntriesCount();
     
     int GetTotalActiveNodesCount();
 
     NodeTableEntry[] GetAllNodeEntries();
-    
-    IEnumerable<EnrRecord> GetBootstrapEnrs();
 
     NodeTableEntry? GetLeastRecentlySeenNode();
 
@@ -18,13 +18,13 @@ public interface IRoutingTable
     
     void UpdateFromEnr(EnrRecord enrRecord);
 
-    void MarkNodeAsQueried(byte[] nodeId);
-    
     void MarkNodeAsLive(byte[] nodeId);
     
     void MarkNodeAsDead(byte[] nodeId);
 
     void IncreaseFailureCounter(byte[] nodeId);
+    
+    void PopulateFromBootstrapEnrs();
 
     NodeTableEntry? GetNodeEntry(byte[] nodeId);
 

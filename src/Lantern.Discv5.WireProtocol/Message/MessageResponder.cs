@@ -75,14 +75,10 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        var enrRecord = nodeEntry.Record;
-        var nodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(enrRecord);
-
-        // This condition might need to be removed because bootnodes will be added to the routing table first and then pinged.
         if (!nodeEntry.IsLive)
         {
-            _routingTable.UpdateFromEnr(enrRecord);
-            _routingTable.MarkNodeAsLive(nodeId);
+            _routingTable.UpdateFromEnr(nodeEntry.Record);
+            _routingTable.MarkNodeAsLive(nodeEntry.Id);
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
@@ -93,9 +89,9 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        _routingTable.MarkNodeAsLive(nodeId);
+        _routingTable.MarkNodeAsLive(nodeEntry.Id);
         
-        if (decodedMessage.EnrSeq <= (int)enrRecord.SequenceNumber)
+        if (decodedMessage.EnrSeq <= (int)nodeEntry.Record.SequenceNumber)
         {
             return null;
         }
@@ -184,7 +180,6 @@ public class MessageResponder : IMessageResponder
             _routingTable.MarkNodeAsLive(senderNodeEntry.Id);
         }
         
-        _routingTable.MarkNodeAsQueried(pendingRequest.NodeId);
         await _lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
         
         return null;
