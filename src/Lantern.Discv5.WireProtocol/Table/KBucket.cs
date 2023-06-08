@@ -22,9 +22,7 @@ public class KBucket
 
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
-        var nodeInReplacementCache = _replacementCache.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, nodeId));
-
-        return nodeInReplacementCache;
+        return _replacementCache.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, nodeId));
     }
 
     public NodeTableEntry? GetNodeById(byte[] nodeId)
@@ -32,6 +30,11 @@ public class KBucket
         return _nodes.FirstOrDefault(n => ByteArrayEqualityComparer.Instance.Equals(n.Id, nodeId));
     }
     
+    public NodeTableEntry? GetLeastRecentlySeenNode()
+    {
+        return _nodes.First?.Value;
+    }
+
     public void Update(NodeTableEntry nodeEntry)
     {
         var existingNode = GetNodeById(nodeEntry.Id);
@@ -66,11 +69,6 @@ public class KBucket
         
         replacementNode.LastSeen = DateTime.UtcNow;
         _nodes.AddLast(replacementNode);
-    }
-
-    public NodeTableEntry? GetLeastRecentlySeenNode()
-    {
-        return _nodes.First?.Value;
     }
     
     public void AddToReplacementCache(NodeTableEntry nodeEntry)

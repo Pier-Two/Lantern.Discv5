@@ -9,8 +9,6 @@ public class PathBucket
     public int Index { get; }
     
     public byte[] TargetNodeId { get; }
-    
-    public readonly Stopwatch StartTime = Stopwatch.StartNew();
 
     public ConcurrentBag<byte[]> QueriedNodes { get; }
     
@@ -19,9 +17,7 @@ public class PathBucket
     public Dictionary<byte[], List<NodeTableEntry>> Responses { get; }
     
     public Dictionary<byte[], int> ExpectedResponses { get; }
-    
-    public TaskCompletionSource<bool> CompletionSource { get; }
-    
+
     public int ReceivedResponses { get; set; }
 
     public bool IsComplete { get; set; }
@@ -33,7 +29,6 @@ public class PathBucket
         QueriedNodes = new ConcurrentBag<byte[]>();
         DiscoveredNodes = new List<NodeTableEntry>();
         Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
-        CompletionSource = new TaskCompletionSource<bool>();
         ExpectedResponses = new Dictionary<byte[], int>();
     }
 }
