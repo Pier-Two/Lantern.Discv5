@@ -30,11 +30,11 @@ public class LookupManager : ILookupManager
             _logger.LogInformation("Lookup is currently in progress");
             return null;
         }
-
-        await Task.Delay(1000);
+        
         IsLookupInProgress = true;
+        
+        await Task.Delay(1000);
         await StartLookupAsync(targetNodeId);
-
         await Task.WhenAll(_pathBuckets.Select(MonitorCompletionAsync));
 
         var result = _pathBuckets
@@ -180,14 +180,13 @@ public class LookupManager : ILookupManager
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Bucket {BucketIndex} timed out.", bucket.Index);
+                _logger.LogInformation("Bucket {BucketIndex} timed out", bucket.Index);
                 break;
             }
 
             if (bucket.ReceivedResponses == TableConstants.BucketSize)
             {
                 bucket.IsComplete = true;
-                bucket.CompletionSource.TrySetResult(true);
                 _logger.LogInformation("Bucket {BucketIndex} completed successfully", bucket.Index);
             }
             else
