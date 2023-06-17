@@ -23,7 +23,7 @@ public class SessionOptions
     
     private static SessionOptions CreateDefault()
     {
-        var privateKey = RandomUtility.GeneratePrivateKey(32);
+        var privateKey = RandomUtility.GenerateRandomData(32);
         var signer = new IdentitySchemeV4Signer(privateKey);
         var verifier = new IdentitySchemeV4Verifier();
         var sessionKeys = new SessionKeys(privateKey);

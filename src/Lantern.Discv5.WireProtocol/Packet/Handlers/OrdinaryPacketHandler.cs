@@ -80,7 +80,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     {
         _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(packet.StaticHeader.AuthData));
         
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var whoAreYouPacket = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(packet.StaticHeader.AuthData, packet.StaticHeader.Nonce, maskingIv);
 
         _sessionManager.CreateSession(SessionType.Recipient, packet.StaticHeader.AuthData, destEndPoint);
@@ -96,7 +96,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     {
         _logger.LogWarning("Cannot decrypt ORDINARY packet. No sessionMain found");
         
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(packet.StaticHeader.AuthData, packet.StaticHeader.Nonce, destNodeRecord, maskingIv);
        
         _sessionManager.CreateSession(SessionType.Recipient, packet.StaticHeader.AuthData, destEndPoint);
@@ -110,7 +110,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     
     private async Task SendResponseToOrdinaryPacketAsync(PacketProcessor packet, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(packet.StaticHeader.AuthData, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);

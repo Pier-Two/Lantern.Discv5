@@ -34,7 +34,7 @@ public class PacketBuilder : IPacketBuilder
     public Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
     {
         var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
-        var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateNonce(PacketConstants.PartialNonceSize));
+        var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
         var packetStaticHeader = ConstructStaticHeader(PacketType.Ordinary, ordinaryPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesUtility);
@@ -45,7 +45,7 @@ public class PacketBuilder : IPacketBuilder
     
     public Tuple<byte[], StaticHeader> BuildWhoAreYouPacketWithoutEnr(byte[] destNodeId, byte[] packetNonce, byte[] maskingIv)
     {
-        var whoAreYouPacket = new WhoAreYouPacketBase(RandomUtility.GenerateIdNonce(PacketConstants.IdNonceSize), 0);
+        var whoAreYouPacket = new WhoAreYouPacketBase(RandomUtility.GenerateRandomData(PacketConstants.IdNonceSize), 0);
         var packetStaticHeader = ConstructStaticHeader(PacketType.WhoAreYou, whoAreYouPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesUtility);
@@ -56,7 +56,7 @@ public class PacketBuilder : IPacketBuilder
 
     public Tuple<byte[], StaticHeader> BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce, EnrRecord destRecord, byte[] maskingIv)
     {
-        var whoAreYouPacket = new WhoAreYouPacketBase(RandomUtility.GenerateIdNonce(PacketConstants.IdNonceSize), destRecord.SequenceNumber);
+        var whoAreYouPacket = new WhoAreYouPacketBase(RandomUtility.GenerateRandomData(PacketConstants.IdNonceSize), destRecord.SequenceNumber);
         var packetStaticHeader = ConstructStaticHeader(PacketType.WhoAreYou, whoAreYouPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesUtility);
@@ -68,7 +68,7 @@ public class PacketBuilder : IPacketBuilder
     public Tuple<byte[], StaticHeader> BuildHandshakePacket(byte[] idSignature, byte[] ephemeralPubKey, byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
     {
         var handshakePacket = new HandshakePacketBase(idSignature, ephemeralPubKey,_identityManager.NodeId, _identityManager.Record.EncodeEnrRecord());
-        var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateNonce(PacketConstants.PartialNonceSize));
+        var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
         var packetStaticHeader =
             ConstructStaticHeader(PacketType.Handshake, handshakePacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);

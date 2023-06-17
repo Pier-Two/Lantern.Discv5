@@ -128,7 +128,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return null;
         }
         
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(senderNodeId, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
         
