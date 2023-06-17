@@ -6,7 +6,8 @@ public class ConnectionOptions
 {
     public int Port { get; }
     public IPAddress? IpAddress { get; }
-    public int RequestTimeoutMs { get; }
+    public int ReqRespTimeoutMs { get; }
+    public int PendingRequestTimeoutMs { get; }
     public int CheckPendingRequestsDelayMs { get; }
     public int RemoveCompletedRequestsDelayMs { get; }
 
@@ -14,7 +15,8 @@ public class ConnectionOptions
     {
         Port = builder.Port;
         IpAddress = builder.IpAddress;
-        RequestTimeoutMs = builder.TimeoutMilliseconds;
+        ReqRespTimeoutMs = builder.ReqRespTimeoutMs;
+        PendingRequestTimeoutMs = builder.PendingRequestTimeoutMs;
         CheckPendingRequestsDelayMs = builder.CheckPendingRequestsDelayMs;
         RemoveCompletedRequestsDelayMs = builder.RemoveCompletedRequestsDelayMs;
     }
@@ -25,7 +27,8 @@ public class ConnectionOptions
     {
         public int Port { get; private set; } = 9000;
         public IPAddress? IpAddress { get; private set; }
-        public int TimeoutMilliseconds { get; private set; } = 1000;
+        public int ReqRespTimeoutMs { get; private set; } = 1000;
+        public int PendingRequestTimeoutMs { get; private set; } = 1000;
         public int CheckPendingRequestsDelayMs { get; private set; } = 500;
         public int RemoveCompletedRequestsDelayMs { get; private set; } = 3000;
         
@@ -40,10 +43,16 @@ public class ConnectionOptions
             IpAddress = ipAddress;
             return this;
         }
-
-        public Builder WithTimeoutMilliseconds(int timeoutMilliseconds)
+        
+        public Builder WithReqRespTimeoutMs(int reqRespTimeoutMs)
         {
-            TimeoutMilliseconds = timeoutMilliseconds;
+            ReqRespTimeoutMs = reqRespTimeoutMs;
+            return this;
+        }
+
+        public Builder WithPendingRequestTimeoutMs(int pendingRequestTimeoutMs)
+        {
+            PendingRequestTimeoutMs = pendingRequestTimeoutMs;
             return this;
         }
         

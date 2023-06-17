@@ -2,6 +2,8 @@ namespace Lantern.Discv5.WireProtocol.Packet;
 
 public static class PacketConstants
 {
+    public const int MaxPacketSize = 1280;
+    public const int MinPacketSize = 63;
     public const int Ordinary = 32;
     public const int WhoAreYou = 24;
     public const int HeaderNonce = 12;

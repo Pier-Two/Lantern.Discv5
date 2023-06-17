@@ -201,7 +201,7 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.RequestTimeoutMs && !request.IsFulfilled)
+        if (request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.PendingRequestTimeoutMs && !request.IsFulfilled)
         {
             _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
             RemovePendingRequest(request.Message.RequestId);
@@ -226,7 +226,7 @@ public class RequestManager : IRequestManager
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if(request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.RequestTimeoutMs && !request.IsFulfilled)
+        if(request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.PendingRequestTimeoutMs && !request.IsFulfilled)
         {
             _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
             RemoveCachedRequest(request.NodeId);
