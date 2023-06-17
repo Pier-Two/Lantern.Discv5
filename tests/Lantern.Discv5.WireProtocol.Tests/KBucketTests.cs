@@ -126,7 +126,7 @@ public class KBucketTests
         
         for(var i = 0; i < count; i++)
         {
-            var signer = new IdentitySchemeV4Signer(RandomUtility.GeneratePrivateKey(32));
+            var signer = new IdentitySchemeV4Signer(RandomUtility.GenerateRandomData(32));
             var ipAddress = new IPAddress(RandomUtility.GenerateRandomData(4));
             
             enrs[i] = new EnrBuilder()

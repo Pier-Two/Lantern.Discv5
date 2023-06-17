@@ -8,7 +8,7 @@ public class SessionKeys : ISessionKeys
     public SessionKeys(byte[] privateKey, byte[]? ephemeralPubkey = null)
     {
         PrivateKey = privateKey;
-        EphemeralPrivateKey = ephemeralPubkey ?? RandomUtility.GeneratePrivateKey(SessionConstants.EcPrivateKeySize);
+        EphemeralPrivateKey = ephemeralPubkey ?? RandomUtility.GenerateRandomData(SessionConstants.EcPrivateKeySize);
         PublicKey = CryptoContext.CreateECPrivKey(PrivateKey).CreatePubKey().ToBytes();
         EphemeralPublicKey = CryptoContext.CreateECPrivKey(EphemeralPrivateKey).CreatePubKey().ToBytes();
     }

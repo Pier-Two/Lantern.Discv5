@@ -77,7 +77,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return;
         }
         
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignature, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
         var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);

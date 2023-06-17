@@ -113,7 +113,7 @@ public class TableManager : ITableManager
                 
                 await Task.Delay(_tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
                 
-                var targetNodeId = RandomUtility.GenerateNodeId(PacketConstants.NodeIdSize);
+                var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
                 var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).First();
 
                 await _packetManager.SendPingPacket(nodeEntry.Record);

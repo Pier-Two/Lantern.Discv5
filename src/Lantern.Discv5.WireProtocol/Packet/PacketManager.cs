@@ -179,7 +179,7 @@ public class PacketManager : IPacketManager
 
     private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
     {
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
         
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
@@ -191,8 +191,8 @@ public class PacketManager : IPacketManager
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
     {
-        var maskingIv = RandomUtility.GenerateMaskingIv(PacketConstants.MaskingIvSize);
-        var packetNonce = RandomUtility.GenerateNonce(PacketConstants.NonceSize);
+        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
+        var packetNonce = RandomUtility.GenerateRandomData(PacketConstants.NonceSize);
             
         _sessionManager.SaveHandshakeInteraction(packetNonce, destNodeId);
             

@@ -34,7 +34,7 @@ public class MessageRequesterTests
     [Test]
     public void Test_MessageRequester_ShouldGeneratePingMessageCorrectly()
     {
-        var destNodeId = RandomUtility.GenerateNodeId(32);
+        var destNodeId = RandomUtility.GenerateRandomData(32);
         var pingMessage = _messageRequester.ConstructPingMessage(destNodeId)!;
         var cachedPingMessage = _messageRequester.ConstructCachedPingMessage(destNodeId)!;
         var decodedPingMessage = (PingMessage)new MessageDecoder().DecodeMessage(pingMessage);
@@ -49,8 +49,8 @@ public class MessageRequesterTests
     [Test]
     public void Test_MessageRequester_ShouldGenerateFindNodeMessageCorrectly()
     {
-        var destNodeId = RandomUtility.GenerateNodeId(32);
-        var targetNodeId = RandomUtility.GenerateNodeId(32);
+        var destNodeId = RandomUtility.GenerateRandomData(32);
+        var targetNodeId = RandomUtility.GenerateRandomData(32);
         var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId)!;
         var decodedFindNodeMessage = (FindNodeMessage)new MessageDecoder().DecodeMessage(findNodeMessage);
         var decodedCachedFindNodeMessage = (FindNodeMessage)new MessageDecoder().DecodeMessage(findNodeMessage);
@@ -64,7 +64,7 @@ public class MessageRequesterTests
     [Test]
     public void Test_MessageRequester_ShouldGenerateTalkRequestMessageCorrectly()
     {
-        var destNodeId = RandomUtility.GenerateNodeId(32);
+        var destNodeId = RandomUtility.GenerateRandomData(32);
         var protocol = "discv5"u8.ToArray();
         var request = "ping"u8.ToArray();
         var talkRequestMessage = _messageRequester.ConstructTalkReqMessage(destNodeId, protocol, request)!;

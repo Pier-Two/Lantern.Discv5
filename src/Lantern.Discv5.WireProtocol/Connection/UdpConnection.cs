@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
+using Lantern.Discv5.WireProtocol.Packet;
 using Microsoft.Extensions.Logging;
 using IPEndPoint = System.Net.IPEndPoint;
 using OperationCanceledException = System.OperationCanceledException;
@@ -11,28 +12,24 @@ namespace Lantern.Discv5.WireProtocol.Connection;
 
 public class UdpConnection : IUdpConnection, IDisposable
 {
-    private const int MaxPacketSize = 1280;
-    private const int MinPacketSize = 63;
-    private const int UdpTimeoutMilliseconds = 2000;
     private readonly UdpClient _udpClient;
     private readonly ILogger<UdpConnection> _logger;
-    private readonly Channel<UdpReceiveResult> _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
+    private readonly Channel<UdpReceiveResult> _messageChannel; 
+    private readonly ConnectionOptions _connectionOptions;
 
     public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory)
     {
-        _logger = loggerFactory.CreateLogger<UdpConnection>(); 
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
+        _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
+        _connectionOptions = options;
+        _logger = loggerFactory.CreateLogger<UdpConnection>(); 
     }
 
-    public async Task SendAsync(byte[] data, IPEndPoint destination, CancellationToken token = default)
+    public async Task SendAsync(byte[] data, IPEndPoint destination)
     {
         ValidatePacketSize(data);
-        token.ThrowIfCancellationRequested();
-
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        cts.CancelAfter(UdpTimeoutMilliseconds);
-
         _logger.LogDebug("Sending packet to {Destination}", destination);
+        
         await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
     }
     
@@ -101,17 +98,17 @@ public class UdpConnection : IUdpConnection, IDisposable
 
     private static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
-        if (data.Count < MinPacketSize) 
+        if (data.Count < PacketConstants.MinPacketSize) 
             throw new InvalidPacketException("Packet is too small");
 
-        if (data.Count > MaxPacketSize)
+        if (data.Count > PacketConstants.MaxPacketSize)
             throw new InvalidPacketException("Packet is too large");
     }
 
     private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken token = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        cts.CancelAfter(UdpTimeoutMilliseconds);
+        cts.CancelAfter(_connectionOptions.ReqRespTimeoutMs);
 
         try
         {
