@@ -12,7 +12,9 @@ namespace Lantern.Discv5.WireProtocol;
 
 public static class ServiceConfiguration
 {
-    public static IServiceCollection ConfigureServices(ILoggerFactory loggerFactory, ConnectionOptions connectionOptions, SessionOptions sessionOptions, TableOptions tableOptions)
+    public static IServiceCollection ConfigureServices(ILoggerFactory loggerFactory, 
+        ConnectionOptions connectionOptions, SessionOptions sessionOptions, 
+        TableOptions tableOptions, ITalkReqAndRespHandler? talkResponder = null)
     {
         var services = new ServiceCollection();
 
@@ -20,6 +22,9 @@ public static class ServiceConfiguration
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
         services.AddSingleton(loggerFactory);
+        
+        if(talkResponder != null)
+            services.AddSingleton(talkResponder);
 
         services.AddSingleton<ILookupManager, LookupManager>();
         services.AddSingleton<IPacketManager, PacketManager>();

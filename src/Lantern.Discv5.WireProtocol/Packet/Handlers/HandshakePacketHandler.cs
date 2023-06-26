@@ -21,16 +21,18 @@ public class HandshakePacketHandler : PacketHandlerBase
     private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
+    private readonly IUdpConnection _connection;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<HandshakePacketHandler> _logger;
 
-    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IMessageResponder messageResponder, IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _messageResponder = messageResponder;
+        _connection = udpConnection;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
@@ -38,7 +40,7 @@ public class HandshakePacketHandler : PacketHandlerBase
 
     public override PacketType PacketType => PacketType.Handshake;
 
-    public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
+    public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
@@ -82,7 +84,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         if(replyPacket == null)
             return;
         
-        await connection.SendAsync(replyPacket, returnedResult.RemoteEndPoint);
+        await _connection.SendAsync(replyPacket, returnedResult.RemoteEndPoint);
         _logger.LogDebug("Sent response to HANDSHAKE packet");
     }
 

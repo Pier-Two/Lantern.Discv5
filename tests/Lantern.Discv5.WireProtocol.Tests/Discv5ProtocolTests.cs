@@ -1,3 +1,5 @@
+using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Utility;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -23,16 +25,16 @@ public class Discv5ProtocolTests
     {
         _discv5Protocol.StartProtocolAsync();
 
-        var closestNodes = await _discv5Protocol.PerformLookupAsync(Convert.FromHexString("1888D1A446592EA3A41BCE3B36F5A2FFB72B8E5FCFCA6E75EB60C6686F269AF8"));
+        var firstClosestNodes = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize));
 
-        if (closestNodes != null)
+        if (firstClosestNodes != null)
         {
-            foreach (var node in closestNodes)
+            foreach (var node in firstClosestNodes)
             {
                 Console.WriteLine("Closest node: " + Convert.ToHexString(node.Id));
             }
-        } 
-        
+        }
+
         await _discv5Protocol.StopProtocolAsync();
     }
 } 

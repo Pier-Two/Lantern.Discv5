@@ -169,7 +169,7 @@ public class PacketManager : IPacketManager
         {
             var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
             var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)packet.StaticHeader.Flag);
-            await packetHandler.HandlePacket(_udpConnection, returnedResult);
+            await packetHandler.HandlePacket(returnedResult);
         }
         catch (Exception e)
         {

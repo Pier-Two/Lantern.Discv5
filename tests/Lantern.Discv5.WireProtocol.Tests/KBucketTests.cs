@@ -29,6 +29,38 @@ public class KBucketTests
     }
     
     [Test]
+    public void Test_KBucket_EmptyBucketAndCache()
+    {
+        var node = GenerateRandomNodeEntries(1).First();
+        var bucket = new KBucket(LoggingOptions.Default);
+
+        node.IsLive = false;
+        bucket.ReplaceDeadNode(node);
+
+        Assert.AreEqual(0, bucket.Nodes.Count());
+        Assert.AreEqual(0, bucket.ReplacementCache.Count());
+    }
+    
+    [Test]
+    public void Test_KBucket_NodeOrder()
+    {
+        var nodes = GenerateRandomNodeEntries(16);
+        var bucket = new KBucket(LoggingOptions.Default);
+
+        for(var i = 0; i < 16; i++)
+        {
+            bucket.Update(nodes[i]);
+            Thread.Sleep(100); 
+        }
+
+        var sortedNodes = bucket.Nodes.ToArray();
+        for(var i = 0; i < 15; i++)
+        {
+            Assert.IsTrue(sortedNodes[i].LastSeen <= sortedNodes[i + 1].LastSeen);
+        }
+    }
+    
+    [Test]
     public void Test_KBucket_AddingNodesToNonFullBucket()
     {
         var nodes = GenerateRandomNodeEntries(10);
@@ -105,6 +137,26 @@ public class KBucketTests
         Assert.AreEqual(16, bucket.Nodes.Count());
         Assert.AreEqual(1, bucket.ReplacementCache.Count());
         Assert.IsFalse(bucket.Nodes.Contains(nodes[17]));
+    }
+    
+    [Test]
+    public void Test_KBucket_ConcurrentAccess()
+    {
+        var nodes = GenerateRandomNodeEntries(100);
+        var bucket = new KBucket(LoggingOptions.Default);
+        var tasks = new List<Task>();
+
+        for(var i = 0; i < 100; i++)
+        {
+            var index = i;
+            tasks.Add(Task.Run(() => bucket.Update(nodes[index])));
+        }
+
+        Task.WhenAll(tasks).Wait();
+
+        Assert.AreEqual(16, bucket.Nodes.Count());
+        Assert.GreaterOrEqual(bucket.ReplacementCache.Count(), 1);
+        Assert.LessOrEqual(bucket.ReplacementCache.Count(), 84); // min and max bound depends on concurrency scheduling
     }
 
     private static NodeTableEntry[] GenerateRandomNodeEntries(int count)

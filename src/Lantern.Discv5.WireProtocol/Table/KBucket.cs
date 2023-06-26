@@ -1,4 +1,3 @@
-using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
@@ -8,26 +7,28 @@ public class KBucket
     private readonly LinkedList<NodeTableEntry> _nodes;
     private readonly LinkedList<NodeTableEntry> _replacementCache;
     private readonly ILogger<KBucket> _logger;
+    private readonly object _lock;
 
     public KBucket(ILoggerFactory loggerFactory)
     {
         _nodes = new LinkedList<NodeTableEntry>();
         _replacementCache = new LinkedList<NodeTableEntry>();
         _logger = loggerFactory.CreateLogger<KBucket>();
+        _lock = new object();
     }
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
     
     public IEnumerable<NodeTableEntry> ReplacementCache => _replacementCache;
-
+    
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
-        return _replacementCache.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, nodeId));
+        return _replacementCache.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
     }
 
     public NodeTableEntry? GetNodeById(byte[] nodeId)
     {
-        return _nodes.FirstOrDefault(n => ByteArrayEqualityComparer.Instance.Equals(n.Id, nodeId));
+        return _nodes.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
     }
     
     public NodeTableEntry? GetLeastRecentlySeenNode()
@@ -37,38 +38,44 @@ public class KBucket
 
     public void Update(NodeTableEntry nodeEntry)
     {
-        var existingNode = GetNodeById(nodeEntry.Id);
+        lock (_lock)
+        {
+            var existingNode = GetNodeById(nodeEntry.Id);
 
-        if (existingNode != null)
-        {
-            UpdateExistingNode(nodeEntry, existingNode);
-        }
-        else if (_nodes.Count >= TableConstants.BucketSize)
-        {
-            CheckLeastRecentlySeenNode(nodeEntry);
-        }
-        else
-        {
-            AddNewNode(nodeEntry);
+            if (existingNode != null)
+            {
+                UpdateExistingNode(nodeEntry, existingNode);
+            }
+            else if (_nodes.Count >= TableConstants.BucketSize)
+            {
+                CheckLeastRecentlySeenNode(nodeEntry);
+            }
+            else
+            {
+                AddNewNode(nodeEntry);
+            }
         }
     }
 
     public void ReplaceDeadNode(NodeTableEntry deadNodeEntry)
     {
-        if (_replacementCache.Count == 0 || _replacementCache.First == null)
-            return;
-        
-        var replacementNode = _replacementCache.First.Value;
-        _replacementCache.RemoveFirst();
-        
-        var deadNode = _nodes.FirstOrDefault(node => ByteArrayEqualityComparer.Instance.Equals(node.Id, deadNodeEntry.Id));
-        if(deadNode != null)
+        lock (_lock)
         {
-            _nodes.Remove(deadNode);
-        }
+            if (_replacementCache.Count == 0 || _replacementCache.First == null)
+                return;
         
-        replacementNode.LastSeen = DateTime.UtcNow;
-        _nodes.AddLast(replacementNode);
+            var replacementNode = _replacementCache.First.Value;
+            _replacementCache.RemoveFirst();
+        
+            var deadNode = _nodes.FirstOrDefault(node => node.Id.SequenceEqual(deadNodeEntry.Id));
+            if(deadNode != null)
+            {
+                _nodes.Remove(deadNode);
+            }
+        
+            replacementNode.LastSeen = DateTime.UtcNow;
+            _nodes.AddLast(replacementNode);
+        }
     }
     
     public void AddToReplacementCache(NodeTableEntry nodeEntry)

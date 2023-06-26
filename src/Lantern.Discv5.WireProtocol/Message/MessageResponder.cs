@@ -44,7 +44,7 @@ public class MessageResponder : IMessageResponder
             _ => throw new ArgumentOutOfRangeException()
         };
     }
-    
+
     private byte[] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Ping);
@@ -57,6 +57,8 @@ public class MessageResponder : IMessageResponder
     
     private byte[]? HandlePongMessage(byte[] message)
     {
+        Console.WriteLine("Pong message: " + Convert.ToHexString(message));
+        
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = GetPendingRequest(decodedMessage);
@@ -194,14 +196,21 @@ public class MessageResponder : IMessageResponder
         
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
-        var pendingRequest = GetPendingRequest(decodedMessage);
         
-        if(pendingRequest == null)
-            return null;
+        TalkRespMessage? talkRespMessage;
         
         var result = _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
+
+        if (result == null)
+        {
+            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, new byte[] { });
+        }
+        else
+        {
+            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, result);
+        }
         
-        return result;
+        return talkRespMessage.EncodeMessage();
     }
     
     private byte[]? HandleTalkRespMessage(byte[] message)
@@ -214,11 +223,6 @@ public class MessageResponder : IMessageResponder
 
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
         var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
-        var pendingRequest = GetPendingRequest(decodedMessage);
-        
-        if(pendingRequest == null)
-            return null;
-
         var result = _talkResponder.HandleResponse(decodedMessage.Response);
 
         return result;

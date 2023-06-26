@@ -8,5 +8,5 @@ public interface IPacketHandler
 {
     PacketType PacketType { get; }
     
-    Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult);
+    Task HandlePacket( UdpReceiveResult returnedResult);
 }

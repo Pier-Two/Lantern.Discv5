@@ -60,8 +60,8 @@ public class StaticHeader
         
         // Based on the flag, it should retrieve the authdata correctly
         var authData = decryptedData[index..(index + authDataSize)];
-        
         var encryptedMessage = decryptedData[(index + authDataSize)..];
+        
         return new StaticHeader(protocolId, version, authData, flag, nonce, encryptedMessage.Length);
     }
 }
