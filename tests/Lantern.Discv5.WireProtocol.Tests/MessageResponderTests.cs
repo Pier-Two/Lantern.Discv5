@@ -21,7 +21,10 @@ public class MessageResponderTests
     [OneTimeSetUp]
     public void Setup()
     {
-        var connectionOptions = ConnectionOptions.Default;
+        var connectionOptions = new ConnectionOptions.Builder()
+            .WithPort(2030)
+            .Build();
+        
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
