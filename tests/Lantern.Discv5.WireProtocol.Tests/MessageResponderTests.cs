@@ -18,12 +18,10 @@ public class MessageResponderTests
     private static IMessageResponder _messageResponder = null!;
     private static IIdentityManager _identityManager = null!;
 
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions.Builder()
-            .WithPort(Random.Shared.Next(0, 9000))
-            .Build();
+        var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
@@ -60,7 +58,7 @@ public class MessageResponderTests
     {
         var distances = new [] { 252, 253, 254 };
         var findNodesMessage = new FindNodeMessage(distances);
-        var ipEndPoint = new IPEndPoint(IPAddress.Any, 9312);
+        var ipEndPoint = new IPEndPoint(IPAddress.Any, 9319);
         var response = await _messageResponder.HandleMessage(findNodesMessage.EncodeMessage(), ipEndPoint);
         var nodesMessage = (NodesMessage)new MessageDecoder().DecodeMessage(response!);
         Assert.NotNull(nodesMessage);
