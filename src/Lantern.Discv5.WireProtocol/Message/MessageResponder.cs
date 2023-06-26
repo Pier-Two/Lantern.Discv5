@@ -57,8 +57,6 @@ public class MessageResponder : IMessageResponder
     
     private byte[]? HandlePongMessage(byte[] message)
     {
-        Console.WriteLine("Pong message: " + Convert.ToHexString(message));
-        
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = GetPendingRequest(decodedMessage);
@@ -203,7 +201,7 @@ public class MessageResponder : IMessageResponder
 
         if (result == null)
         {
-            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, new byte[] { });
+            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, Array.Empty<byte>());
         }
         else
         {

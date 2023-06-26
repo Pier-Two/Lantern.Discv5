@@ -40,6 +40,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
+        
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
         var destNodeId = _sessionManager.GetHandshakeInteraction(packet.StaticHeader.Nonce);
         
@@ -57,6 +58,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return;
         }
         
+        _routingTable.MarkNodeAsLive(nodeEntry.Id);
         var session = GenerateOrUpdateSession(packet, destNodeId, returnedResult.RemoteEndPoint);
         
         if(session == null)

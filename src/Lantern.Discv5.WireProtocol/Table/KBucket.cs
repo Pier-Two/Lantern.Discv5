@@ -68,6 +68,7 @@ public class KBucket
             _replacementCache.RemoveFirst();
         
             var deadNode = _nodes.FirstOrDefault(node => node.Id.SequenceEqual(deadNodeEntry.Id));
+            
             if(deadNode != null)
             {
                 _nodes.Remove(deadNode);
