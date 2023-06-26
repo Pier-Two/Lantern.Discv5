@@ -19,17 +19,20 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
+    private readonly IUdpConnection _connection;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<OrdinaryPacketHandler> _logger;
 
     public OrdinaryPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager,
-        IRoutingTable routingTable, IMessageResponder messageResponder, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+        IRoutingTable routingTable, IMessageResponder messageResponder, IUdpConnection udpConnection,
+        IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _messageResponder = messageResponder;
+        _connection = udpConnection;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<OrdinaryPacketHandler>();
@@ -37,7 +40,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
     public override PacketType PacketType => PacketType.Ordinary;
 
-    public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
+    public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received ORDINARY packet from {Address}", returnedResult.RemoteEndPoint.Address);
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
@@ -45,7 +48,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         if(nodeEntry == null)
         {
-            await SendWhoAreYouPacketWithoutEnrAsync(packet, returnedResult.RemoteEndPoint, connection);
+            await SendWhoAreYouPacketWithoutEnrAsync(packet, returnedResult.RemoteEndPoint, _connection);
             return;
         }
         
@@ -53,7 +56,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         if (session == null)
         {
-            await SendWhoAreYouPacketAsync(packet, nodeEntry.Record, returnedResult.RemoteEndPoint, connection);
+            await SendWhoAreYouPacketAsync(packet, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
 
@@ -61,7 +64,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
-            await SendWhoAreYouPacketAsync(packet, nodeEntry.Record, returnedResult.RemoteEndPoint, connection);
+            await SendWhoAreYouPacketAsync(packet, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
         
@@ -71,7 +74,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (response != null)
         {
-            await SendResponseToOrdinaryPacketAsync(packet, session, returnedResult.RemoteEndPoint, connection,
+            await SendResponseToOrdinaryPacketAsync(packet, session, returnedResult.RemoteEndPoint, _connection,
                 response);
         }
     }

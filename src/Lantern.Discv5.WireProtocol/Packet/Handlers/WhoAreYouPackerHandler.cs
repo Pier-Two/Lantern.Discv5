@@ -18,16 +18,18 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
     private readonly IRequestManager _requestManager;
+    private readonly IUdpConnection _connection;
     private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<WhoAreYouPacketHandler> _logger;
 
-    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IRequestManager requestManager, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IRequestManager requestManager, IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _requestManager = requestManager;
+        _connection = udpConnection;
         _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<WhoAreYouPacketHandler>();
@@ -35,7 +37,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
     public override PacketType PacketType => PacketType.WhoAreYou;
 
-    public override async Task HandlePacket(IUdpConnection connection, UdpReceiveResult returnedResult)
+    public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
         var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
@@ -82,7 +84,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
         
-        await connection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);
+        await _connection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);
         _logger.LogInformation("Sent HANDSHAKE packet with encrypted message");
     }
 

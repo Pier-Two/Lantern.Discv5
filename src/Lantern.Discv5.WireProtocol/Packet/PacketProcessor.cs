@@ -27,6 +27,7 @@ public class PacketProcessor
     {
         var decryptedPacket = _aesUtility.AesCtrDecrypt(_identityManager.NodeId[..16], _rawPacket[..16], _rawPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
+        
         return staticHeader;
     }
 

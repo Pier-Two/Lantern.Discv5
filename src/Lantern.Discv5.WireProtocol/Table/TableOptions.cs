@@ -7,7 +7,6 @@ public class TableOptions
 {
     public int PingIntervalMilliseconds { get; }
     public int RefreshIntervalMilliseconds { get; }
-    public int LookupIntervalMilliseconds { get; }
     public int LookupTimeoutMilliseconds { get; }
     public int MaxAllowedFailures { get; }
     public int ConcurrencyParameter { get; }
@@ -20,7 +19,6 @@ public class TableOptions
     {
         PingIntervalMilliseconds = builder.PingIntervalMilliseconds;
         RefreshIntervalMilliseconds = builder.RefreshIntervalMilliseconds;
-        LookupIntervalMilliseconds = builder.LookupIntervalMilliseconds;
         LookupTimeoutMilliseconds = builder.LookupTimeoutMilliseconds;
         MaxAllowedFailures = builder.MaxAllowedFailures;
         ConcurrencyParameter = builder.ConcurrencyParameter;
@@ -32,7 +30,6 @@ public class TableOptions
     {
         public int PingIntervalMilliseconds { get; private set; } = 5000;
         public int RefreshIntervalMilliseconds { get; private set; } = 5000;
-        public int LookupIntervalMilliseconds { get; private set; } = 3000;
         public int LookupTimeoutMilliseconds { get; private set; } = 10000;
         public int MaxAllowedFailures { get; private set; } = 3;
         public int ConcurrencyParameter { get; private set; } = 3;
@@ -51,12 +48,6 @@ public class TableOptions
             return this;
         }
 
-        public Builder WithLookupIntervalMilliseconds(int lookupIntervalMilliseconds)
-        {
-            LookupIntervalMilliseconds = lookupIntervalMilliseconds;
-            return this;
-        }
-        
         public Builder WithLookupTimeoutMilliseconds(int lookupTimeoutMilliseconds)
         {
             LookupTimeoutMilliseconds = lookupTimeoutMilliseconds;
