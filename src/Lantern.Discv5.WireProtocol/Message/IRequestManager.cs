@@ -2,7 +2,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IRequestManager
 {
-    void StartRequestManagerAsync();
+    void StartRequestManager();
     
     Task StopRequestManagerAsync();
     

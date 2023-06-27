@@ -51,7 +51,7 @@ public class Discv5Protocol
     {
         _connectionManager.StartConnectionManagerAsync();
         _tableManager.StartTableManagerAsync();
-        _requestManager.StartRequestManagerAsync();
+        _requestManager.StartRequestManager();
     }
     
     public async Task StopProtocolAsync()
