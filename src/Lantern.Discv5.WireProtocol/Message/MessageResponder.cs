@@ -41,7 +41,7 @@ public class MessageResponder : IMessageResponder
             MessageType.Nodes => await HandleNodesMessage(message),
             MessageType.TalkReq => HandleTalkReqMessage(message),
             MessageType.TalkResp => HandleTalkRespMessage(message),
-            _ => throw new ArgumentOutOfRangeException()
+            _ => null
         };
     }
 
@@ -220,10 +220,11 @@ public class MessageResponder : IMessageResponder
         }
 
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
+        
         var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
-        var result = _talkResponder.HandleResponse(decodedMessage.Response);
+        _talkResponder.HandleResponse(decodedMessage.Response);
 
-        return result;
+        return null;
     }
     
     private PendingRequest? GetPendingRequest(Message message)

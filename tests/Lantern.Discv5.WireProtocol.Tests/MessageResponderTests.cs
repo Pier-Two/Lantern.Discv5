@@ -35,10 +35,12 @@ public class MessageResponderTests
     }
     
     [Test]
-    public void Test_MessageResponder_ShouldThrowArgumentException_WhenMessageIsNotSupported()
+    public async Task Test_MessageResponder_ShouldThrowArgumentException_WhenMessageIsNotSupported()
     {
         var topicMessage = new TopicQueryMessage("test"u8.ToArray());
-        Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await _messageResponder.HandleMessage(topicMessage.EncodeMessage(), new IPEndPoint(IPAddress.Any, 9000)));
+        var result =
+            await _messageResponder.HandleMessage(topicMessage.EncodeMessage(), new IPEndPoint(IPAddress.Any, 9000));
+        Assert.Null(result);
     }
 
     [Test]

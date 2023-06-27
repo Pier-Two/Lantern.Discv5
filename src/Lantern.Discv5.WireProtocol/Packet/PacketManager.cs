@@ -39,130 +39,7 @@ public class PacketManager : IPacketManager
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
-
-    public async Task SendPingPacket(EnrRecord destRecord)
-    {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
-        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
-        
-        if(destIpKey == null || destUdpKey == null)
-        {
-            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
-            return;
-        }
-        
-        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
-        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-
-        if (cryptoSession is { IsEstablished: true })
-        {
-            var message = _messageRequester.ConstructPingMessage(destNodeId);
-
-            if (message == null)
-            {
-                _logger.LogWarning("Unable to construct message. Cannot send packet");
-                return;
-            }
-
-            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
-        }
-        else
-        {
-            var message = _messageRequester.ConstructCachedPingMessage(destNodeId);
-            
-            if(message == null)
-            {
-                _logger.LogWarning("No message constructed. Cannot send packet");
-                return;
-            }
-            
-            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
-        }
-    }
-
-    public async Task SendFindNodePacket(EnrRecord destRecord, byte[] targetNodeId)
-    {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
-        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
-        
-        if(destIpKey == null || destUdpKey == null)
-        {
-            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
-            return;
-        }
-        
-        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
-        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-        
-        if (cryptoSession is { IsEstablished: true })
-        {
-            var message = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId);
-            
-            if (message == null)
-            {
-                _logger.LogWarning("Unable to construct message. Cannot send packet");
-                return;
-            }
-            
-            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
-        }
-        else
-        {
-            var message = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, targetNodeId);
-            
-            if(message == null)
-            {
-                _logger.LogWarning("No message constructed. Cannot send packet");
-                return;
-            }
-            
-            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
-        }
-    }
-
-    public async Task SendTalkReqPacket(EnrRecord destRecord, byte[] protocol, byte[] request)
-    {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
-        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
-        
-        if(destIpKey == null || destUdpKey == null)
-        {
-            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
-            return;
-        }
-        
-        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
-        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-        
-        if (cryptoSession is { IsEstablished: true })
-        {
-            var message = _messageRequester.ConstructTalkReqMessage(destNodeId, protocol, request);
-            
-            if (message == null)
-            {
-                _logger.LogWarning("Unable to construct message. Cannot send packet");
-                return;
-            }
-            
-            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
-        }
-        else
-        {
-            var message = _messageRequester.ConstructCachedTalkReqMessage(destNodeId, protocol, request);
-            
-            if(message == null)
-            {
-                _logger.LogWarning("No message constructed. Cannot send packet");
-                return;
-            }
-            
-            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
-        }
-    }
-
+    
     public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
         try
@@ -200,4 +77,54 @@ public class PacketManager : IPacketManager
         await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
         _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
+    
+    public async Task SendPacket(EnrRecord destRecord, MessageType messageType, params byte[][] parameters)
+    {
+        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
+        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
+        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
+
+        if (destIpKey == null || destUdpKey == null)
+        {
+            _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
+            return;
+        }
+
+        var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
+        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
+
+        if (cryptoSession is { IsEstablished: true })
+        {
+            var message = messageType switch
+            {
+                MessageType.Ping => _messageRequester.ConstructPingMessage(destNodeId),
+                MessageType.FindNode => _messageRequester.ConstructFindNodeMessage(destNodeId, parameters[0]),
+                MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, parameters[0], parameters[1]),
+                MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, parameters[0]),
+                _ => null
+            };
+            
+            if (message == null)
+            {
+                _logger.LogWarning("Unable to construct message. Cannot send packet");
+                return;
+            }
+            
+            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
+        }
+        else
+        {
+            _ = messageType switch
+            {
+                MessageType.Ping => _messageRequester.ConstructCachedPingMessage(destNodeId),
+                MessageType.FindNode => _messageRequester.ConstructCachedFindNodeMessage(destNodeId, parameters[0]),
+                MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, parameters[0], parameters[1]),
+                MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, parameters[0]),
+                _ => null
+            };
+
+            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+        }
+    }
+
 }

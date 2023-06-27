@@ -1,5 +1,6 @@
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
+using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
@@ -121,5 +122,38 @@ public class MessageRequester : IMessageRequester
         
         _logger.LogDebug("TalkReq message constructed: {TalkReqMessage}", talkReqMessage.RequestId);
         return talkReqMessage.EncodeMessage();
+    }
+    
+    public byte[]? ConstructTalkRespMessage(byte[] destNodeId, byte[] response)
+    {
+        _logger.LogInformation("Constructing message of type {MessageType}", MessageType.TalkResp);
+        
+        var talkRespMessage = new TalkRespMessage(response);
+        var result = _requestManager.AddPendingRequest(talkRespMessage.RequestId, new PendingRequest(destNodeId, talkRespMessage));
+        
+        if(result == false)
+        {
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
+            return null;
+        }
+        
+        _logger.LogDebug("TalkResp message constructed: {TalkRespMessage}", talkRespMessage.RequestId);
+        return talkRespMessage.EncodeMessage();
+    }
+    
+    public byte[]? ConstructCachedTalkRespMessage(byte[] destNodeId, byte[] response)
+    {
+        _logger.LogInformation("Constructing message of type {MessageType}", MessageType.TalkResp);
+        
+        var talkRespMessage = new TalkRespMessage(response);
+        
+        if(!_requestManager.ContainsCachedRequest(destNodeId))
+        {
+            _logger.LogInformation("Adding cached request for node {NodeId}", Convert.ToHexString(destNodeId));
+            _requestManager.AddCachedRequest(destNodeId, new CachedRequest(destNodeId, talkRespMessage));
+        }
+        
+        _logger.LogDebug("TalkResp message constructed: {TalkRespMessage}", talkRespMessage.RequestId);
+        return talkRespMessage.EncodeMessage();
     }
 }

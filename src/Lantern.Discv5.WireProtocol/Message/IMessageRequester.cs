@@ -13,4 +13,8 @@ public interface IMessageRequester
     byte[]? ConstructTalkReqMessage(byte[] destNodeId, byte[] protocol, byte[] request);
 
     byte[]? ConstructCachedTalkReqMessage(byte[] destNodeId, byte[] protocol, byte[] request);
+
+    byte[]? ConstructTalkRespMessage(byte[] destNodeId, byte[] response);
+    
+    byte[]? ConstructCachedTalkRespMessage(byte[] destNodeId, byte[] response);
 }
