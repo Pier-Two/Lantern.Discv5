@@ -34,7 +34,7 @@ public class Discv5ProtocolTests
                 Console.WriteLine("Closest node: " + Convert.ToHexString(node.Id));
             }
         }
-
+        
         await _discv5Protocol.StopProtocolAsync();
     }
 } 

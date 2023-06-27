@@ -83,7 +83,7 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendPingPacket(destinationRecord);
+            await _packetManager.SendPacket(destinationRecord, MessageType.Ping);
         }
         catch (Exception ex)
         {
@@ -95,7 +95,7 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendFindNodePacket(destinationRecord, nodeId);
+            await _packetManager.SendPacket(destinationRecord, MessageType.FindNode, nodeId);
         }
         catch (Exception ex)
         {
@@ -107,11 +107,23 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendTalkReqPacket(destinationRecord, protocol, request);
+            await _packetManager.SendPacket(destinationRecord, MessageType.TalkReq, protocol, request);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destinationRecord);
+        }
+    }
+    
+    public async Task SendTalkRespAsync(EnrRecord destinationRecord, byte[] response)
+    {
+        try
+        {
+            await _packetManager.SendPacket(destinationRecord, MessageType.TalkResp, response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destinationRecord);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Microsoft.Extensions.Logging;
 
@@ -142,7 +143,7 @@ public class LookupManager : ILookupManager
                     continue;
                 
                 bucket.QueriedNodes.Add(node.Id);
-                await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
+                await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
             }
         }
     }
@@ -166,7 +167,7 @@ public class LookupManager : ILookupManager
             if (!_pathBuckets.Any(pathBucket => pathBucket.QueriedNodes.Contains(node.Id)))
             {
                 bucket.QueriedNodes.Add(node.Id);
-                await _packetManager.SendFindNodePacket(node.Record, bucket.TargetNodeId);
+                await _packetManager.SendPacket(node.Record, MessageType.FindNode,bucket.TargetNodeId);
             }
         }
     }

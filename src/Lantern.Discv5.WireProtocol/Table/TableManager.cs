@@ -1,3 +1,4 @@
+using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
@@ -65,7 +66,7 @@ public class TableManager : ITableManager
             {
                 try
                 {
-                    await _packetManager.SendPingPacket(bootstrapEnr);
+                    await _packetManager.SendPacket(bootstrapEnr, MessageType.Ping);
                 }
                 catch (Exception ex)
                 {
@@ -116,7 +117,7 @@ public class TableManager : ITableManager
                 var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
                 var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).First();
 
-                await _packetManager.SendPingPacket(nodeEntry.Record);
+                await _packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
             }
         }
         catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)

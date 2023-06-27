@@ -84,6 +84,13 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignature, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
         var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
+        
+        if(encryptedMessage == null)
+        {
+            _logger.LogWarning("Failed to encrypt message with new keys");
+            return;
+        }
+        
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
         
         await _connection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);

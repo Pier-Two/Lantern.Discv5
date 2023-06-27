@@ -102,82 +102,45 @@ public class RequestManager : IRequestManager
     {
         _cachedRequests.TryRemove(requestId, out _);
     }
-    
-    private List<PendingRequest> GetPendingRequests()
-    {
-        return _pendingRequests.Values.ToList();
-    }
-    
-    private List<CachedRequest> GetCachedRequests()
-    {
-        return _cachedRequests.Values.ToList();
-    }
 
     private void CheckRequests(object? state)
     {
-        _logger.LogInformation("Starting CheckPendingRequestsAsync");
+        _logger.LogDebug("Checking for pending and cached requests");
 
-        try
+        var currentPendingRequests = _pendingRequests.Values.ToList();
+        var currentCachedRequests = _cachedRequests.Values.ToList();
+
+        foreach (var pendingRequest in currentPendingRequests)
         {
-            var currentPendingRequests = GetPendingRequests();
-            var currentCachedRequests = GetCachedRequests();
-
-            foreach (var pendingRequest in currentPendingRequests)
-            {
-                HandlePendingRequest(pendingRequest);
-            }
-
-            foreach (var cachedRequest in currentCachedRequests)
-            {
-                HandleCachedRequest(cachedRequest);
-            }
-
-        }
-        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
-        {
-            _logger.LogInformation("CheckPendingRequestsAsync was canceled gracefully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in CheckPendingRequestsAsync");
+            HandlePendingRequest(pendingRequest);
         }
 
-        _logger.LogInformation("CheckPendingRequestsAsync completed");
+        foreach (var cachedRequest in currentCachedRequests)
+        {
+            HandleCachedRequest(cachedRequest);
+        }
     }
     
     private void RemoveFulfilledRequests(object? state)
     {
-        _logger.LogInformation("Starting RemoveCompletedTasksAsync");
+        _logger.LogDebug("Removing fulfilled requests");
 
-        try
+        var completedTasks = _pendingRequests.Values.ToList().Where(x => x.IsFulfilled).ToList();
+
+        foreach (var task in completedTasks)
         {
-            var completedTasks = GetPendingRequests().Where(x => x.IsFulfilled).ToList();
-
-            foreach (var task in completedTasks)
+            if (task.Message.MessageType == MessageType.FindNode)
             {
-                if (task.Message.MessageType == MessageType.FindNode)
+                if (task.ResponsesCount == task.MaxResponses)
                 {
-                    if (task.ResponsesCount == task.MaxResponses)
-                    {
-                        RemovePendingRequest(task.Message.RequestId);
-                    }
-                }
-                else
-                {
-                    RemovePendingRequest(task.Message.RequestId);
+                    _pendingRequests.TryRemove(task.Message.RequestId, out _);
                 }
             }
+            else
+            {
+                _pendingRequests.TryRemove(task.Message.RequestId, out _);
+            }
         }
-        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
-        {
-            _logger.LogInformation("RemoveCompletedTasksAsync was canceled gracefully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in RemoveCompletedTasksAsync");
-        }
-
-        _logger.LogInformation("RemoveCompletedTasksAsync completed");
     }
 
     private void HandlePendingRequest(PendingRequest request)
@@ -186,9 +149,9 @@ public class RequestManager : IRequestManager
             request.IsFulfilled) 
             return;
         
-        _logger.LogDebug("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
-        RemovePendingRequest(request.Message.RequestId);
+        _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
 
+        _pendingRequests.TryRemove(request.Message.RequestId, out _);
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
 
         if (nodeEntry == null) 
@@ -212,9 +175,9 @@ public class RequestManager : IRequestManager
             request.IsFulfilled) 
             return;
         
-        _logger.LogDebug("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
-        RemoveCachedRequest(request.NodeId);
-            
+        _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
+        
+        _cachedRequests.TryRemove(request.NodeId, out _);  
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
             
         if (nodeEntry == null)
@@ -224,16 +187,6 @@ public class RequestManager : IRequestManager
         }
             
         _routingTable.MarkNodeAsDead(request.NodeId);
-    }
-    
-    private void RemovePendingRequest(byte[] requestId)
-    {
-        _pendingRequests.TryRemove(requestId, out _);
-    }
-
-    private void RemoveCachedRequest(byte[] requestId)
-    {
-        _cachedRequests.TryRemove(requestId, out _);
     }
 }
 
