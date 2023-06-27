@@ -15,8 +15,8 @@ public class RequestManager : IRequestManager
     private readonly TableOptions _tableOptions;
     private readonly ConnectionOptions _connectionOptions;
     private readonly CancellationTokenSource _shutdownCts;
-    private Task? _checkRequestsTask;
-    private Task? _removeFulfilledRequestsTask;
+    private Timer? _checkRequestsTimer;
+    private Timer? _removeFulfilledRequestsTimer;
 
     public RequestManager(IRoutingTable routingTable, ILoggerFactory loggerFactory, TableOptions tableOptions, ConnectionOptions connectionOptions)
     {
@@ -29,52 +29,44 @@ public class RequestManager : IRequestManager
         _shutdownCts = new CancellationTokenSource();
     }
     
-    public void StartRequestManagerAsync()
+    public void StartRequestManager()
     {
         _logger.LogInformation("Starting RequestManagerAsync");
         
-        _checkRequestsTask = CheckRequestsAsync(_shutdownCts.Token);
-        _removeFulfilledRequestsTask = RemoveFulfilledRequestsAsync(_shutdownCts.Token);
+        _checkRequestsTimer = new Timer(CheckRequests, null, 0, _connectionOptions.CheckPendingRequestsDelayMs);
+        _removeFulfilledRequestsTimer = new Timer(RemoveFulfilledRequests, null, 0, _connectionOptions.RemoveCompletedRequestsDelayMs);
     }
 
     public async Task StopRequestManagerAsync()
     {
         _logger.LogInformation("Stopping RequestManagerAsync");
         _shutdownCts.Cancel();
-        
-        try
+
+        if (_checkRequestsTimer != null)
         {
-            if (_checkRequestsTask != null && _removeFulfilledRequestsTask != null)
-            {
-                await Task.WhenAll(_checkRequestsTask, _removeFulfilledRequestsTask).ConfigureAwait(false);
-            }
+            await _checkRequestsTimer.DisposeAsync();
+            _checkRequestsTimer = null; 
         }
-        catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
+
+        if (_removeFulfilledRequestsTimer != null)
         {
-            _logger.LogInformation("RequestManagerAsync was canceled gracefully");
+            await _removeFulfilledRequestsTimer.DisposeAsync();
+            _removeFulfilledRequestsTimer = null; 
         }
     }
 
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
-        if (ContainsPendingRequest(requestId)) 
-            return false;
-        
-        _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
-        
-        _pendingRequests.TryAdd(requestId, request);
-        return true;
+        _logger.LogDebug("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
+        return _pendingRequests.TryAdd(requestId, request);
     }
     
     public bool AddCachedRequest(byte[] requestId, CachedRequest request)
     {
-        if (ContainsCachedRequest(requestId)) 
-            return false;
-        
-        _cachedRequests.TryAdd(requestId, request);
-        return true;
+        _logger.LogDebug("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
+        return _cachedRequests.TryAdd(requestId, request);
     }
-    
+
     public bool ContainsPendingRequest(byte[] requestId)
     {
         return _pendingRequests.ContainsKey(requestId);
@@ -99,19 +91,16 @@ public class RequestManager : IRequestManager
     
     public void MarkRequestAsFulfilled(byte[] requestId)
     {
-        if (!ContainsPendingRequest(requestId)) 
+        if (!_pendingRequests.TryGetValue(requestId, out var request)) 
             return;
         
-        _pendingRequests[requestId].IsFulfilled = true;
-        _pendingRequests[requestId].ResponsesCount++;
+        request.IsFulfilled = true;
+        request.ResponsesCount++;
     }
 
     public void MarkCachedRequestAsFulfilled(byte[] requestId)
     {
-        if (ContainsCachedRequest(requestId))
-        {
-            _cachedRequests.TryRemove(requestId, out _);
-        }
+        _cachedRequests.TryRemove(requestId, out _);
     }
     
     private List<PendingRequest> GetPendingRequests()
@@ -124,29 +113,25 @@ public class RequestManager : IRequestManager
         return _cachedRequests.Values.ToList();
     }
 
-    private async Task CheckRequestsAsync(CancellationToken token)
+    private void CheckRequests(object? state)
     {
         _logger.LogInformation("Starting CheckPendingRequestsAsync");
 
         try
         {
-            while (!_shutdownCts.IsCancellationRequested)
+            var currentPendingRequests = GetPendingRequests();
+            var currentCachedRequests = GetCachedRequests();
+
+            foreach (var pendingRequest in currentPendingRequests)
             {
-                var currentPendingRequests = GetPendingRequests();
-                var currentCachedRequests = GetCachedRequests();
-                
-                foreach (var pendingRequest in currentPendingRequests)
-                {
-                    HandlePendingRequest(pendingRequest);
-                }
-
-                foreach (var cachedRequest in currentCachedRequests)
-                {
-                    HandleCachedRequest(cachedRequest);
-                }
-
-                await Task.Delay(_connectionOptions.CheckPendingRequestsDelayMs, token).ConfigureAwait(false);
+                HandlePendingRequest(pendingRequest);
             }
+
+            foreach (var cachedRequest in currentCachedRequests)
+            {
+                HandleCachedRequest(cachedRequest);
+            }
+
         }
         catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
         {
@@ -160,31 +145,27 @@ public class RequestManager : IRequestManager
         _logger.LogInformation("CheckPendingRequestsAsync completed");
     }
     
-    private async Task RemoveFulfilledRequestsAsync(CancellationToken token)
+    private void RemoveFulfilledRequests(object? state)
     {
         _logger.LogInformation("Starting RemoveCompletedTasksAsync");
 
         try
         {
-            while (!_shutdownCts.IsCancellationRequested)
+            var completedTasks = GetPendingRequests().Where(x => x.IsFulfilled).ToList();
+
+            foreach (var task in completedTasks)
             {
-                var completedTasks = GetPendingRequests().Where(x => x.IsFulfilled).ToList();
-                
-                foreach (var task in completedTasks)
+                if (task.Message.MessageType == MessageType.FindNode)
                 {
-                    if (task.Message.MessageType == MessageType.FindNode)
-                    {
-                        if (task.ResponsesCount == task.MaxResponses)
-                        {
-                            RemovePendingRequest(task.Message.RequestId);
-                        }
-                    }
-                    else
+                    if (task.ResponsesCount == task.MaxResponses)
                     {
                         RemovePendingRequest(task.Message.RequestId);
                     }
                 }
-                await Task.Delay(_connectionOptions.RemoveCompletedRequestsDelayMs, token).ConfigureAwait(false);
+                else
+                {
+                    RemovePendingRequest(task.Message.RequestId);
+                }
             }
         }
         catch (OperationCanceledException) when (_shutdownCts.IsCancellationRequested)
@@ -201,62 +182,58 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.PendingRequestTimeoutMs && !request.IsFulfilled)
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs ||
+            request.IsFulfilled) 
+            return;
+        
+        _logger.LogDebug("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
+        RemovePendingRequest(request.Message.RequestId);
+
+        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        if(nodeEntry.FailureCounter >= _tableOptions.MaxAllowedFailures)
         {
-            _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
-            RemovePendingRequest(request.Message.RequestId);
-
-            var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
-
-            if (nodeEntry != null)
-            {
-                if(nodeEntry.FailureCounter >= _tableOptions.MaxAllowedFailures)
-                {
-                    _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
-                    _routingTable.MarkNodeAsDead(request.NodeId);
-                }
-                else
-                {
-                    _logger.LogDebug("Increasing failure counter for Node {NodeId}",Convert.ToHexString(request.NodeId));
-                    _routingTable.IncreaseFailureCounter(request.NodeId);
-                }
-            }
+            _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
+            _routingTable.MarkNodeAsDead(request.NodeId);
+        }
+        else
+        {
+            _logger.LogDebug("Increasing failure counter for Node {NodeId}",Convert.ToHexString(request.NodeId));
+            _routingTable.IncreaseFailureCounter(request.NodeId);
         }
     }
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if(request.ElapsedTime.ElapsedMilliseconds >= _connectionOptions.PendingRequestTimeoutMs && !request.IsFulfilled)
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs ||
+            request.IsFulfilled) 
+            return;
+        
+        _logger.LogDebug("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
+        RemoveCachedRequest(request.NodeId);
+            
+        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+            
+        if (nodeEntry == null)
         {
-            _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
-            RemoveCachedRequest(request.NodeId);
-            
-            var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
-            
-            if (nodeEntry == null)
-            {
-                _logger.LogDebug("Node {NodeId} not found in routing table", Convert.ToHexString(request.NodeId));
-                return;
-            }
-            
-            _routingTable.MarkNodeAsDead(request.NodeId);
+            _logger.LogDebug("Node {NodeId} not found in routing table", Convert.ToHexString(request.NodeId));
+            return;
         }
+            
+        _routingTable.MarkNodeAsDead(request.NodeId);
     }
     
     private void RemovePendingRequest(byte[] requestId)
     {
-        if (ContainsPendingRequest(requestId))
-        {
-            _pendingRequests.TryRemove(requestId, out _);
-        }
+        _pendingRequests.TryRemove(requestId, out _);
     }
 
     private void RemoveCachedRequest(byte[] requestId)
     {
-        if (ContainsCachedRequest(requestId))
-        {
-            _cachedRequests.Remove(requestId, out _);
-        }
+        _cachedRequests.TryRemove(requestId, out _);
     }
 }
 
