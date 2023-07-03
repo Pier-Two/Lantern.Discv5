@@ -124,13 +124,6 @@ public class MessageResponder : IMessageResponder
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Nodes);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
-
-        if (decodedMessage.Enrs.Length == 0)
-        {
-            _logger.LogWarning("Received NODES message with no ENRs. Ignoring message");
-            return null;
-        }
-
         var pendingRequest = GetPendingRequest(decodedMessage);
     
         if (pendingRequest == null)

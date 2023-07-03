@@ -16,10 +16,10 @@ public class PathBucket
     public Dictionary<byte[], List<NodeTableEntry>> Responses { get; }
     
     public Dictionary<byte[], int> ExpectedResponses { get; }
-
-    public int ReceivedResponses { get; set; }
-
+    
     public bool IsComplete { get; set; }
+    
+    public TaskCompletionSource<bool> Completion { get; } = new();
 
     public PathBucket(byte[] targetNodeId, int index) 
     {
@@ -29,5 +29,12 @@ public class PathBucket
         DiscoveredNodes = new List<NodeTableEntry>();
         Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
         ExpectedResponses = new Dictionary<byte[], int>();
+    }
+    
+    // Method of setting completion status
+    public void SetComplete()
+    {
+        IsComplete = true;
+        Completion.SetResult(true);  
     }
 }
