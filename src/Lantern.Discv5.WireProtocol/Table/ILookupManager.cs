@@ -6,7 +6,7 @@ public interface ILookupManager
     
     Task StartLookupAsync(byte[] targetNodeId);
     
-    Task ContinueLookupAsync(List<NodeTableEntry> nodes, byte[] senderNode, int expectedResponses);
+    Task ContinueLookupAsync(List<NodeTableEntry> nodes, byte[] senderNodeId, int expectedResponses);
 
     bool IsLookupInProgress { get; }
 }
