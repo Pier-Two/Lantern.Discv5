@@ -3,6 +3,7 @@ using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
+using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -36,14 +37,10 @@ public class MessageRequesterTests
     {
         var destNodeId = RandomUtility.GenerateRandomData(32);
         var pingMessage = _messageRequester.ConstructPingMessage(destNodeId)!;
-        var cachedPingMessage = _messageRequester.ConstructCachedPingMessage(destNodeId)!;
         var decodedPingMessage = (PingMessage)new MessageDecoder().DecodeMessage(pingMessage);
-        var decodedCachedPingMessage = (PingMessage)new MessageDecoder().DecodeMessage(cachedPingMessage);
-        
+
         Assert.AreEqual(MessageType.Ping, decodedPingMessage.MessageType);
         Assert.AreEqual(_identityManager.Record.SequenceNumber, decodedPingMessage.EnrSeq);
-        Assert.AreEqual(MessageType.Ping, decodedCachedPingMessage.MessageType);
-        Assert.AreEqual(_identityManager.Record.SequenceNumber, decodedCachedPingMessage.EnrSeq);
     }
     
     [Test]
@@ -53,12 +50,9 @@ public class MessageRequesterTests
         var targetNodeId = RandomUtility.GenerateRandomData(32);
         var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId)!;
         var decodedFindNodeMessage = (FindNodeMessage)new MessageDecoder().DecodeMessage(findNodeMessage);
-        var decodedCachedFindNodeMessage = (FindNodeMessage)new MessageDecoder().DecodeMessage(findNodeMessage);
-        
+
         Assert.AreEqual(MessageType.FindNode, decodedFindNodeMessage.MessageType);
         Assert.AreEqual(TableUtility.Log2Distance(targetNodeId, destNodeId), decodedFindNodeMessage.Distances.First());
-        Assert.AreEqual(MessageType.FindNode, decodedCachedFindNodeMessage.MessageType);
-        Assert.AreEqual(TableUtility.Log2Distance(targetNodeId, destNodeId), decodedCachedFindNodeMessage.Distances.First());
     }
     
     [Test]
@@ -69,13 +63,21 @@ public class MessageRequesterTests
         var request = "ping"u8.ToArray();
         var talkRequestMessage = _messageRequester.ConstructTalkReqMessage(destNodeId, protocol, request)!;
         var decodedTalkRequestMessage = (TalkReqMessage)new MessageDecoder().DecodeMessage(talkRequestMessage);
-        var decodedCachedTalkRequestMessage = (TalkReqMessage)new MessageDecoder().DecodeMessage(talkRequestMessage);
-        
+
         Assert.AreEqual(MessageType.TalkReq, decodedTalkRequestMessage.MessageType);
         Assert.AreEqual(protocol, decodedTalkRequestMessage.Protocol);
         Assert.AreEqual(request, decodedTalkRequestMessage.Request);
-        Assert.AreEqual(MessageType.TalkReq, decodedCachedTalkRequestMessage.MessageType);
-        Assert.AreEqual(protocol, decodedCachedTalkRequestMessage.Protocol);
-        Assert.AreEqual(request, decodedCachedTalkRequestMessage.Request);
+    }
+
+    [Test]
+    public void Test_MessageRequester_ShouldGenerateTalkResponseMessageCorrectly()
+    {
+        var destNodeId = RandomUtility.GenerateRandomData(32);
+        var response = "response"u8.ToArray();
+        var talkResponseMessage = _messageRequester.ConstructTalkRespMessage(destNodeId, response)!;
+        var decodedTalkResponseMessage = (TalkRespMessage)new MessageDecoder().DecodeMessage(talkResponseMessage);
+
+        Assert.AreEqual(MessageType.TalkResp, decodedTalkResponseMessage.MessageType);
+        Assert.AreEqual(response, decodedTalkResponseMessage.Response);
     }
 }

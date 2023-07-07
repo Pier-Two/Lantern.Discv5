@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol.Packet;
 
 public interface IPacketBuilder
 {
-    Tuple<byte[], StaticHeader> BuildRandomOrdinaryPacket(byte[] destNodeId, byte[] packetNonce, byte[] maskingIv);
+    Tuple<byte[], StaticHeader> BuildRandomOrdinaryPacket(byte[] destNodeId);
 
     Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
 

@@ -9,6 +9,10 @@ public interface IRequestManager
     bool AddPendingRequest(byte[] requestId, PendingRequest request);
 
     bool AddCachedRequest(byte[] requestId, CachedRequest request);
+
+    void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
+    
+    byte[]? GetCachedHandshakeInteraction(byte[] packetNonce);
     
     bool ContainsPendingRequest(byte[] requestId);
 

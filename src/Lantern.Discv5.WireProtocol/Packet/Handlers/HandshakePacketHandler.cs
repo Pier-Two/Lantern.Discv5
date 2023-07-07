@@ -22,19 +22,21 @@ public class HandshakePacketHandler : PacketHandlerBase
     private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
     private readonly IUdpConnection _connection;
-    private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
+    private readonly IPacketProcessor _packetProcessor;
     private readonly ILogger<HandshakePacketHandler> _logger;
 
-    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IMessageResponder messageResponder, IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, 
+        IRoutingTable routingTable, IMessageResponder messageResponder, IUdpConnection udpConnection, 
+        IPacketBuilder packetBuilder, IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _messageResponder = messageResponder;
         _connection = udpConnection;
-        _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
+        _packetProcessor = packetProcessor;
         _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
     }
 
@@ -43,8 +45,8 @@ public class HandshakePacketHandler : PacketHandlerBase
     public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
-        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
-        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packet.StaticHeader);
+        var packet = returnedResult.Buffer;
+        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(_packetProcessor.GetStaticHeader(packet));
         var result = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!, out var publicKey);
 
         if (!result)
@@ -69,7 +71,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
 
-        var decryptedMessage = session.DecryptMessageWithNewKeys(packet, handshakePacket, _identityManager.NodeId);
+        var decryptedMessage = session.DecryptMessageWithNewKeys(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), _packetProcessor.GetEncryptedMessage(packet),handshakePacket, _identityManager.NodeId);
 
         if (decryptedMessage == null)
         {

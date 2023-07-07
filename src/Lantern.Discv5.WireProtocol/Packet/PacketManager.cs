@@ -22,20 +22,20 @@ public class PacketManager : IPacketManager
     private readonly ISessionManager _sessionManager;
     private readonly IMessageRequester _messageRequester;
     private readonly IUdpConnection _udpConnection;
-    private readonly IAesUtility _aesUtility;
+    private readonly IPacketProcessor _packetProcessor;
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<PacketManager> _logger;
 
     public PacketManager(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
         ISessionManager sessionManager, IMessageRequester messageRequester, IUdpConnection udpConnection, 
-        IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+        IPacketProcessor packetProcessor, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _packetHandlerFactory = packetHandlerFactory;
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _messageRequester = messageRequester;
         _udpConnection = udpConnection;
-        _aesUtility = aesUtility;
+        _packetProcessor = packetProcessor;
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
@@ -54,18 +54,17 @@ public class PacketManager : IPacketManager
 
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-
+        var message = messageType switch
+        {
+            MessageType.Ping => _messageRequester.ConstructPingMessage(destNodeId),
+            MessageType.FindNode => _messageRequester.ConstructFindNodeMessage(destNodeId, args[0]),
+            MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1]),
+            MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, args[0]),
+            _ => null
+        };
+        
         if (cryptoSession is { IsEstablished: true })
         {
-            var message = messageType switch
-            {
-                MessageType.Ping => _messageRequester.ConstructPingMessage(destNodeId),
-                MessageType.FindNode => _messageRequester.ConstructFindNodeMessage(destNodeId, args[0]),
-                MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1]),
-                MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, args[0]),
-                _ => null
-            };
-            
             if (message == null)
             {
                 _logger.LogWarning("Unable to construct message. Cannot send packet");
@@ -76,14 +75,6 @@ public class PacketManager : IPacketManager
         }
         else
         {
-            _ = messageType switch
-            {
-                MessageType.Ping => _messageRequester.ConstructCachedPingMessage(destNodeId),
-                MessageType.FindNode => _messageRequester.ConstructCachedFindNodeMessage(destNodeId, args[0]),
-                MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1]),
-                MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, args[0]),
-                _ => null
-            };
 
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
@@ -93,8 +84,7 @@ public class PacketManager : IPacketManager
     {
         try
         {
-            var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
-            var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)packet.StaticHeader.Flag);
+            var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)_packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
             await packetHandler.HandlePacket(returnedResult);
         }
         catch (Exception e)
@@ -107,22 +97,16 @@ public class PacketManager : IPacketManager
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
-        
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
         
         await _udpConnection.SendAsync(finalPacket, destEndPoint);
-        _logger.LogInformation("Sent request to {Destination}", destEndPoint);
+        _logger.LogInformation("Sent ORDINARY packet to {Destination}", destEndPoint);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
     {
-        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var packetNonce = RandomUtility.GenerateRandomData(PacketConstants.NonceSize);
-            
-        _sessionManager.SaveHandshakeInteraction(packetNonce, destNodeId);
-            
-        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId, packetNonce, maskingIv);
+        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
         await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
         _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }

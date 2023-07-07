@@ -35,6 +35,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IRoutingTable, RoutingTable>();
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
+        services.AddSingleton<IPacketProcessor, PacketProcessor>();
         services.AddSingleton<IAesUtility, AesUtility>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<ISessionManager, SessionManager>();

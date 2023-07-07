@@ -4,40 +4,33 @@ using Lantern.Discv5.WireProtocol.Session;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
-public class PacketProcessor
+public class PacketProcessor : IPacketProcessor
 {
     private readonly IIdentityManager _identityManager;
     private readonly IAesUtility _aesUtility;
-    private readonly byte[] _rawPacket;
-
-    public PacketProcessor(IIdentityManager identityManager, IAesUtility aesUtility, byte[] rawPacket)
+    
+    public PacketProcessor(IIdentityManager identityManager, IAesUtility aesUtility)
     {
         _identityManager = identityManager;
         _aesUtility = aesUtility;
-        _rawPacket = rawPacket;
     }
 
-    public StaticHeader StaticHeader => GetStaticHeader();
-
-    public byte[] MaskingIv => GetMaskingIv();
-    
-    public byte[] EncryptedMessage => GetEncryptedMessage();
-
-    private StaticHeader GetStaticHeader()
+    public StaticHeader GetStaticHeader(byte[] rawPacket)
     {
-        var decryptedPacket = _aesUtility.AesCtrDecrypt(_identityManager.NodeId[..16], _rawPacket[..16], _rawPacket[16..]);
+        var decryptedPacket = _aesUtility.AesCtrDecrypt(_identityManager.NodeId[..16], rawPacket[..16], rawPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
         
         return staticHeader;
     }
-
-    private byte[] GetMaskingIv()
+    
+    public byte[] GetMaskingIv(byte[] rawPacket)
     {
-        return _rawPacket.AsSpan()[..16].ToArray();
+        return rawPacket.AsSpan()[..16].ToArray();
     }
     
-    private byte[] GetEncryptedMessage()
+    public byte[] GetEncryptedMessage(byte[] rawPacket)
     {
-        return _rawPacket[^StaticHeader.EncryptedMessageLength..];
+        var staticHeader = GetStaticHeader(rawPacket);
+        return rawPacket[^staticHeader.EncryptedMessageLength..];
     }
 }
