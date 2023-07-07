@@ -23,17 +23,26 @@ public class KBucket
     
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
-        return _replacementCache.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
+        lock (_lock)
+        {
+            return _replacementCache.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
+        }
     }
 
     public NodeTableEntry? GetNodeById(byte[] nodeId)
     {
-        return _nodes.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
+        lock (_lock)
+        {
+            return _nodes.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
+        }
     }
     
     public NodeTableEntry? GetLeastRecentlySeenNode()
     {
-        return _nodes.First?.Value;
+        lock (_lock)
+        {
+            return _nodes.First?.Value;
+        }
     }
 
     public void Update(NodeTableEntry nodeEntry)

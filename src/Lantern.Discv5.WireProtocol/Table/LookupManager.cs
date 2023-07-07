@@ -96,7 +96,7 @@ public class LookupManager : ILookupManager
             _logger.LogDebug("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNodeId], Convert.ToHexString(senderNodeId), bucket.Index);
             _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
             _logger.LogDebug("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNodeId), bucket.Index);
-            _logger.LogDebug("Received responses from {ReceivedResponsesCount} nodes so far in bucket {BucketIndex}", bucket.ExpectedResponses.Count, bucket.Index);
+            _logger.LogInformation("Received responses from {ReceivedResponsesCount} nodes so far in bucket {BucketIndex}", bucket.ExpectedResponses.Count, bucket.Index);
             
             UpdatePathBucket(bucket, nodes, senderNodeId);
             

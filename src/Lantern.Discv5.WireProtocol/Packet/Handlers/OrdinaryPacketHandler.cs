@@ -54,6 +54,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         if(nodeEntry == null)
         {
+            _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
             await SendWhoAreYouPacketWithoutEnrAsync(staticHeader, returnedResult.RemoteEndPoint, _connection);
             return;
         }
@@ -62,6 +63,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         if (session == null)
         {
+            _logger.LogWarning("Cannot decrypt ORDINARY packet. No session found, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
@@ -70,6 +72,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
+            _logger.LogWarning("Cannot decrypt ORDINARY packet. Decryption failed, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
@@ -87,14 +90,9 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
     private async Task SendWhoAreYouPacketWithoutEnrAsync(StaticHeader staticHeader, IPEndPoint destEndPoint, IUdpConnection connection)
     {
-        _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
-        
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var whoAreYouPacket = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(staticHeader.AuthData, staticHeader.Nonce, maskingIv);
-
-        _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
-        
-        var session = _sessionManager.GetSession(staticHeader.AuthData, destEndPoint);
+        var session = _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
         
         if(session == null)
         {
@@ -110,15 +108,17 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
     private async Task SendWhoAreYouPacketAsync(StaticHeader staticHeader, EnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
     {
-        _logger.LogWarning("Cannot decrypt ORDINARY packet. No session found");
-        
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNodeRecord, maskingIv);
-       
-        _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
+        var session = _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
         
-        var session = _sessionManager.GetSession(staticHeader.AuthData, destEndPoint);
-        session!.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());
+        if(session == null)
+        {
+            _logger.LogError("Could not create a session for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
+            return;
+        }
+        
+        session.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());
 
         await connection.SendAsync(constructedWhoAreYouPacket.Item1, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
