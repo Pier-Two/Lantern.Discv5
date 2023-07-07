@@ -9,6 +9,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 public class RequestManager : IRequestManager
 {
     private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests;
+    private readonly ConcurrentDictionary<byte[], byte[]> _cachedHandshakeInteractions;
     private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests;
     private readonly IRoutingTable _routingTable;
     private readonly ILogger<RequestManager> _logger;
@@ -21,6 +22,7 @@ public class RequestManager : IRequestManager
     public RequestManager(IRoutingTable routingTable, ILoggerFactory loggerFactory, TableOptions tableOptions, ConnectionOptions connectionOptions)
     {
         _pendingRequests = new ConcurrentDictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
+        _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
         _cachedRequests = new ConcurrentDictionary<byte[], CachedRequest>(ByteArrayEqualityComparer.Instance);
         _routingTable = routingTable;
         _logger = loggerFactory.CreateLogger<RequestManager>();
@@ -60,13 +62,23 @@ public class RequestManager : IRequestManager
         _logger.LogDebug("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
         return _pendingRequests.TryAdd(requestId, request);
     }
-    
+
     public bool AddCachedRequest(byte[] requestId, CachedRequest request)
     {
         _logger.LogDebug("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
         return _cachedRequests.TryAdd(requestId, request);
     }
-
+    
+    public void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
+    { 
+        _cachedHandshakeInteractions.TryAdd(packetNonce, destNodeId);
+    }
+    
+    public byte[]? GetCachedHandshakeInteraction(byte[] packetNonce)
+    {
+        return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
+    }
+    
     public bool ContainsPendingRequest(byte[] requestId)
     {
         return _pendingRequests.ContainsKey(requestId);

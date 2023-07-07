@@ -86,7 +86,7 @@ public class SessionMain
         return _aesUtility.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
 
-    public byte[]? DecryptMessageWithNewKeys(PacketProcessor packet, HandshakePacketBase handshakePacket, byte[] selfNodeId)
+    public byte[]? DecryptMessageWithNewKeys(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage, HandshakePacketBase handshakePacket, byte[] selfNodeId)
     {
         var sharedSecret = GenerateSharedSecret(_sessionKeys.PrivateKey, handshakePacket.EphPubkey);
         
@@ -103,10 +103,10 @@ public class SessionMain
         }
         
         var sharedKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId, selfNodeId, _challengeData);
-        var messageAd = ByteArrayUtils.JoinByteArrays(packet.MaskingIv, packet.StaticHeader.GetHeader());
+        var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         
         _logger.LogDebug("Decrypting message with new keys");
-        var decryptedResult = _aesUtility.AesGcmDecrypt(sharedKeys.InitiatorKey, packet.StaticHeader.Nonce, packet.EncryptedMessage, messageAd);
+        var decryptedResult = _aesUtility.AesGcmDecrypt(sharedKeys.InitiatorKey, header.Nonce, encryptedMessage, messageAd);
         
         _currentSharedKeys = sharedKeys;
 
@@ -132,7 +132,7 @@ public class SessionMain
         return encryptedMessage;
     }
     
-    public byte[]? DecryptMessage(PacketProcessor packet)
+    public byte[]? DecryptMessage(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage)
     {
         if(_currentSharedKeys == null)
         {
@@ -140,11 +140,11 @@ public class SessionMain
             return null;
         }
         
-        var messageAd = ByteArrayUtils.JoinByteArrays(packet.MaskingIv, packet.StaticHeader.GetHeader());
+        var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         var decryptionKey = _sessionType == SessionType.Initiator ? _currentSharedKeys.RecipientKey : _currentSharedKeys.InitiatorKey;
         
         _logger.LogDebug("Decrypting message");
-        var decryptedMessage = _aesUtility.AesGcmDecrypt(decryptionKey, packet.StaticHeader.Nonce, packet.EncryptedMessage, messageAd);
+        var decryptedMessage = _aesUtility.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
 
         if (!IsEstablished)
         {

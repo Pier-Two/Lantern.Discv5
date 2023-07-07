@@ -4,6 +4,7 @@ using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
@@ -19,19 +20,21 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     private readonly IRoutingTable _routingTable;
     private readonly IRequestManager _requestManager;
     private readonly IUdpConnection _connection;
-    private readonly IAesUtility _aesUtility;
     private readonly IPacketBuilder _packetBuilder;
+    private readonly IPacketProcessor _packetProcessor;
     private readonly ILogger<WhoAreYouPacketHandler> _logger;
 
-    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, IRoutingTable routingTable, IRequestManager requestManager, IUdpConnection udpConnection, IAesUtility aesUtility, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, 
+        IRoutingTable routingTable, IRequestManager requestManager, IUdpConnection udpConnection, 
+        IPacketBuilder packetBuilder, IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _requestManager = requestManager;
         _connection = udpConnection;
-        _aesUtility = aesUtility;
         _packetBuilder = packetBuilder;
+        _packetProcessor = packetProcessor;
         _logger = loggerFactory.CreateLogger<WhoAreYouPacketHandler>();
     }
 
@@ -41,12 +44,12 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     {
         _logger.LogInformation("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
         
-        var packet = new PacketProcessor(_identityManager, _aesUtility, returnedResult.Buffer);
-        var destNodeId = _sessionManager.GetHandshakeInteraction(packet.StaticHeader.Nonce);
+        var packet = returnedResult.Buffer;
+        var destNodeId = _requestManager.GetCachedHandshakeInteraction(_packetProcessor.GetStaticHeader(packet).Nonce);
         
         if (destNodeId == null)
         {
-            _logger.LogWarning("Failed to get dest node id from packet nonce");
+            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
             return;
         }
         
@@ -59,7 +62,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         }
         
         _routingTable.MarkNodeAsLive(nodeEntry.Id);
-        var session = GenerateOrUpdateSession(packet, destNodeId, returnedResult.RemoteEndPoint);
+        var session = GenerateOrUpdateSession(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
         
         if(session == null)
         {
@@ -70,7 +73,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(message == null)
         {
-            _logger.LogWarning("Failed to construct message in response to WHOAREYOU packet");
+            _logger.LogWarning("Failed to construct message in response to WHOAREYOU packet. Sending RANDOM packet");
             return;
         }
         
@@ -97,7 +100,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         _logger.LogInformation("Sent HANDSHAKE packet with encrypted message");
     }
 
-    private SessionMain? GenerateOrUpdateSession(PacketProcessor packet, byte[] destNodeId, IPEndPoint destEndPoint)
+    private SessionMain? GenerateOrUpdateSession(StaticHeader header,byte[] maskingIv, byte[] destNodeId, IPEndPoint destEndPoint)
     {
         var session = _sessionManager.GetSession(destNodeId, destEndPoint);
 
@@ -109,7 +112,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
         if (session != null)
         {
-            session.SetChallengeData(packet.MaskingIv, packet.StaticHeader.GetHeader());
+            session.SetChallengeData(maskingIv, header.GetHeader());
             return session;
         }
         
@@ -123,12 +126,11 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(cachedRequest == null)
         {
-            _logger.LogWarning("Failed to get cached request for node id: {NodeId}", Convert.ToHexString(destNodeId));
+            _logger.LogWarning("Cached request is not available for node {NodeId}. Checking pending requests", Convert.ToHexString(destNodeId));
             return null;
         }
         
         _requestManager.MarkCachedRequestAsFulfilled(destNodeId);
-
         _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
         
         var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message);
@@ -136,4 +138,5 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
         return cachedRequest.Message.EncodeMessage();
     }
+    
 }

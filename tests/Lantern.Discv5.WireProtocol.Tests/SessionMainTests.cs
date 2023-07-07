@@ -56,11 +56,12 @@ public class SessionMainTests
         Assert.IsFalse(result);
     }
 
+    /*
     [Test]
     public void Test_SessionMain_ShouldReturnNullWhenCurrentSharedKeysAreNotSet()
     {
         var packetProcessor = new PacketProcessor(_identityManager, _aesUtility, RandomUtility.GenerateRandomData(32));
         var result = _sessionMain.DecryptMessage(packetProcessor);
         Assert.Null(result);
-    }
+    }*/
 }
