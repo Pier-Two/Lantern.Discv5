@@ -97,7 +97,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
         
         await _connection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);
-        _logger.LogInformation("Sent HANDSHAKE packet with encrypted message");
+        _logger.LogInformation("Sent HANDSHAKE packet to {RemoteEndPoint}", returnedResult.RemoteEndPoint);
     }
 
     private SessionMain? GenerateOrUpdateSession(StaticHeader header,byte[] maskingIv, byte[] destNodeId, IPEndPoint destEndPoint)
