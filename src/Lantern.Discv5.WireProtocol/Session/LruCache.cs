@@ -7,6 +7,7 @@ public class LruCache<TKey, TValue>
     private readonly int _capacity;
     private readonly ConcurrentDictionary<TKey, LinkedListNode<CacheItem>> _cache;
     private readonly LinkedList<CacheItem> _lruList = new();
+    private readonly object _lock = new();
 
     public LruCache(int capacity)
     {
@@ -24,26 +25,36 @@ public class LruCache<TKey, TValue>
             RefreshNode(node);
             return value;
         }
-        return default(TValue);
+        return default;
     }
 
     public void Add(TKey key, TValue value)
     {
-        if (_cache.Count >= _capacity)
+        if (_cache.TryGetValue(key, out var existingNode))
         {
-            RemoveFirst();
+            RefreshNode(existingNode);
+            existingNode.Value.Value = value;
         }
-
-        var cacheItem = new CacheItem(key, value);
-        var node = new LinkedListNode<CacheItem>(cacheItem);
-        _lruList.AddLast(node);
-        _cache[key] = node;
+        else
+        {
+            if (_cache.Count >= _capacity)
+            {
+                RemoveFirst();
+            }
+            var cacheItem = new CacheItem(key, value);
+            var node = new LinkedListNode<CacheItem>(cacheItem);
+            _lruList.AddLast(node);
+            _cache[key] = node;
+        }
     }
 
     private void RefreshNode(LinkedListNode<CacheItem> node)
     {
-        _lruList.Remove(node);
-        _lruList.AddLast(node);
+        lock (_lock)
+        {
+            _lruList.Remove(node);
+            _lruList.AddLast(node);
+        }
     }
 
     private void RemoveFirst()
@@ -62,6 +73,6 @@ public class LruCache<TKey, TValue>
         }
 
         public TKey Key { get; }
-        public TValue Value { get; }
+        public TValue Value { get; set; }
     }
 }

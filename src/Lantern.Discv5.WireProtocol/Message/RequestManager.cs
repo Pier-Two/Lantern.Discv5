@@ -59,13 +59,13 @@ public class RequestManager : IRequestManager
 
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
-        _logger.LogDebug("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
+        _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
         return _pendingRequests.TryAdd(requestId, request);
     }
 
     public bool AddCachedRequest(byte[] requestId, CachedRequest request)
     {
-        _logger.LogDebug("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
+        _logger.LogInformation("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
         return _cachedRequests.TryAdd(requestId, request);
     }
     
@@ -157,8 +157,7 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs ||
-            request.IsFulfilled) 
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs) 
             return;
         
         _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
@@ -183,8 +182,7 @@ public class RequestManager : IRequestManager
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs ||
-            request.IsFulfilled) 
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs) 
             return;
         
         _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));

@@ -37,7 +37,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         
         if(result == false)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(pingMessage.RequestId));
+            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
 
@@ -67,7 +67,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         
         if(result == false)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
+            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
 
@@ -94,7 +94,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         
         if(result == false)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(talkReqMessage.RequestId));
+            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
         
@@ -121,7 +121,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         
         if(result == false)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
+            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
 
