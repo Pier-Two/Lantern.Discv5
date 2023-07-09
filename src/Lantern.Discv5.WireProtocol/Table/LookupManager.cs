@@ -10,13 +10,15 @@ public class LookupManager : ILookupManager
     private readonly IRoutingTable _routingTable;
     private readonly IPacketManager _packetManager;
     private readonly TableOptions _tableOptions;
+    private readonly IRequestManager _requestManager;
     private readonly ILogger<LookupManager> _logger;
     private readonly ConcurrentBag<PathBucket> _pathBuckets;
 
-    public LookupManager(IRoutingTable routingTable, IPacketManager packetManager, ILoggerFactory loggerFactory, TableOptions tableOptions)
+    public LookupManager(IRoutingTable routingTable, IPacketManager packetManager, IRequestManager requestManager, ILoggerFactory loggerFactory, TableOptions tableOptions)
     {
         _routingTable = routingTable;
         _packetManager = packetManager;
+        _requestManager = requestManager;
         _logger = loggerFactory.CreateLogger<LookupManager>();
         _tableOptions = tableOptions;
         _pathBuckets = new ConcurrentBag<PathBucket>();
@@ -40,7 +42,7 @@ public class LookupManager : ILookupManager
         var allBucketsCompleteTask = Task.WhenAll(_pathBuckets.Select(bucket => bucket.Completion.Task));
         var delayTask = Task.Delay(_tableOptions.LookupTimeoutMilliseconds);
         
-        await Task.WhenAny(allBucketsCompleteTask, delayTask);
+        await MonitorLookupAsync(allBucketsCompleteTask, delayTask);
         PrintLookupSummary();
         
         var result = _pathBuckets
@@ -55,8 +57,7 @@ public class LookupManager : ILookupManager
 
         return result;
     }
-
-
+    
     public async Task StartLookupAsync(byte[] targetNodeId)
     {
         _logger.LogInformation("Starting lookup for target node {NodeID}", Convert.ToHexString(targetNodeId));
@@ -93,6 +94,15 @@ public class LookupManager : ILookupManager
                 bucket.ExpectedResponses.Add(senderNodeId, expectedResponses - 1);
             }
             
+            if(bucket.PendingQueries.ContainsKey(senderNodeId))
+            {
+                if (!bucket.PendingQueries[senderNodeId].Task.IsCompleted)
+                {
+                    bucket.PendingQueries[senderNodeId].SetResult(true);
+                    QueryTimeoutCallback(senderNodeId, bucket); // Stop timeout timer
+                }
+            }
+            
             _logger.LogDebug("Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}", bucket.ExpectedResponses[senderNodeId], Convert.ToHexString(senderNodeId), bucket.Index);
             _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}", bucket.DiscoveredNodes.Count, bucket.Index);
             _logger.LogDebug("Received {NodesCount} nodes from node {NodeId} in bucket {BucketIndex}", nodes.Count, Convert.ToHexString(senderNodeId), bucket.Index);
@@ -113,6 +123,28 @@ public class LookupManager : ILookupManager
             {
                 await QuerySelfNode(bucket, senderNodeId);
             }
+        }
+    }
+
+    private async Task MonitorLookupAsync(Task allBucketsCompleteTask, Task delayTask)
+    {
+        while (true)
+        {
+            var completedTask = await Task.WhenAny(allBucketsCompleteTask, delayTask);
+
+            if (completedTask == allBucketsCompleteTask)
+            {
+                _logger.LogInformation("All buckets are complete. Stopping lookup");
+                break;
+            }
+
+            if (completedTask == delayTask)
+            {
+                _logger.LogInformation("Lookup timed out. Stopping lookup");
+                break; 
+            }
+            
+            PrintLookupSummary();
         }
     }
 
@@ -143,7 +175,7 @@ public class LookupManager : ILookupManager
     private async Task QuerySelfNode(PathBucket bucket, byte[] senderNodeId)
     {
         var node = _routingTable.GetNodeEntry(senderNodeId);
-            
+        
         if(node == null)
             return;
         
@@ -153,9 +185,38 @@ public class LookupManager : ILookupManager
                 return;
             
             _logger.LogDebug("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id), bucket.Index);
-                
+            
             bucket.QueriedNodes.Add(node.Id);
+            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
+            bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, 1000 * 1000, Timeout.Infinite);
+            
             await _packetManager.SendPacket(node.Record, MessageType.FindNode,bucket.TargetNodeId);
+        }
+    }
+    
+    private async void QueryTimeoutCallback(byte[] nodeId, PathBucket bucket)
+    {
+        try
+        {
+            bucket.DisposeTimer(nodeId);
+            var unqueriedNode = bucket.DiscoveredNodes
+                .Where(node => !bucket.QueriedNodes.Contains(node.Id))
+                .Where(node => !bucket.PendingQueries.ContainsKey(node.Id))
+                .FirstOrDefault(node => !_requestManager.ContainsCachedRequest(node.Id));
+            
+            if(unqueriedNode == null)
+                return;
+            
+            bucket.QueriedNodes.Add(unqueriedNode.Id);
+            bucket.PendingQueries.TryAdd(unqueriedNode.Id, new TaskCompletionSource<bool>());
+            bucket.PendingTimers[unqueriedNode.Id] = new Timer(_ => QueryTimeoutCallback(unqueriedNode.Id, bucket), null, 1000, Timeout.Infinite);
+            
+            _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(unqueriedNode.Id), bucket.Index);
+            await _packetManager.SendPacket(unqueriedNode.Record, MessageType.FindNode, bucket.TargetNodeId);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error in QueryTimeoutCallback");
         }
     }
 
@@ -174,6 +235,8 @@ public class LookupManager : ILookupManager
                 continue;
 
             bucket.QueriedNodes.Add(node.Id);
+            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
+            bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, 1000, Timeout.Infinite);
             await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
         }
     }
