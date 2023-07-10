@@ -27,7 +27,7 @@ public class PacketManager : IPacketManager
     private readonly ILogger<PacketManager> _logger;
 
     public PacketManager(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
-        ISessionManager sessionManager, IMessageRequester messageRequester, IUdpConnection udpConnection, 
+        ISessionManager sessionManager, IMessageRequester messageRequester, IUdpConnection udpConnection,
         IPacketProcessor packetProcessor, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
     {
         _packetHandlerFactory = packetHandlerFactory;
@@ -39,7 +39,7 @@ public class PacketManager : IPacketManager
         _packetBuilder = packetBuilder;
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
-    
+
     public async Task SendPacket(EnrRecord destRecord, MessageType messageType, params byte[][] args)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
@@ -54,56 +54,69 @@ public class PacketManager : IPacketManager
 
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
-        var message = messageType switch
+        var sessionEstablished = cryptoSession is { IsEstablished: true };
+        var message = ConstructMessage(sessionEstablished, messageType, destNodeId, args);
+
+        if (message == null)
         {
-            MessageType.Ping => _messageRequester.ConstructPingMessage(destNodeId),
-            MessageType.FindNode => _messageRequester.ConstructFindNodeMessage(destNodeId, args[0]),
-            MessageType.TalkReq => _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1]),
-            MessageType.TalkResp => _messageRequester.ConstructTalkRespMessage(destNodeId, args[0]),
-            _ => null
-        };
-        
-        if (cryptoSession is { IsEstablished: true })
+            return;
+        }
+
+        if (sessionEstablished)
         {
-            if (message == null)
-            {
-                return;
-            }
-            
             await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
         }
         else
         {
-            if (message == null)
-            {
-                return;
-            }
-            
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
     }
-    
+
+    private byte[]? ConstructMessage(bool sessionEstablished, MessageType messageType, byte[] destNodeId, byte[][] args)
+    {
+        return messageType switch
+        {
+            MessageType.Ping => sessionEstablished
+                ? _messageRequester.ConstructPingMessage(destNodeId)
+                : _messageRequester.ConstructCachedPingMessage(destNodeId),
+            MessageType.FindNode => sessionEstablished
+                ? _messageRequester.ConstructFindNodeMessage(destNodeId, args[0])
+                : _messageRequester.ConstructCachedFindNodeMessage(destNodeId, args[0]),
+            MessageType.TalkReq => sessionEstablished
+                ? _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1])
+                : _messageRequester.ConstructCachedTalkReqMessage(destNodeId, args[0], args[1]),
+            MessageType.TalkResp => sessionEstablished
+                ? _messageRequester.ConstructTalkRespMessage(destNodeId, args[0])
+                : _messageRequester.ConstructCachedTalkRespMessage(destNodeId, args[0]),
+            _ => null
+        };
+    }
+
     public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
         try
         {
-            var packetHandler = _packetHandlerFactory.GetPacketHandler((PacketType)_packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
+            var packetHandler =
+                _packetHandlerFactory.GetPacketHandler(
+                    (PacketType)_packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
             await packetHandler.HandlePacket(returnedResult);
         }
         catch (Exception e)
         {
-            _logger.LogWarning("An error occurred when trying to handle the received UDP packet. Could not handle as it may have been reordered");
+            _logger.LogWarning(
+                "An error occurred when trying to handle the received packet. Could not handle as it may have been reordered");
             _logger.LogDebug(e, "Exception details");
         }
     }
 
-    private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint, byte[] destNodeId)
+    private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint,
+        byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(destNodeId, maskingIv, sessionMain.MessageCount);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(message,destNodeId, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
-        
+
         await _udpConnection.SendAsync(finalPacket, destEndPoint);
         _logger.LogInformation("Sent ORDINARY packet to {Destination}", destEndPoint);
     }

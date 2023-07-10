@@ -17,6 +17,8 @@ public interface IRoutingTable
     void UpdateFromEntry(NodeTableEntry nodeEntry);
     
     void UpdateFromEnr(EnrRecord enrRecord);
+    
+    void MarkNodeAsResponded(byte[] nodeId);
 
     void MarkNodeAsPending(byte[] nodeId);
 

@@ -20,5 +20,7 @@ public class NodeTableEntry
 
     public int FailureCounter { get; set; }
     
+    public bool HasRespondedEver { get; set; }
+    
     public DateTime LastSeen { get; set; }
 }

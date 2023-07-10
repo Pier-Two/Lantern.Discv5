@@ -49,9 +49,6 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         var encryptedMessage = _packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
         var nodeEntry = _routingTable.GetNodeEntry(staticHeader.AuthData);
 
-        _requestManager.GetCachedHandshakeInteraction(staticHeader.Nonce);
-        _requestManager.MarkCachedRequestAsFulfilled(staticHeader.AuthData);
-        
         if(nodeEntry == null)
         {
             _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
@@ -127,7 +124,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     private async Task SendResponseToOrdinaryPacketAsync(StaticHeader staticHeader, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(staticHeader.AuthData, maskingIv, sessionMain.MessageCount);
+        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(response,staticHeader.AuthData, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
 

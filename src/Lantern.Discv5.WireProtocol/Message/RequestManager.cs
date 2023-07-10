@@ -59,14 +59,13 @@ public class RequestManager : IRequestManager
 
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
-        _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
-
         var result = _pendingRequests.ContainsKey(requestId);
         _pendingRequests.AddOrUpdate(requestId, request, (_, _) => request);
 
         if (!result)
         {
             _routingTable.MarkNodeAsPending(request.NodeId);
+            _logger.LogInformation("Added pending request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
         return !result;
@@ -74,14 +73,13 @@ public class RequestManager : IRequestManager
 
     public bool AddCachedRequest(byte[] requestId, CachedRequest request)
     {
-        _logger.LogInformation("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
-
         var result = _cachedRequests.ContainsKey(requestId);
         _cachedRequests.AddOrUpdate(requestId, request, (_, _) => request);
 
         if (!result)
         {
             _routingTable.MarkNodeAsPending(request.NodeId);
+            _logger.LogInformation("Added cached request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
         return !result;
@@ -119,42 +117,23 @@ public class RequestManager : IRequestManager
         return request;
     }
     
-    public void MarkRequestAsFulfilled(byte[] requestId)
+    public PendingRequest? MarkRequestAsFulfilled(byte[] requestId)
     {
         if (!_pendingRequests.TryGetValue(requestId, out var request)) 
-            return;
+            return null;
         
         request.IsFulfilled = true;
         request.ResponsesCount++;
 
-        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
-
-        if (nodeEntry == null) 
-            return;
-        
-        if (nodeEntry.Status == NodeStatus.Pending)
-        {
-            nodeEntry.Status = NodeStatus.Live;
-        }
+        return request;
     }
 
-    public void MarkCachedRequestAsFulfilled(byte[] requestId)
+    public CachedRequest? MarkCachedRequestAsFulfilled(byte[] requestId)
     {
         _logger.LogInformation("Marking cached request with id {RequestId} as fulfilled", Convert.ToHexString(requestId));
         _cachedRequests.TryRemove(requestId, out var request);
-        
-        if(request == null)
-            return;
-        
-        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
 
-        if (nodeEntry == null) 
-            return;
-        
-        if (nodeEntry.Status == NodeStatus.Pending)
-        {
-            nodeEntry.Status = NodeStatus.Live;
-        }
+        return request;
     }
 
     private void CheckRequests(object? state)
@@ -199,10 +178,10 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
+        _logger.LogDebug("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
@@ -224,10 +203,10 @@ public class RequestManager : IRequestManager
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));
+        _logger.LogInformation("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
@@ -237,8 +216,11 @@ public class RequestManager : IRequestManager
             _logger.LogDebug("Node {NodeId} not found in routing table", Convert.ToHexString(request.NodeId));
             return;
         }
-            
-        _routingTable.MarkNodeAsDead(request.NodeId);
+
+        if (!nodeEntry.HasRespondedEver)
+        {
+            _routingTable.MarkNodeAsDead(request.NodeId);
+        }
     }
 }
 
