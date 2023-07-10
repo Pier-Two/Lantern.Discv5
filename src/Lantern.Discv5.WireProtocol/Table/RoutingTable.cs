@@ -28,10 +28,6 @@ public class RoutingTable : IRoutingTable
 
     public NodeTableEntry[] GetAllNodeEntries() => _buckets.SelectMany(bucket => bucket.Nodes.Concat(bucket.ReplacementCache)).ToArray();
     
-    public KBucket GetBucketFromIndex(int index) => _buckets[index];
-    
-    public KBucket GetBucketFromId(byte[] nodeId) => _buckets[GetBucketIndex(nodeId)];
-
     public void UpdateFromEntry(NodeTableEntry nodeEntry)
     {
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
@@ -59,6 +55,18 @@ public class RoutingTable : IRoutingTable
         return leastRecentlyRefreshedBucket?.GetLeastRecentlySeenNode();
     }
 
+    public void MarkNodeAsPending(byte[] nodeId)
+    {
+        var bucketIndex = GetBucketIndex(nodeId);
+        var bucket = _buckets[bucketIndex];
+        var nodeEntry = bucket.GetNodeById(nodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        nodeEntry.Status = NodeStatus.Pending;
+    }
+    
     public void MarkNodeAsLive(byte[] nodeId)
     {
         var bucketIndex = GetBucketIndex(nodeId);
@@ -68,7 +76,7 @@ public class RoutingTable : IRoutingTable
         if (nodeEntry == null) 
             return;
         
-        nodeEntry.IsLive = true;
+        nodeEntry.Status = NodeStatus.Live;
         nodeEntry.FailureCounter = 0;
     }
     
@@ -81,8 +89,7 @@ public class RoutingTable : IRoutingTable
         if (nodeEntry == null) 
             return;
         
-        nodeEntry.IsLive = false;
-        bucket.ReplaceDeadNode(nodeEntry);
+        nodeEntry.Status = NodeStatus.Dead;
     }
 
     public void IncreaseFailureCounter(byte[] nodeId)
@@ -180,7 +187,7 @@ public class RoutingTable : IRoutingTable
     private bool IsNodeConsideredLive(NodeTableEntry nodeEntry)
     {
         // A node is considered live if it is marked as live or if its LivenessCounter is greater than the maximum allowed failures
-        return nodeEntry.IsLive && nodeEntry.FailureCounter < TableOptions.MaxAllowedFailures;
+        return nodeEntry.Status == NodeStatus.Live && nodeEntry.FailureCounter < TableOptions.MaxAllowedFailures;
     }
     
     private List<NodeTableEntry> GetNodesAtDistance(int distance)

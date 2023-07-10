@@ -108,7 +108,7 @@ public class UdpConnection : IUdpConnection, IDisposable
     private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken token = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        cts.CancelAfter(_connectionOptions.ReqRespTimeoutMs);
+        cts.CancelAfter(_connectionOptions.ReceiveTimeoutMs);
 
         try
         {

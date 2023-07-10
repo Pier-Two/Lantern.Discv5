@@ -61,7 +61,6 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return;
         }
         
-        _routingTable.MarkNodeAsLive(nodeEntry.Id);
         var session = GenerateOrUpdateSession(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
         
         if(session == null)

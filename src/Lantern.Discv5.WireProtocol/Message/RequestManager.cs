@@ -60,13 +60,31 @@ public class RequestManager : IRequestManager
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
         _logger.LogInformation("Adding pending request with id {RequestId}", Convert.ToHexString(requestId));
-        return _pendingRequests.TryAdd(requestId, request);
+
+        var result = _pendingRequests.ContainsKey(requestId);
+        _pendingRequests.AddOrUpdate(requestId, request, (_, _) => request);
+
+        if (!result)
+        {
+            _routingTable.MarkNodeAsPending(request.NodeId);
+        }
+
+        return !result;
     }
 
     public bool AddCachedRequest(byte[] requestId, CachedRequest request)
     {
         _logger.LogInformation("Adding cached request with id {RequestId}", Convert.ToHexString(requestId));
-        return _cachedRequests.TryAdd(requestId, request);
+
+        var result = _cachedRequests.ContainsKey(requestId);
+        _cachedRequests.AddOrUpdate(requestId, request, (_, _) => request);
+
+        if (!result)
+        {
+            _routingTable.MarkNodeAsPending(request.NodeId);
+        }
+
+        return !result;
     }
     
     public void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
@@ -108,11 +126,35 @@ public class RequestManager : IRequestManager
         
         request.IsFulfilled = true;
         request.ResponsesCount++;
+
+        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        if (nodeEntry.Status == NodeStatus.Pending)
+        {
+            nodeEntry.Status = NodeStatus.Live;
+        }
     }
 
     public void MarkCachedRequestAsFulfilled(byte[] requestId)
     {
-        _cachedRequests.TryRemove(requestId, out _);
+        _logger.LogInformation("Marking cached request with id {RequestId} as fulfilled", Convert.ToHexString(requestId));
+        _cachedRequests.TryRemove(requestId, out var request);
+        
+        if(request == null)
+            return;
+        
+        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        if (nodeEntry.Status == NodeStatus.Pending)
+        {
+            nodeEntry.Status = NodeStatus.Live;
+        }
     }
 
     private void CheckRequests(object? state)
@@ -157,7 +199,7 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.RequestTimeoutMs) 
             return;
         
         _logger.LogInformation("Request timed out for node {NodeId}. Removing from pending requests", Convert.ToHexString(request.NodeId));
@@ -182,7 +224,7 @@ public class RequestManager : IRequestManager
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.PendingRequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds < _connectionOptions.RequestTimeoutMs) 
             return;
         
         _logger.LogInformation("Cached request timed out for node {NodeId}. Removing from cached requests", Convert.ToHexString(request.NodeId));

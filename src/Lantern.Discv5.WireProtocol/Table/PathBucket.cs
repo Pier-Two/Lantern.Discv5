@@ -44,13 +44,11 @@ public class PathBucket
     
     public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
 
-    public byte[]? DisposeTimer(byte[] nodeId)
+    public void DisposeTimer(byte[] nodeId)
     {
         if (PendingTimers.TryRemove(nodeId, out var timer))
         {
             timer.Dispose();
-            return nodeId;
         }
-        return null;
     }
 }

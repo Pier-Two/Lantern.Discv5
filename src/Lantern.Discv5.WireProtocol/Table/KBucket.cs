@@ -72,6 +72,8 @@ public class KBucket
         {
             if (_replacementCache.Count == 0 || _replacementCache.First == null)
                 return;
+            
+            _logger.LogInformation("Replacing dead node {NodeId} with node {ReplacementNodeId}", Convert.ToHexString(deadNodeEntry.Id), Convert.ToHexString(_replacementCache.First.Value.Id));
         
             var replacementNode = _replacementCache.First.Value;
             _replacementCache.RemoveFirst();
@@ -96,7 +98,7 @@ public class KBucket
 
     private void UpdateExistingNode(NodeTableEntry nodeEntry, NodeTableEntry existingNode)
     {
-        if (nodeEntry.IsLive)
+        if (nodeEntry.Status is NodeStatus.Live)
         {
             _nodes.Remove(existingNode);
 
@@ -122,7 +124,7 @@ public class KBucket
         if(leastRecentlySeenNode == null)
             return;
     
-        if (leastRecentlySeenNode.IsLive)
+        if (leastRecentlySeenNode.Status is NodeStatus.Live or NodeStatus.Pending)
         {
             AddToReplacementCache(nodeEntry);
         }

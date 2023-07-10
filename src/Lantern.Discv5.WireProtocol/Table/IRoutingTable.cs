@@ -14,13 +14,11 @@ public interface IRoutingTable
 
     NodeTableEntry? GetLeastRecentlySeenNode();
 
-    KBucket GetBucketFromIndex(int index);
-    
-    KBucket GetBucketFromId(byte[] nodeId);
-
     void UpdateFromEntry(NodeTableEntry nodeEntry);
     
     void UpdateFromEnr(EnrRecord enrRecord);
+
+    void MarkNodeAsPending(byte[] nodeId);
 
     void MarkNodeAsLive(byte[] nodeId);
     

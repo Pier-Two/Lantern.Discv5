@@ -9,14 +9,14 @@ public class NodeTableEntry
     {
         Record = record;
         Id = verifier.GetNodeIdFromRecord(record);
-        IsLive = false;
+        Status = NodeStatus.None;
     }
 
     public byte[] Id { get; }
     
     public EnrRecord Record { get; }
 
-    public bool IsLive { get; set; }
+    public NodeStatus Status { get; set; }
 
     public int FailureCounter { get; set; }
     

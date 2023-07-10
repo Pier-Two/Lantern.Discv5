@@ -34,7 +34,7 @@ public class KBucketTests
         var node = GenerateRandomNodeEntries(1).First();
         var bucket = new KBucket(LoggingOptions.Default);
 
-        node.IsLive = false;
+        node.Status = NodeStatus.Dead;
         bucket.ReplaceDeadNode(node);
 
         Assert.AreEqual(0, bucket.Nodes.Count());
@@ -111,7 +111,7 @@ public class KBucketTests
             bucket.AddToReplacementCache(nodes[i]);
         }
         
-        nodes[0].IsLive = false;
+        nodes[0].Status = NodeStatus.Dead;
         bucket.ReplaceDeadNode(nodes[0]);
         
         Assert.IsFalse(bucket.Nodes.Contains(nodes[0]));
@@ -131,7 +131,7 @@ public class KBucketTests
             bucket.Update(nodes[i]);
         }
 
-        nodes[17].IsLive = false; 
+        nodes[17].Status = NodeStatus.Dead; 
         bucket.Update(nodes[17]);
 
         Assert.AreEqual(16, bucket.Nodes.Count());

@@ -74,7 +74,7 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        if (!nodeEntry.IsLive)
+        if (nodeEntry.Status != NodeStatus.Live)
         {
             _routingTable.UpdateFromEnr(nodeEntry.Record);
             _routingTable.MarkNodeAsLive(nodeEntry.Id);
@@ -87,9 +87,7 @@ public class MessageResponder : IMessageResponder
 
             return null;
         }
-        
-        _routingTable.MarkNodeAsLive(nodeEntry.Id);
-        
+
         if (decodedMessage.EnrSeq <= (int)nodeEntry.Record.SequenceNumber)
         {
             return null;
@@ -165,11 +163,6 @@ public class MessageResponder : IMessageResponder
                     }
                 }
             }
-        }
-
-        if (senderNodeEntry is { IsLive: false })
-        {
-            _routingTable.MarkNodeAsLive(senderNodeEntry.Id);
         }
         
         await _lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
