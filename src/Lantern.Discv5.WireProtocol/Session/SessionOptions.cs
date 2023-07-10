@@ -32,7 +32,6 @@ public class SessionOptions
             .WithSigner(signer)
             .WithVerifier(verifier)
             .WithSessionKeys(sessionKeys)
-            .WithCacheSize(100)
             .Build();
     }
     
@@ -40,8 +39,8 @@ public class SessionOptions
     {
         public IIdentitySchemeSigner Signer { get; private set; }
         public IIdentitySchemeVerifier Verifier { get; private set; }
-        public ISessionKeys SessionKeys { get; private set; } 
-        public int CacheSize { get; private set; }
+        public ISessionKeys SessionKeys { get; private set; }
+        public int CacheSize { get; private set; } = 1000;
 
         public Builder WithSigner(IIdentitySchemeSigner signer)
         {

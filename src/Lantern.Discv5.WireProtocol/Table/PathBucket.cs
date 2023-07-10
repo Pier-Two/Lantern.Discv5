@@ -11,9 +11,9 @@ public class PathBucket
     public byte[] TargetNodeId { get; }
     
     public ConcurrentDictionary<byte[], TaskCompletionSource<bool>> PendingQueries { get; }
-
-    public ConcurrentBag<byte[]> QueriedNodes { get; }
     
+    public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
+
     public List<NodeTableEntry> DiscoveredNodes { get; }
 
     public Dictionary<byte[], List<NodeTableEntry>> Responses { get; }
@@ -29,7 +29,6 @@ public class PathBucket
         Index = index;
         TargetNodeId = targetNodeId;
         PendingQueries = new ConcurrentDictionary<byte[], TaskCompletionSource<bool>>(ByteArrayEqualityComparer.Instance);
-        QueriedNodes = new ConcurrentBag<byte[]>();
         DiscoveredNodes = new List<NodeTableEntry>();
         Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
         ExpectedResponses = new Dictionary<byte[], int>();
@@ -42,8 +41,6 @@ public class PathBucket
         Completion.SetResult(true);  
     }
     
-    public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
-
     public void DisposeTimer(byte[] nodeId)
     {
         if (PendingTimers.TryRemove(nodeId, out var timer))

@@ -73,7 +73,7 @@ public class KBucket
             if (_replacementCache.Count == 0 || _replacementCache.First == null)
                 return;
             
-            _logger.LogInformation("Replacing dead node {NodeId} with node {ReplacementNodeId}", Convert.ToHexString(deadNodeEntry.Id), Convert.ToHexString(_replacementCache.First.Value.Id));
+            _logger.LogDebug("Replacing dead node {NodeId} with node {ReplacementNodeId}", Convert.ToHexString(deadNodeEntry.Id), Convert.ToHexString(_replacementCache.First.Value.Id));
         
             var replacementNode = _replacementCache.First.Value;
             _replacementCache.RemoveFirst();

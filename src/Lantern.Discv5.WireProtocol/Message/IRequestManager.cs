@@ -13,8 +13,6 @@ public interface IRequestManager
     void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId);
     
     byte[]? GetCachedHandshakeInteraction(byte[] packetNonce);
-    
-    bool ContainsPendingRequest(byte[] requestId);
 
     bool ContainsCachedRequest(byte[] requestId);
     
@@ -22,7 +20,7 @@ public interface IRequestManager
 
     CachedRequest? GetCachedRequest(byte[] requestId);
 
-    void MarkRequestAsFulfilled(byte[] requestId);
+    PendingRequest? MarkRequestAsFulfilled(byte[] requestId);
 
-    void MarkCachedRequestAsFulfilled(byte[] requestId);
+    CachedRequest? MarkCachedRequestAsFulfilled(byte[] requestId);
 }

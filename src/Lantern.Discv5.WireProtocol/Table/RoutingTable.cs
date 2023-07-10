@@ -55,6 +55,18 @@ public class RoutingTable : IRoutingTable
         return leastRecentlyRefreshedBucket?.GetLeastRecentlySeenNode();
     }
 
+    public void MarkNodeAsResponded(byte[] nodeId)
+    {
+        var bucketIndex = GetBucketIndex(nodeId);
+        var bucket = _buckets[bucketIndex];
+        var nodeEntry = bucket.GetNodeById(nodeId);
+
+        if (nodeEntry == null) 
+            return;
+        
+        nodeEntry.HasRespondedEver = true;
+    }
+    
     public void MarkNodeAsPending(byte[] nodeId)
     {
         var bucketIndex = GetBucketIndex(nodeId);

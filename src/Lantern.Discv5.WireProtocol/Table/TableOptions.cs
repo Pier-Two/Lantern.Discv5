@@ -29,7 +29,7 @@ public class TableOptions
     public class Builder
     {
         public int PingIntervalMilliseconds { get; private set; } = 5000;
-        public int RefreshIntervalMilliseconds { get; private set; } = 5000;
+        public int RefreshIntervalMilliseconds { get; private set; } = 300000;
         public int LookupTimeoutMilliseconds { get; private set; } = 10000;
         public int MaxAllowedFailures { get; private set; } = 3;
         public int ConcurrencyParameter { get; private set; } = 3;

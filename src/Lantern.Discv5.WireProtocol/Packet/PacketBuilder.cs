@@ -13,14 +13,12 @@ public class PacketBuilder : IPacketBuilder
 {
     private readonly IIdentityManager _identityManager;
     private readonly IAesUtility _aesUtility;
-    private readonly ISessionManager _sessionManager;
     private readonly IRequestManager _requestManager;
 
-    public PacketBuilder(IIdentityManager identityManager, IAesUtility aesUtility, ISessionManager sessionManager, IRequestManager requestManager)
+    public PacketBuilder(IIdentityManager identityManager, IAesUtility aesUtility, IRequestManager requestManager)
     {
         _identityManager = identityManager;
         _aesUtility = aesUtility;
-        _sessionManager = sessionManager;
         _requestManager = requestManager;
     }
 
@@ -41,12 +39,14 @@ public class PacketBuilder : IPacketBuilder
         return Tuple.Create(packet, packetStaticHeader);
     }
 
-    public Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
+    public Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] message, byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
     {
         var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
+        var cachedRequest = new CachedRequest(destNodeId, new MessageDecoder().DecodeMessage(message)); 
         
         _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
+        _requestManager.AddCachedRequest(packetNonce, cachedRequest);
         
         var packetStaticHeader = ConstructStaticHeader(PacketType.Ordinary, ordinaryPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);

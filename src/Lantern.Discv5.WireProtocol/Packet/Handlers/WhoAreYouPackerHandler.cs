@@ -68,7 +68,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return;
         }
 
-        var message = CreateReplyMessage(destNodeId);
+        var message = CreateReplyMessage(destNodeId, _packetProcessor.GetStaticHeader(packet).Nonce);
         
         if(message == null)
         {
@@ -119,9 +119,9 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         return null;
     }
 
-    private byte[]? CreateReplyMessage(byte[] destNodeId)
+    private byte[]? CreateReplyMessage(byte[] destNodeId, byte[] nonce)
     {
-        var cachedRequest = _requestManager.GetCachedRequest(destNodeId);
+        var cachedRequest = _requestManager.GetCachedRequest(destNodeId) ?? _requestManager.GetCachedRequest(nonce);
         
         if(cachedRequest == null)
         {
@@ -137,5 +137,4 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
 
         return cachedRequest.Message.EncodeMessage();
     }
-    
 }

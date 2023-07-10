@@ -134,11 +134,10 @@ public class MessageResponder : IMessageResponder
 
         if (pendingRequest.ResponsesCount > decodedMessage.Total)
         {
-            _logger.LogWarning("Received {ResponsesCount} responses so far. Expected {TotalResponses} from node {NodeId}. Ignoring response", pendingRequest.ResponsesCount, decodedMessage.Total, Convert.ToHexString(pendingRequest.NodeId));
+            _logger.LogWarning("Expected {ExpectedResponsesCount} from node {NodeId} but received {TotalResponsesCount}. Ignoring response", decodedMessage.Total, Convert.ToHexString(pendingRequest.NodeId), pendingRequest.ResponsesCount);
             return null;
         }
         
-        var senderNodeEntry = _routingTable.GetNodeEntry(pendingRequest.NodeId);
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var receivedNodes = new List<NodeTableEntry>();
 
@@ -149,18 +148,18 @@ public class MessageResponder : IMessageResponder
                 var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
                 var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
 
-                if (distance == distanceToNode)
+                if (distance != distanceToNode) 
+                    continue;
+                
+                if (_routingTable.GetNodeEntry(nodeId) == null)
                 {
-                    if (_routingTable.GetNodeEntry(nodeId) == null)
-                    {
-                        _routingTable.UpdateFromEnr(enr);
-                    }
+                    _routingTable.UpdateFromEnr(enr);
+                }
                     
-                    var nodeEntry = _routingTable.GetNodeEntry(nodeId);
-                    if (nodeEntry != null)
-                    {
-                        receivedNodes.Add(nodeEntry);
-                    }
+                var nodeEntry = _routingTable.GetNodeEntry(nodeId);
+                if (nodeEntry != null)
+                {
+                    receivedNodes.Add(nodeEntry);
                 }
             }
         }
@@ -215,15 +214,17 @@ public class MessageResponder : IMessageResponder
     
     private PendingRequest? GetPendingRequest(Message message)
     {
-        var result = _requestManager.ContainsPendingRequest(message.RequestId);
-        
-        if (result == false)
+        var pendingRequest = _requestManager.MarkRequestAsFulfilled(message.RequestId);
+
+        if(pendingRequest == null )
         {
             _logger.LogWarning("Received message with unknown request id. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
             return null;
         }
+        
+        _routingTable.MarkNodeAsLive(pendingRequest.NodeId);
+        _routingTable.MarkNodeAsResponded(pendingRequest.NodeId);
 
-        _requestManager.MarkRequestAsFulfilled(message.RequestId);
         return _requestManager.GetPendingRequest(message.RequestId);
     }
 }

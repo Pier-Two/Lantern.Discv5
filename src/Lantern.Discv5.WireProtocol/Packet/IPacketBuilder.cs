@@ -7,7 +7,7 @@ public interface IPacketBuilder
 {
     Tuple<byte[], StaticHeader> BuildRandomOrdinaryPacket(byte[] destNodeId);
 
-    Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
+    Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] message, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
 
     Tuple<byte[], StaticHeader> BuildWhoAreYouPacketWithoutEnr(byte[] destNodeId, byte[] packetNonce,
         byte[] maskingIv);
