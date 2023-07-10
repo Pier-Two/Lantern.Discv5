@@ -73,6 +73,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         if(message == null)
         {
             _logger.LogWarning("Failed to construct message in response to WHOAREYOU packet. Sending RANDOM packet");
+            await SendRandomOrdinaryPacketAsync(returnedResult.RemoteEndPoint, destNodeId, _connection);
             return;
         }
         
@@ -125,7 +126,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(cachedRequest == null)
         {
-            _logger.LogWarning("Cached request is not available for node {NodeId}. Checking pending requests", Convert.ToHexString(destNodeId));
+            _logger.LogWarning("Cached request is not available for node {NodeId}", Convert.ToHexString(destNodeId));
             return null;
         }
         
@@ -136,5 +137,12 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         _requestManager.AddPendingRequest(cachedRequest.Message.RequestId, pendingRequest);
 
         return cachedRequest.Message.EncodeMessage();
+    }
+    
+    private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId, IUdpConnection connection)
+    {
+        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
+        await connection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
+        _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
 }
