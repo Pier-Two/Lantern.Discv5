@@ -43,11 +43,6 @@ public class PacketBuilder : IPacketBuilder
     {
         var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
-        var cachedRequest = new CachedRequest(destNodeId, new MessageDecoder().DecodeMessage(message)); 
-        
-        _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
-        _requestManager.AddCachedRequest(packetNonce, cachedRequest);
-        
         var packetStaticHeader = ConstructStaticHeader(PacketType.Ordinary, ordinaryPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesUtility);
