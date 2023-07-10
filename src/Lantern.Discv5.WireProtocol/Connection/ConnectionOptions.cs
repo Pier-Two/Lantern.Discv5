@@ -6,8 +6,8 @@ public class ConnectionOptions
 {
     public int Port { get; }
     public IPAddress? IpAddress { get; }
-    public int ReqRespTimeoutMs { get; }
-    public int PendingRequestTimeoutMs { get; }
+    public int ReceiveTimeoutMs { get; }
+    public int RequestTimeoutMs { get; }
     public int CheckPendingRequestsDelayMs { get; }
     public int RemoveCompletedRequestsDelayMs { get; }
 
@@ -15,8 +15,8 @@ public class ConnectionOptions
     {
         Port = builder.Port;
         IpAddress = builder.IpAddress;
-        ReqRespTimeoutMs = builder.ReqRespTimeoutMs;
-        PendingRequestTimeoutMs = builder.PendingRequestTimeoutMs;
+        ReceiveTimeoutMs = builder.ReceiveTimeoutMs;
+        RequestTimeoutMs = builder.RequestTimeoutMs;
         CheckPendingRequestsDelayMs = builder.CheckPendingRequestsDelayMs;
         RemoveCompletedRequestsDelayMs = builder.RemoveCompletedRequestsDelayMs;
     }
@@ -27,10 +27,10 @@ public class ConnectionOptions
     {
         public int Port { get; private set; } = 9000;
         public IPAddress? IpAddress { get; private set; }
-        public int ReqRespTimeoutMs { get; private set; } = 1000;
-        public int PendingRequestTimeoutMs { get; private set; } = 1000;
+        public int ReceiveTimeoutMs { get; private set; } = 1000;
+        public int RequestTimeoutMs { get; private set; } = 2000;
         public int CheckPendingRequestsDelayMs { get; private set; } = 500;
-        public int RemoveCompletedRequestsDelayMs { get; private set; } = 3000;
+        public int RemoveCompletedRequestsDelayMs { get; private set; } = 1000;
         
         public Builder WithPort(int port)
         {
@@ -46,16 +46,16 @@ public class ConnectionOptions
         
         public Builder WithReqRespTimeoutMs(int reqRespTimeoutMs)
         {
-            ReqRespTimeoutMs = reqRespTimeoutMs;
+            ReceiveTimeoutMs = reqRespTimeoutMs;
             return this;
         }
 
         public Builder WithPendingRequestTimeoutMs(int pendingRequestTimeoutMs)
         {
-            PendingRequestTimeoutMs = pendingRequestTimeoutMs;
+            RequestTimeoutMs = pendingRequestTimeoutMs;
             return this;
         }
-        
+
         public Builder WithCheckPendingRequestsDelayMs(int checkPendingRequestsDelayMs)
         {
             CheckPendingRequestsDelayMs = checkPendingRequestsDelayMs;

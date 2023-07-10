@@ -67,7 +67,6 @@ public class PacketManager : IPacketManager
         {
             if (message == null)
             {
-                _logger.LogWarning("Unable to construct message. Cannot send packet");
                 return;
             }
             
@@ -75,7 +74,11 @@ public class PacketManager : IPacketManager
         }
         else
         {
-
+            if (message == null)
+            {
+                return;
+            }
+            
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         }
     }
@@ -89,7 +92,8 @@ public class PacketManager : IPacketManager
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Error handling received packet");
+            _logger.LogWarning("An error occurred when trying to handle the received UDP packet. Could not handle as it may have been reordered");
+            _logger.LogDebug(e, "Exception details");
         }
     }
 
