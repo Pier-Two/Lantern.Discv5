@@ -18,6 +18,8 @@ public interface IRequestManager
     
     PendingRequest? GetPendingRequest(byte[] requestId);
 
+    PendingRequest? GetPendingRequestByNodeId(byte[] nodeId);
+
     CachedRequest? GetCachedRequest(byte[] requestId);
 
     PendingRequest? MarkRequestAsFulfilled(byte[] requestId);

@@ -68,7 +68,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             return;
         }
 
-        var message = CreateReplyMessage(destNodeId, _packetProcessor.GetStaticHeader(packet).Nonce);
+        var message = CreateReplyMessage(destNodeId);
         
         if(message == null)
         {
@@ -120,14 +120,24 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         return null;
     }
 
-    private byte[]? CreateReplyMessage(byte[] destNodeId, byte[] nonce)
+    private byte[]? CreateReplyMessage(byte[] destNodeId)
     {
-        var cachedRequest = _requestManager.GetCachedRequest(destNodeId) ?? _requestManager.GetCachedRequest(nonce);
-        
+        var cachedRequest = _requestManager.GetCachedRequest(destNodeId);
+
         if(cachedRequest == null)
         {
-            _logger.LogWarning("Cached request is not available for node {NodeId}", Convert.ToHexString(destNodeId));
-            return null;
+            var existingRequest = _requestManager.GetPendingRequestByNodeId(destNodeId);
+            
+            if(existingRequest == null)
+            {
+                _logger.LogWarning("No cached or pending request found for node {NodeId}", Convert.ToHexString(destNodeId));
+                return null;
+            }
+
+            var newRequest = new PendingRequest(destNodeId, existingRequest.Message);
+            _requestManager.AddPendingRequest(existingRequest.Message.RequestId, newRequest);
+           
+            return existingRequest.Message.EncodeMessage();
         }
         
         _requestManager.MarkCachedRequestAsFulfilled(destNodeId);
