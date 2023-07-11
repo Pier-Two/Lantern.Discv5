@@ -6,6 +6,7 @@ using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
@@ -14,12 +15,14 @@ public class PacketBuilder : IPacketBuilder
     private readonly IIdentityManager _identityManager;
     private readonly IAesUtility _aesUtility;
     private readonly IRequestManager _requestManager;
+    private readonly ILogger<PacketBuilder> _logger;
 
-    public PacketBuilder(IIdentityManager identityManager, IAesUtility aesUtility, IRequestManager requestManager)
+    public PacketBuilder(IIdentityManager identityManager, IAesUtility aesUtility, IRequestManager requestManager, ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _aesUtility = aesUtility;
         _requestManager = requestManager;
+        _logger = loggerFactory.CreateLogger<PacketBuilder>();
     }
 
     public Tuple<byte[], StaticHeader> BuildRandomOrdinaryPacket(byte[] destNodeId)
@@ -43,6 +46,11 @@ public class PacketBuilder : IPacketBuilder
     {
         var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
+
+        _logger.LogInformation("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
+        
+        _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
+        
         var packetStaticHeader = ConstructStaticHeader(PacketType.Ordinary, ordinaryPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesUtility);

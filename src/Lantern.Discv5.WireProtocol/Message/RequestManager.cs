@@ -94,11 +94,6 @@ public class RequestManager : IRequestManager
     {
         return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
     }
-    
-    public bool ContainsPendingRequest(byte[] requestId)
-    {
-        return _pendingRequests.ContainsKey(requestId);
-    }
 
     public bool ContainsCachedRequest(byte[] requestId)
     {
@@ -110,13 +105,18 @@ public class RequestManager : IRequestManager
         _pendingRequests.TryGetValue(requestId, out var request);
         return request;
     }
+    
+    public PendingRequest? GetPendingRequestByNodeId(byte[] nodeId)
+    {
+        return _pendingRequests.Values.FirstOrDefault(x => x.NodeId.SequenceEqual(nodeId));
+    }
 
     public CachedRequest? GetCachedRequest(byte[] requestId)
     {
         _cachedRequests.TryGetValue(requestId, out var request);
         return request;
     }
-    
+
     public PendingRequest? MarkRequestAsFulfilled(byte[] requestId)
     {
         if (!_pendingRequests.TryGetValue(requestId, out var request)) 
@@ -124,13 +124,13 @@ public class RequestManager : IRequestManager
         
         request.IsFulfilled = true;
         request.ResponsesCount++;
-
+        
         return request;
     }
 
     public CachedRequest? MarkCachedRequestAsFulfilled(byte[] requestId)
     {
-        _logger.LogInformation("Marking cached request with id {RequestId} as fulfilled", Convert.ToHexString(requestId));
+        _logger.LogDebug("Marking cached request as fulfilled with id {RequestId}", Convert.ToHexString(requestId));
         _cachedRequests.TryRemove(requestId, out var request);
 
         return request;
@@ -147,7 +147,7 @@ public class RequestManager : IRequestManager
         {
             HandlePendingRequest(pendingRequest);
         }
-
+        
         foreach (var cachedRequest in currentCachedRequests)
         {
             HandleCachedRequest(cachedRequest);
@@ -206,7 +206,7 @@ public class RequestManager : IRequestManager
         if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogInformation("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
+        _logger.LogDebug("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
@@ -223,4 +223,3 @@ public class RequestManager : IRequestManager
         }
     }
 }
-
