@@ -47,6 +47,7 @@ public class LookupManager : ILookupManager
         var delayTask = Task.Delay(_tableOptions.LookupTimeoutMilliseconds);
         
         await MonitorLookupAsync(allBucketsCompleteTask, delayTask);
+        ClearPendingQueries();
         PrintLookupSummary();
         
         var result = _pathBuckets
@@ -210,6 +211,13 @@ public class LookupManager : ILookupManager
                 _lookupSemaphore.Release();
                 return;
             }
+            
+            if(bucket.IsComplete)
+            {
+                bucket.DisposeTimer(nodeId);
+                _lookupSemaphore.Release();
+                return;
+            }
 
             var unqueriedNode = bucket.DiscoveredNodes
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
@@ -274,6 +282,15 @@ public class LookupManager : ILookupManager
         }
 
         return pathBuckets;
+    }
+    
+    private void ClearPendingQueries()
+    {
+        foreach (var bucket in _pathBuckets)
+        {
+            bucket.PendingTimers.Clear();
+            bucket.PendingQueries.Clear();
+        }
     }
 
     private void PrintLookupSummary()

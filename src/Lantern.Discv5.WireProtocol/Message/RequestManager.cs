@@ -65,7 +65,7 @@ public class RequestManager : IRequestManager
         if (!result)
         {
             _routingTable.MarkNodeAsPending(request.NodeId);
-            _logger.LogInformation("Added pending request with id {RequestId}", Convert.ToHexString(requestId));
+            _logger.LogDebug("Added pending request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
         return !result;
@@ -79,7 +79,7 @@ public class RequestManager : IRequestManager
         if (!result)
         {
             _routingTable.MarkNodeAsPending(request.NodeId);
-            _logger.LogInformation("Added cached request with id {RequestId}", Convert.ToHexString(requestId));
+            _logger.LogDebug("Added cached request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
         return !result;
