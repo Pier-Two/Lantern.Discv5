@@ -1,6 +1,6 @@
 # Usage Documentation
 
-This document provides guidance on how to use the Lantern.Discv5 library in a C# project.
+This document provides guidance on how to use the Lantern.Discv5 library.
 
 ## General Usage
 
