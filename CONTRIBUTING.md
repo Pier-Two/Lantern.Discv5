@@ -1,4 +1,4 @@
-# Configuration Guidelines
+# Contribution Guidelines
 
 Thanks for your interest in contributing to Lantern.Discv5! Following these guidelines helps to communicate effectively and ensure that your contribution matches our project needs.
 
