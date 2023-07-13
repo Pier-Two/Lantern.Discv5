@@ -1,3 +1,5 @@
+# Configuration Documentation
+
 This section is dedicated for explaining the various configuration options for Lantern.Discv5.
 
 ## ConnectionOptions
