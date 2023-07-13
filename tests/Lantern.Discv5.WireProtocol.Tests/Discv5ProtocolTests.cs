@@ -22,7 +22,7 @@ public class Discv5ProtocolTests
     [Test]
     public async Task Test()
     {
-        _discv5Protocol.StartProtocolAsync();
+        _discv5Protocol.StartProtocol();
 
         var firstClosestNodes = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
         
