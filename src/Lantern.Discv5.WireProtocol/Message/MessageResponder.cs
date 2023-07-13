@@ -29,7 +29,7 @@ public class MessageResponder : IMessageResponder
         _logger = loggerFactory.CreateLogger<MessageResponder>();
     }
     
-    public async Task<byte[]?> HandleMessage(byte[] message, IPEndPoint endPoint)
+    public async Task<byte[]?> HandleMessageAsync(byte[] message, IPEndPoint endPoint)
     {
         var messageType = (MessageType)message[0];
 
@@ -38,7 +38,7 @@ public class MessageResponder : IMessageResponder
             MessageType.Ping => HandlePingMessage(message, endPoint),
             MessageType.Pong => HandlePongMessage(message),
             MessageType.FindNode => HandleFindNodeMessage(message),
-            MessageType.Nodes => await HandleNodesMessage(message),
+            MessageType.Nodes => await HandleNodesMessageAsync(message),
             MessageType.TalkReq => HandleTalkReqMessage(message),
             MessageType.TalkResp => HandleTalkRespMessage(message),
             _ => null
@@ -118,7 +118,7 @@ public class MessageResponder : IMessageResponder
         return nodesMessage.EncodeMessage();
     }
     
-    private async Task <byte[]?> HandleNodesMessage(byte[] message)
+    private async Task <byte[]?> HandleNodesMessageAsync(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Nodes);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
