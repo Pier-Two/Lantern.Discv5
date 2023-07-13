@@ -39,7 +39,7 @@ public class MessageResponderTests
     {
         var topicMessage = new TopicQueryMessage("test"u8.ToArray());
         var result =
-            await _messageResponder.HandleMessage(topicMessage.EncodeMessage(), new IPEndPoint(IPAddress.Any, 9000));
+            await _messageResponder.HandleMessageAsync(topicMessage.EncodeMessage(), new IPEndPoint(IPAddress.Any, 9000));
         Assert.Null(result);
     }
 
@@ -48,7 +48,7 @@ public class MessageResponderTests
     {
         var pingMessage = new PingMessage((int)_identityManager.Record.SequenceNumber);
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9989);
-        var response = await _messageResponder.HandleMessage(pingMessage.EncodeMessage(), ipEndPoint);
+        var response = await _messageResponder.HandleMessageAsync(pingMessage.EncodeMessage(), ipEndPoint);
         var pongMessage = (PongMessage)new MessageDecoder().DecodeMessage(response!);
         
         Assert.NotNull(pongMessage);
@@ -64,7 +64,7 @@ public class MessageResponderTests
         var distances = new [] { 252, 253, 254 };
         var findNodesMessage = new FindNodeMessage(distances);
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9319);
-        var response = await _messageResponder.HandleMessage(findNodesMessage.EncodeMessage(), ipEndPoint);
+        var response = await _messageResponder.HandleMessageAsync(findNodesMessage.EncodeMessage(), ipEndPoint);
         var nodesMessage = (NodesMessage)new MessageDecoder().DecodeMessage(response!);
         Assert.NotNull(nodesMessage);
         Assert.AreEqual(MessageType.Nodes, nodesMessage.MessageType);
@@ -77,7 +77,7 @@ public class MessageResponderTests
     {
         var talkRequestMessage = new TalkReqMessage("protocol"u8.ToArray(), "request"u8.ToArray());
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9312);
-        var response = await _messageResponder.HandleMessage(talkRequestMessage.EncodeMessage(), ipEndPoint);
+        var response = await _messageResponder.HandleMessageAsync(talkRequestMessage.EncodeMessage(), ipEndPoint);
         var talkRespMessage = (TalkRespMessage)new MessageDecoder().DecodeMessage(response!);
         Assert.NotNull(talkRespMessage);
         Assert.AreEqual(MessageType.TalkResp, talkRespMessage.MessageType);

@@ -125,7 +125,7 @@ public class HandshakePacketHandler : PacketHandlerBase
     
     private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, SessionMain sessionMain, IPEndPoint endPoint) 
     {
-        var response = await _messageResponder.HandleMessage(decryptedMessage, endPoint);
+        var response = await _messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
 
         if (response == null)
         {

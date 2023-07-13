@@ -37,11 +37,11 @@ public class Discv5Protocol
     
     public EnrRecord SelfEnrRecord => _identityManager.Record;
     
-    public int NodesCount() => _routingTable.GetTotalEntriesCount();
+    public int NodesCount => _routingTable.GetTotalEntriesCount();
     
-    public int PeerCount() => _routingTable.GetTotalActiveNodesCount();
+    public int PeerCount => _routingTable.GetTotalActiveNodesCount();
     
-    public int ActiveSessionCount() => _sessionManager.TotalSessionCount;
+    public int ActiveSessionCount => _sessionManager.TotalSessionCount;
     
     public NodeTableEntry? GetNodeFromId(byte[] nodeId) => _routingTable.GetNodeEntry(nodeId);
 
