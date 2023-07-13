@@ -127,7 +127,7 @@ await discv5.SendTalkReqAsync(destinationEnrRecord, protocol, request);
 ```
 
 ## Advanced Usage
-For a more detailed description for each of these options, please visit the [Options](OPTIONS.md) documentation.
+For a more detailed description for each of these options, please visit the [Configuration](CONFIGURATION.md) documentation.
 #### ConnectionOptions Configuration
 
 `ConnectionOptions` allows you to adjust certain settings related with the connection manager. Example:
