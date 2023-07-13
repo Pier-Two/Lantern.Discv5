@@ -16,7 +16,7 @@ var bootstrapEnrs = new string[] {
     "enr:-KG4QO..." // Include bootstrap Ethereum Node Records (ENR)
 };
 
-var discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
+Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
 ```
 
 The `CreateDefault` method of `Discv5Builder` is used to instantiate the Discv5 protocol with a list of bootstrap ENR nodes. 
@@ -42,12 +42,12 @@ public class CustomHandler : ITalkReqAndRespHandler
 }
 ```
 
-Then the Discv5 protocol can be instantiated by passing the custom handler:
+The Discv5 protocol can then be instantiated by passing the custom handler:
 
 ```csharp
 ITalkReqAndRespHandler customHandler = new CustomHandler(); 
 
-var discv5 = Discv5Builder.CreateDefault(bootstrapEnrs, customHandler);
+Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs, customHandler);
 ```
 
 #### Starting the Protocol
@@ -76,21 +76,21 @@ EnrRecord selfRecord = discv5.SelfEnrRecord;
 
 #### Node/Peer Counts
 
-The `NodesCount` method returns the total number of nodes that are stored in the routing table.
+The `NodesCount` property returns the total number of nodes that are stored in the routing table.
 
 ```csharp
-int totalNodes = discv5.NodesCount();
+int totalNodes = discv5.NodesCount;
 ```
 
-The `PeerCount` method returns the number of active nodes (peers) currently connected to.
+The `PeerCount` property returns the number of active nodes (peers) currently connected to.
 
 ```csharp
-int activePeers = discv5.PeerCount();
+int activePeers = discv5.PeerCount;
 ```
 
 #### Sending Ping Request
 
-A PING message can be sent to node by supplying its ENR record using the method:
+A PING message can be sent to a connected node by supplying its ENR record using the method:
 
 ```csharp
 await discv5.SendPingAsync(destinationEnrRecord);
@@ -141,7 +141,7 @@ var connectionOptions = new ConnectionOptions.Builder()
 
 #### SessionOptions Configuration
 
-`SessionOptions` allows you to adjust certain settings related with the session manager.
+`SessionOptions` allows you to adjust certain settings related with the session manager. Example:
 
 ```csharp
 var privateKey = ...; // 32 bytes private key
@@ -157,7 +157,7 @@ var sessionOptions = new SessionOptions.Builder()
 
 #### TableOptions Configuration
 
-`TableOptions` allows you to configure the settings related with the node table manager.
+`TableOptions` allows you to configure the settings related to the node table manager. Example:
 
 ```csharp
 var tableOptions = new TableOptions.Builder()
@@ -169,7 +169,7 @@ var tableOptions = new TableOptions.Builder()
 
 #### Combining Options
 
-After generating your custom configurations, you can provide them when creating `Discv5Protocol`. Here's how:
+After generating your custom configurations, you can provide them when creating the `Discv5Protocol` class:
 
 ```csharp
 var services = ServiceConfiguration.ConfigureServices(
@@ -182,5 +182,4 @@ var services = ServiceConfiguration.ConfigureServices(
 var serviceProvider = services.BuildServiceProvider();
 var discv5 = new Discv5Protocol(serviceProvider);
 ```
-
-Please note the customization and settings of mentioned options are optional and only recommended for advanced users who have a deep understanding of the underlying protocol, as they may affect the performance and functionality of the protocol.
+Please note the customization and settings of mentioned options are optional and only recommended for certain scenarios, as it may affect the performance and functionality of the protocol.
