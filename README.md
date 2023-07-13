@@ -55,11 +55,11 @@ This library can used in any C# project by using the following import statement:
 ```
 using Lantern.Discv5.WireProtocol;
 ```
-Once this statement is added, the protocol can be initialised by providing any number of bootstrap ENRS:
+Once this statement is added, the protocol can be initialised by providing any number of bootstrap ENRS as an array of strings:
 ```
 Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
 ```
-Here, `bootstrapEnrs` is  an array of strings. As an example, the following bootstrap ENRs can be used for initialising:
+As an example, the following bootstrap ENRs can be used for initialising:
 ```
 var bootstrapEnrs = new[]
 {
