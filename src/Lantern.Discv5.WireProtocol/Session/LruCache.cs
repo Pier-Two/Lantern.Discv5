@@ -17,15 +17,15 @@ public class LruCache<TKey, TValue>
     
     public int Count => _cache.Count;
 
-    public TValue Get(TKey key)
+    public TValue? Get(TKey key)
     {
-        if (_cache.TryGetValue(key, out var node))
-        {
-            var value = node.Value.Value;
-            RefreshNode(node);
-            return value;
-        }
-        return default;
+        if (!_cache.TryGetValue(key, out var node)) 
+            return default;
+        
+        var value = node.Value.Value;
+        RefreshNode(node);
+        
+        return value;
     }
 
     public void Add(TKey key, TValue value)
@@ -41,8 +41,10 @@ public class LruCache<TKey, TValue>
             {
                 RemoveFirst();
             }
+            
             var cacheItem = new CacheItem(key, value);
             var node = new LinkedListNode<CacheItem>(cacheItem);
+            
             _lruList.AddLast(node);
             _cache[key] = node;
         }
@@ -61,7 +63,11 @@ public class LruCache<TKey, TValue>
     {
         var node = _lruList.First;
         _lruList.RemoveFirst();
-        _cache.TryRemove(node.Value.Key, out var removedNode);
+        
+        if(node == null)
+            return;
+        
+        _cache.TryRemove(node.Value.Key, out _);
     }
 
     private class CacheItem

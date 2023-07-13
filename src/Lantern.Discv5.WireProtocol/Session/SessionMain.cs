@@ -10,13 +10,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public class SessionMain
+public class SessionMain : ISessionMain
 {
     private readonly ISessionKeys _sessionKeys;
     private readonly IAesUtility _aesUtility;
     private readonly ISessionCrypto _sessionCrypto;
     private readonly SessionType _sessionType;
-    private readonly ILogger<SessionMain> _logger;
+    private readonly ILogger<ISessionMain> _logger;
     private byte[]? _challengeData;
     private SharedKeys? _currentSharedKeys;
     private int _messageCount;
@@ -29,7 +29,7 @@ public class SessionMain
         _aesUtility = aesUtility;
         _sessionCrypto = sessionCrypto;
         _sessionType = sessionType;
-        _logger = loggerFactory.CreateLogger<SessionMain>();
+        _logger = loggerFactory.CreateLogger<ISessionMain>();
         _messageCount = 0;
     }
 
