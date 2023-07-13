@@ -49,9 +49,26 @@ The following features have been implemented:
    dotnet test
    ```
 
-## Usage
+## Example Usage
 
-TODO
+This library can used in any C# project by using the following import statement: 
+```
+using Lantern.Discv5.WireProtocol;
+```
+Once this statement is added, the protocol can be initialised by providing any number of bootstrap ENRS:
+```
+Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
+```
+Here, `bootstrapEnrs` is  an array of strings. As an example, the following bootstrap ENRs can be used for initialising:
+```
+var bootstrapEnrs = new[]
+{
+"enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
+"enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA"
+};
+```
+
+For a more detailed usage, we recommend checking our [Usage](USAGE.md) guide. This document clarifies various configuration settings and functionalities available with this library.
 
 ## Contributing
 
