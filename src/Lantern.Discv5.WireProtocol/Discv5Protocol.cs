@@ -47,7 +47,7 @@ public class Discv5Protocol
 
     public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodeEntries();
 
-    public void StartProtocolAsync()
+    public void StartProtocol()
     {
         _connectionManager.StartConnectionManagerAsync();
         _tableManager.StartTableManagerAsync();
