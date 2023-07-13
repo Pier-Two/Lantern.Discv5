@@ -1,4 +1,4 @@
-This document provides more guidance on how to use the Lantern.Discv5 library in a C# project.
+This document provides guidance on how to use the Lantern.Discv5 library in a C# project.
 
 ## General Usage
 
@@ -40,13 +40,12 @@ public class CustomHandler : ITalkReqAndRespHandler
 }
 ```
 
-You then instantiate the Discv5 protocol as mentioned earlier but now passing your custom handler:
+Then the Discv5 protocol can be instantiated by passing the custom handler:
 
 ```csharp
 ITalkReqAndRespHandler customHandler = new CustomHandler(); 
 
 var discv5 = Discv5Builder.CreateDefault(bootstrapEnrs, customHandler);
-
 ```
 
 #### Starting the Protocol
@@ -73,7 +72,7 @@ The `SelfEnrRecord` property returns the Ethereum Node Record (ENR) for the loca
 EnrRecord selfRecord = discv5.SelfEnrRecord;
 ```
 
-#### Node/Active Peer Counts
+#### Node/Peer Counts
 
 The `NodesCount` method returns the total number of nodes that are stored in the routing table.
 
@@ -81,7 +80,7 @@ The `NodesCount` method returns the total number of nodes that are stored in the
 int totalNodes = discv5.NodesCount();
 ```
 
-The `PeerCount` method returns the number of active nodes (peers).
+The `PeerCount` method returns the number of active nodes (peers) currently connected to.
 
 ```csharp
 int activePeers = discv5.PeerCount();
@@ -89,7 +88,7 @@ int activePeers = discv5.PeerCount();
 
 #### Sending Ping Request
 
-This library allows you to send PING messages to peers:
+A PING message can be sent to node by supplying its ENR record using the method:
 
 ```csharp
 await discv5.SendPingAsync(destinationEnrRecord);
@@ -104,6 +103,17 @@ byte[] nodeId = ...; // Node identifier
 await discv5.SendFindNodeAsync(destinationEnrRecord, nodeId);
 ```
 
+#### Performing Node Lookup
+
+To query the network for nodes closest to a given target Node ID, you can use the `PerformLookupAsync` method. This method will return list of `NodeTableEntry` objects, or `null` if no nodes were found or an error occurred.
+
+```csharp
+byte[] targetNodeId = ...; // Target node identifier
+List<NodeTableEntry>? closestNodes = await discv5.PerformLookupAsync(targetNodeId);
+```
+
+In this example, `targetNodeId` is the Node ID of your target and must be a 32-byte long byte array. `PerformLookupAsync` will locate the nodes in the network that are closest to your target Node ID. This function will return a list of nodes or `null` if an error occurred or no nodes were found.
+
 #### Sending Talk Requests (TalkReq and TalkResp)
 
 TalkReq/TalkResp messages can be sent for general-purpose communication.
@@ -115,7 +125,7 @@ await discv5.SendTalkReqAsync(destinationEnrRecord, protocol, request);
 ```
 
 ## Advanced Usage
-For a more detailed description for each of these options, visit the [Options](OPTIONS.md) documentation.
+For a more detailed description for each of these options, please visit the [Options](OPTIONS.md) documentation.
 #### ConnectionOptions Configuration
 
 `ConnectionOptions` allows you to adjust certain settings related with the connection manager. Example:
