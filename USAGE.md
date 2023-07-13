@@ -52,7 +52,7 @@ var discv5 = Discv5Builder.CreateDefault(bootstrapEnrs, customHandler);
 
 #### Starting the Protocol
 
-`Discv5Protocol` exposes a `StartProtocolAsync` method to start the discovery protocol.
+The class `Discv5Protocol` exposes a `StartProtocolAsync` method to start the discovery protocol.
 
 ```csharp
 discv5.StartProtocolAsync();
