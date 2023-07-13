@@ -49,7 +49,7 @@ The following features have been implemented:
    dotnet test
    ```
 
-## Example Usage
+## Quick Usage
 
 This library can used in any C# project by using the following import statement: 
 ```
