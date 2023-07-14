@@ -5,16 +5,16 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionManager : ISessionManager
 {
-    private readonly IAesUtility _aesUtility;
+    private readonly IAesCrypto _aesCrypto;
     private readonly ISessionCrypto _sessionCrypto;
     private readonly ISessionKeys _sessionKeys;
     private readonly ILoggerFactory _loggerFactory;
     private readonly LruCache<SessionCacheKey, ISessionMain> _sessions;
 
-    public SessionManager(SessionOptions options, IAesUtility aesUtility, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory)
+    public SessionManager(SessionOptions options, IAesCrypto aesCrypto, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory)
     {
         _sessionKeys = options.SessionKeys;
-        _aesUtility = aesUtility;
+        _aesCrypto = aesCrypto;
         _sessionCrypto = sessionCrypto;
         _loggerFactory = loggerFactory;
         _sessions = new LruCache<SessionCacheKey, ISessionMain>(options.CacheSize);
@@ -47,7 +47,7 @@ public class SessionManager : ISessionManager
     private ISessionMain CreateSession(SessionType sessionType)
     {
         var newSessionKeys = new SessionKeys(_sessionKeys.PrivateKey);
-        var cryptoSession = new SessionMain(newSessionKeys, _aesUtility, _sessionCrypto, _loggerFactory, sessionType);
+        var cryptoSession = new SessionMain(newSessionKeys, _aesCrypto, _sessionCrypto, _loggerFactory, sessionType);
         
         return cryptoSession;
     }

@@ -21,5 +21,5 @@ public class MaskedHeader
 
     private byte[] MaskingIv { get; }
 
-    public byte[] GetMaskedHeader(byte[] header, IAesUtility aesUtility) => aesUtility.AesCtrEncrypt(MaskingKey, MaskingIv, header);
+    public byte[] GetMaskedHeader(byte[] header, IAesCrypto aesCrypto) => aesCrypto.AesCtrEncrypt(MaskingKey, MaskingIv, header);
 }

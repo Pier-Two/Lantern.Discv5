@@ -14,11 +14,11 @@ public class PathBucket
     
     public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
 
-    public List<NodeTableEntry> DiscoveredNodes { get; }
+    public ConcurrentBag<NodeTableEntry> DiscoveredNodes { get; }
 
-    public Dictionary<byte[], List<NodeTableEntry>> Responses { get; }
+    public ConcurrentDictionary<byte[], List<NodeTableEntry>> Responses { get; }
     
-    public Dictionary<byte[], int> ExpectedResponses { get; }
+    public ConcurrentDictionary<byte[], int> ExpectedResponses { get; }
     
     public bool IsComplete { get; private set; }
     
@@ -29,9 +29,9 @@ public class PathBucket
         Index = index;
         TargetNodeId = targetNodeId;
         PendingQueries = new ConcurrentDictionary<byte[], TaskCompletionSource<bool>>(ByteArrayEqualityComparer.Instance);
-        DiscoveredNodes = new List<NodeTableEntry>();
-        Responses = new Dictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
-        ExpectedResponses = new Dictionary<byte[], int>();
+        DiscoveredNodes = new ConcurrentBag<NodeTableEntry>();
+        Responses = new ConcurrentDictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
+        ExpectedResponses = new ConcurrentDictionary<byte[], int>();
     }
     
     // Method of setting completion status

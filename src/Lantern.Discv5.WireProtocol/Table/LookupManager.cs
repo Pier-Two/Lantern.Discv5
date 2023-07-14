@@ -96,7 +96,7 @@ public class LookupManager : ILookupManager
             }
             else
             {
-                bucket.ExpectedResponses.Add(senderNodeId, expectedResponses - 1);
+                bucket.ExpectedResponses.TryAdd(senderNodeId, expectedResponses - 1);
             }
             
             if(bucket.PendingQueries.ContainsKey(senderNodeId))
@@ -165,12 +165,12 @@ public class LookupManager : ILookupManager
             
             if (!bucket.Responses.ContainsKey(node.Id))
             {
-                bucket.Responses.Add(node.Id, new List<NodeTableEntry>());
+                bucket.Responses.TryAdd(node.Id, new List<NodeTableEntry>());
             }
         }
 
         bucket.Responses[senderNodeId].Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
-        bucket.DiscoveredNodes.Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
+        bucket.DiscoveredNodes.ToList().Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId).CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
         
         if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
         {
@@ -277,8 +277,8 @@ public class LookupManager : ILookupManager
 
         for (var i = 0; i < initialNodes.Count; i++)
         {
-            pathBuckets[i % bucketCount].Responses.Add(initialNodes[i].Id, new List<NodeTableEntry>());
-            pathBuckets[i % bucketCount].ExpectedResponses.Add(initialNodes[i].Id, 0);
+            pathBuckets[i % bucketCount].Responses.TryAdd(initialNodes[i].Id, new List<NodeTableEntry>());
+            pathBuckets[i % bucketCount].ExpectedResponses.TryAdd(initialNodes[i].Id, 0);
         }
 
         return pathBuckets;
