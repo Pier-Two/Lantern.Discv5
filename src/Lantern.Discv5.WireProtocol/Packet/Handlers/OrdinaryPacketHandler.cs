@@ -67,7 +67,6 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
-            Console.WriteLine("Decrypted message is null");
             _logger.LogWarning("Cannot decrypt ORDINARY packet. Decryption failed, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
@@ -75,12 +74,11 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         _logger.LogDebug("Successfully decrypted ORDINARY packet");
 
-        var response = await _messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
-
-        if (response != null)
+        var reply = await _messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
+        
+        if (reply != null)
         {
-            await SendResponseToOrdinaryPacketAsync(staticHeader, session, returnedResult.RemoteEndPoint, _connection,
-                response);
+            await SendResponseToOrdinaryPacketAsync(staticHeader, session, returnedResult.RemoteEndPoint, _connection, reply);
         }
     }
 

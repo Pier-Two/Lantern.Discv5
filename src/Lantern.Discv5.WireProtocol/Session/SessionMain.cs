@@ -13,7 +13,7 @@ namespace Lantern.Discv5.WireProtocol.Session;
 public class SessionMain : ISessionMain
 {
     private readonly ISessionKeys _sessionKeys;
-    private readonly IAesUtility _aesUtility;
+    private readonly IAesCrypto _aesCrypto;
     private readonly ISessionCrypto _sessionCrypto;
     private readonly SessionType _sessionType;
     private readonly ILogger<ISessionMain> _logger;
@@ -23,10 +23,10 @@ public class SessionMain : ISessionMain
 
     public bool IsEstablished { get; private set; }
     
-    public SessionMain(ISessionKeys sessionKeys, IAesUtility aesUtility, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory, SessionType sessionType)
+    public SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessionCrypto sessionCrypto, ILoggerFactory loggerFactory, SessionType sessionType)
     {
         _sessionKeys = sessionKeys;
-        _aesUtility = aesUtility;
+        _aesCrypto = aesCrypto;
         _sessionCrypto = sessionCrypto;
         _sessionType = sessionType;
         _logger = loggerFactory.CreateLogger<ISessionMain>();
@@ -83,7 +83,7 @@ public class SessionMain : ISessionMain
         _messageCount++;
         
         _logger.LogDebug("Encrypting message with new keys");
-        return _aesUtility.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
+        return _aesCrypto.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
 
     public byte[]? DecryptMessageWithNewKeys(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage, HandshakePacketBase handshakePacket, byte[] selfNodeId)
@@ -106,7 +106,7 @@ public class SessionMain : ISessionMain
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         
         _logger.LogDebug("Decrypting message with new keys");
-        var decryptedResult = _aesUtility.AesGcmDecrypt(sharedKeys.InitiatorKey, header.Nonce, encryptedMessage, messageAd);
+        var decryptedResult = _aesCrypto.AesGcmDecrypt(sharedKeys.InitiatorKey, header.Nonce, encryptedMessage, messageAd);
         
         _currentSharedKeys = sharedKeys;
 
@@ -125,7 +125,7 @@ public class SessionMain : ISessionMain
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         
         _logger.LogDebug("Encrypting message");
-        var encryptedMessage = _aesUtility.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
+        var encryptedMessage = _aesCrypto.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
         
         _messageCount++;
         
@@ -144,7 +144,7 @@ public class SessionMain : ISessionMain
         var decryptionKey = _sessionType == SessionType.Initiator ? _currentSharedKeys.RecipientKey : _currentSharedKeys.InitiatorKey;
         
         _logger.LogDebug("Decrypting message");
-        var decryptedMessage = _aesUtility.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
+        var decryptedMessage = _aesCrypto.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
 
         if (!IsEstablished)
         {

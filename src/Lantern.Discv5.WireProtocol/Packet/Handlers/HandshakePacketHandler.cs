@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Rlp;
@@ -106,7 +107,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             if (nodeEntry != null)
             {
                 senderRecord = nodeEntry.Record;
-                senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>("secp256k1").Value;
+                senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
                 return true;
             }
         }
@@ -119,7 +120,7 @@ public class HandshakePacketHandler : PacketHandlerBase
 
         _routingTable.UpdateFromEnr(senderRecord);
     
-        senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>("secp256k1").Value;
+        senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         return true;
     }
     

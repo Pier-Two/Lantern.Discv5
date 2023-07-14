@@ -6,7 +6,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class AesCryptographyTests
 {
-    private static readonly AesUtility AesUtility = new();
+    private static readonly AesCrypto AesCrypto = new();
     private static readonly Random Random = new();
 
     [Test]
@@ -16,7 +16,7 @@ public class AesCryptographyTests
         var invalidMaskingIv = GenerateRandomBytes(8);
         var header = GenerateRandomBytes(16);
 
-        Assert.Throws<ArgumentException>(() => AesUtility.AesCtrEncrypt(invalidMaskingKey, invalidMaskingIv, header));
+        Assert.Throws<ArgumentException>(() => AesCrypto.AesCtrEncrypt(invalidMaskingKey, invalidMaskingIv, header));
     }
 
     [Test]
@@ -25,10 +25,10 @@ public class AesCryptographyTests
         var maskingKey = GenerateRandomBytes(16);
         var maskingIv = GenerateRandomBytes(16);
         var header = GenerateRandomBytes(16);
-        var encryptedHeader = AesUtility.AesCtrEncrypt(maskingKey, maskingIv, header);
+        var encryptedHeader = AesCrypto.AesCtrEncrypt(maskingKey, maskingIv, header);
         Assert.AreNotEqual(header, encryptedHeader);
         
-        var decryptedHeader = AesUtility.AesCtrDecrypt(maskingKey, maskingIv, encryptedHeader);
+        var decryptedHeader = AesCrypto.AesCtrDecrypt(maskingKey, maskingIv, encryptedHeader);
         Assert.AreEqual(header, decryptedHeader);
     }
 
@@ -39,8 +39,8 @@ public class AesCryptographyTests
         var nonce = Convert.FromHexString("27b5af763c446acd2749fe8e");
         var msg = Convert.FromHexString("01c20101");
         var ad = Convert.FromHexString("93a7400fa0d6a694ebc24d5cf570f65d04215b6ac00757875e3f3a5f42107903");
-        var cipher = AesUtility.AesGcmEncrypt(key, nonce, msg, ad);
-        var decrypted = AesUtility.AesGcmDecrypt(key, nonce, cipher, ad);
+        var cipher = AesCrypto.AesGcmEncrypt(key, nonce, msg, ad);
+        var decrypted = AesCrypto.AesGcmDecrypt(key, nonce, cipher, ad);
         Assert.IsTrue(msg.SequenceEqual(decrypted));
     }
     

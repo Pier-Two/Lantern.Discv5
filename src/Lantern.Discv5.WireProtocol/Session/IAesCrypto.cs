@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public interface IAesUtility
+public interface IAesCrypto
 {
     byte[] AesCtrEncrypt(byte[] maskingKey, byte[] maskingIv, byte[] header);
     

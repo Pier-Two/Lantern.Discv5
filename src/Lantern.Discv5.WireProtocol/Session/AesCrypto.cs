@@ -9,7 +9,7 @@ namespace Lantern.Discv5.WireProtocol.Session;
 /// <summary>
 /// Provides utility methods for handling AES cryptography operations.
 /// </summary>
-public class AesUtility : IAesUtility
+public class AesCrypto : IAesCrypto
 {
     private const int AesBlockSize = 16;
     private const int GcmTagSize = 128;

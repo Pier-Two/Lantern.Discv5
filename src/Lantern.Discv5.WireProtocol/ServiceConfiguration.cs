@@ -36,7 +36,7 @@ public static class ServiceConfiguration
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
-        services.AddSingleton<IAesUtility, AesUtility>();
+        services.AddSingleton<IAesCrypto, AesCrypto>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();

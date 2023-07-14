@@ -29,7 +29,7 @@ public class SessionMainTests
         var loggerFactory = LoggingOptions.Default;
         
         var serviceProvider = ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, tableOptions).BuildServiceProvider();
-        var aesUtility = serviceProvider.GetRequiredService<IAesUtility>();
+        var aesUtility = serviceProvider.GetRequiredService<IAesCrypto>();
         var logger = serviceProvider.GetRequiredService<ILoggerFactory>();
         var sessionCrypto = serviceProvider.GetRequiredService<ISessionCrypto>();
         
