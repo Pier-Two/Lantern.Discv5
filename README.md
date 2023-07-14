@@ -1,15 +1,15 @@
 # Lantern.Discv5 
-Lantern.Discv5 is a C# implementation of the Ethereum Discovery Protocol Version 5 (Discv5) which provides a robust and efficient peer-to-peer network communication. This project aims to offer a reliable, extensible, and compatible solution for modern applications.
+Lantern.Discv5 is a C# implementation of the Ethereum Discovery Protocol Version 5.1 (Discv5) which provides a robust and efficient peer-to-peer network communication. This project aims to offer a reliable, extensible, and compatible solution for modern applications.
 
 The Discv5 specification is available at the [Ethereum devp2p repository](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md).
 
-By providing this implementation, we enable developers to integrate and utilize Discv5 for Ethereum-based projects and any application requiring peer-to-peer communication within the .NET ecosystem.
+By providing this implementation, developers can integrate and utilize Discv5 for Ethereum-based projects and any application requiring peer-to-peer communication within the .NET ecosystem.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Quick Usage](#quick-usage)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -19,7 +19,7 @@ The following features have been implemented:
 - Support for RLP (Recursive Length Prefix) serialization and deserialization
 - Support for using ENR (Ethereum Node Record) with extensibility
 
-*Note: This implementation does not support topic advertisement because it will be removed from the specification in the upcoming Discovery Protocol v5.2.*
+*Note: This implementation does not support topic advertisement because it will be removed from the specification in the upcoming [Discovery Protocol v5.2](https://github.com/ethereum/devp2p/issues/226).*
 
 ## Installation
 
@@ -49,9 +49,26 @@ The following features have been implemented:
    dotnet test
    ```
 
-## Usage
+## Quick Usage
 
-TODO
+This library can used in any C# project by using the following import statement: 
+```
+using Lantern.Discv5.WireProtocol;
+```
+Once this statement is added, the protocol can be initialised by providing any number of bootstrap ENRS as an array of strings:
+```
+Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
+```
+As an example, the following bootstrap ENRs can be used for initialising:
+```
+var bootstrapEnrs = new[]
+{
+"enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
+"enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA"
+};
+```
+
+For a more detailed overview, we recommend checking our [Usage](USAGE.md) guide which describes the available functionalities and configuration options.
 
 ## Contributing
 
