@@ -123,7 +123,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         return true;
     }
     
-    private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, SessionMain sessionMain, IPEndPoint endPoint) 
+    private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 
     {
         var response = await _messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
 

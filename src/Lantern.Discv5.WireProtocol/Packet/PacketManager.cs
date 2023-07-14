@@ -109,7 +109,7 @@ public class PacketManager : IPacketManager
         }
     }
 
-    private async Task SendOrdinaryPacketAsync(byte[] message, SessionMain sessionMain, IPEndPoint destEndPoint,
+    private async Task SendOrdinaryPacketAsync(byte[] message, ISessionMain sessionMain, IPEndPoint destEndPoint,
         byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);

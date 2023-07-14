@@ -136,6 +136,7 @@ public class RequestManager : IRequestManager
         return request;
     }
 
+    // CheckRequests and RemoveFulfilledRequests can likely be merged into one method
     private void CheckRequests(object? state)
     {
         _logger.LogDebug("Checking for pending and cached requests");

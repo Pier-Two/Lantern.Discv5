@@ -18,20 +18,18 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     private readonly ISessionManager _sessionManager;
     private readonly IRoutingTable _routingTable;
     private readonly IMessageResponder _messageResponder;
-    private readonly IRequestManager _requestManager;
     private readonly IUdpConnection _connection;
     private readonly IPacketBuilder _packetBuilder;
     private readonly IPacketProcessor _packetProcessor;
     private readonly ILogger<OrdinaryPacketHandler> _logger;
 
     public OrdinaryPacketHandler(ISessionManager sessionManager, IRoutingTable routingTable, 
-        IMessageResponder messageResponder, IRequestManager requestManager,IUdpConnection udpConnection, IPacketBuilder packetBuilder, 
+        IMessageResponder messageResponder, IUdpConnection udpConnection, IPacketBuilder packetBuilder, 
         IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
     {
         _sessionManager = sessionManager;
         _routingTable = routingTable;
         _messageResponder = messageResponder;
-        _requestManager = requestManager;
         _connection = udpConnection;
         _packetBuilder = packetBuilder;
         _packetProcessor = packetProcessor;
@@ -69,6 +67,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
+            Console.WriteLine("Decrypted message is null");
             _logger.LogWarning("Cannot decrypt ORDINARY packet. Decryption failed, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
@@ -90,13 +89,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var whoAreYouPacket = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(staticHeader.AuthData, staticHeader.Nonce, maskingIv);
         var session = _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
-        
-        if(session == null)
-        {
-            _logger.LogError("Could not create a session for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
-            return;
-        }
-        
+
         session.SetChallengeData(maskingIv, whoAreYouPacket.Item2.GetHeader()); 
         
         await connection.SendAsync(whoAreYouPacket.Item1, destEndPoint);
@@ -108,20 +101,14 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNodeRecord, maskingIv);
         var session = _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
-        
-        if(session == null)
-        {
-            _logger.LogError("Could not create a session for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
-            return;
-        }
-        
+
         session.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());
 
         await connection.SendAsync(constructedWhoAreYouPacket.Item1, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
     
-    private async Task SendResponseToOrdinaryPacketAsync(StaticHeader staticHeader, SessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
+    private async Task SendResponseToOrdinaryPacketAsync(StaticHeader staticHeader, ISessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(response,staticHeader.AuthData, maskingIv, sessionMain.MessageCount);

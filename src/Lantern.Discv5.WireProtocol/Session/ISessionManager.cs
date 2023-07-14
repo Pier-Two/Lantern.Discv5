@@ -6,7 +6,7 @@ public interface ISessionManager
 {
     int TotalSessionCount { get; }
     
-    SessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint);
+    ISessionMain? GetSession(byte[] nodeId, IPEndPoint endPoint);
 
-    SessionMain? CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint);
+    ISessionMain CreateSession(SessionType sessionType, byte[] nodeId, IPEndPoint endPoint);
 }

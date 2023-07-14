@@ -15,10 +15,8 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class SessionMainTests
 {
-    private static SessionMain _sessionMain = null!;
-    private static IIdentityManager _identityManager = null!;
-    private static IAesUtility _aesUtility = null!;
-    
+    private static ISessionMain _sessionMain = null!;
+
     [SetUp]
     public void Setup()
     {
@@ -36,8 +34,6 @@ public class SessionMainTests
         var sessionCrypto = serviceProvider.GetRequiredService<ISessionCrypto>();
         
         _sessionMain = new SessionMain(sessionOptions.SessionKeys, aesUtility, sessionCrypto, logger,SessionType.Initiator);
-        _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
-        _aesUtility = serviceProvider.GetRequiredService<IAesUtility>();
     }
 
     [Test]

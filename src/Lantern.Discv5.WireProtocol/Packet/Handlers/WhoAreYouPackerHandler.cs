@@ -100,7 +100,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         _logger.LogInformation("Sent HANDSHAKE packet to {RemoteEndPoint}", returnedResult.RemoteEndPoint);
     }
 
-    private SessionMain? GenerateOrUpdateSession(StaticHeader header,byte[] maskingIv, byte[] destNodeId, IPEndPoint destEndPoint)
+    private ISessionMain? GenerateOrUpdateSession(StaticHeader header,byte[] maskingIv, byte[] destNodeId, IPEndPoint destEndPoint)
     {
         var session = _sessionManager.GetSession(destNodeId, destEndPoint);
 
