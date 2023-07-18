@@ -135,8 +135,9 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
             }
 
             var newRequest = new PendingRequest(destNodeId, existingRequest.Message);
+            
             _requestManager.AddPendingRequest(existingRequest.Message.RequestId, newRequest);
-           
+            
             return existingRequest.Message.EncodeMessage();
         }
         

@@ -51,15 +51,14 @@ public class OrdinaryPacketHandlerTests
     }
 
     [Test]
-    public void Test_PacketType_ShouldReturnOrdinaryType()
+    public void Test_PacketHandlerType_ShouldReturnOrdinaryType()
     {
         Assert.AreEqual(PacketType.Ordinary, new OrdinaryPacketHandler(mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object,mockLoggerFactory.Object).PacketType);
     }
 
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacketWithoutEnr_WhenNodeEntryIsNull(string ip, int port)
+    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacketWithoutEnr_WhenNodeEntryIsNull()
     {
         // Test data
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
@@ -81,7 +80,7 @@ public class OrdinaryPacketHandlerTests
         var handler = new OrdinaryPacketHandler(mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, 
             mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
@@ -97,12 +96,10 @@ public class OrdinaryPacketHandlerTests
     }
 
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenSessionIsNull(string ip, int port)
+    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenSessionIsNull()
     {
         // Test data
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
-        var ipEndpoint = new IPEndPoint(IPAddress.Parse(ip), port);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         
@@ -127,7 +124,7 @@ public class OrdinaryPacketHandlerTests
             .Returns(Task.CompletedTask);
 
         var handler = new OrdinaryPacketHandler(mockSessionManager.Object, mockRoutingTable.Object, mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], ipEndpoint);
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
         
         // Act
         await handler.HandlePacket(fakeResult);
@@ -143,13 +140,11 @@ public class OrdinaryPacketHandlerTests
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }
 
-    [Test] 
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenDecryptedMessageIsNull(string ip, int port)
+    [Test]
+    public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenDecryptedMessageIsNull()
     {
         // Test data
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
-        var ipEndpoint = new IPEndPoint(IPAddress.Parse(ip), port);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         
@@ -180,7 +175,7 @@ public class OrdinaryPacketHandlerTests
 
         // Act
         var handler = new OrdinaryPacketHandler(mockSessionManager.Object, mockRoutingTable.Object, mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], ipEndpoint);
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
         await handler.HandlePacket(fakeResult);
         
         // Assert
@@ -196,12 +191,10 @@ public class OrdinaryPacketHandlerTests
     }
 
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldSendResponseToOrdinaryPacket_WhenReplyIsNotNull(string ip, int port)
+    public async Task Test_HandlePacket_ShouldSendResponseToOrdinaryPacket_WhenReplyIsNotNull()
     {
         // Test data
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
-        var ipEndpoint = new IPEndPoint(IPAddress.Parse(ip), port);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         
@@ -229,7 +222,7 @@ public class OrdinaryPacketHandlerTests
 
         // Act
         var handler = new OrdinaryPacketHandler(mockSessionManager.Object, mockRoutingTable.Object, mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], ipEndpoint);
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
         await handler.HandlePacket(fakeResult);
         
         // Assert
