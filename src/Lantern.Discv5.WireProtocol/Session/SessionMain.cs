@@ -3,7 +3,6 @@ using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.Rlp;
-using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Microsoft.Extensions.Logging;
@@ -70,7 +69,7 @@ public class SessionMain : ISessionMain
     {
         var publicKey = destRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         var destNodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(destRecord);
-        var sharedSecret = GenerateSharedSecret(_sessionKeys.EphemeralPrivateKey, publicKey);
+        var sharedSecret = _sessionCrypto.GenerateSharedSecret(_sessionKeys.EphemeralPrivateKey, publicKey, _sessionKeys.CryptoContext);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         
         if(_challengeData == null)
@@ -88,8 +87,8 @@ public class SessionMain : ISessionMain
 
     public byte[]? DecryptMessageWithNewKeys(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage, HandshakePacketBase handshakePacket, byte[] selfNodeId)
     {
-        var sharedSecret = GenerateSharedSecret(_sessionKeys.PrivateKey, handshakePacket.EphPubkey);
-        
+        var sharedSecret = _sessionCrypto.GenerateSharedSecret(_sessionKeys.PrivateKey, handshakePacket.EphPubkey, _sessionKeys.CryptoContext);
+
         if (handshakePacket.SrcId == null)
         {
             _logger.LogError("Handshake packet does not contain a source node id. Cannot decrypt packet");
@@ -128,7 +127,6 @@ public class SessionMain : ISessionMain
         var encryptedMessage = _aesCrypto.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
         
         _messageCount++;
-        
         return encryptedMessage;
     }
     
@@ -154,7 +152,4 @@ public class SessionMain : ISessionMain
 
         return decryptedMessage;
     }
-
-    private byte[] GenerateSharedSecret(byte[] privateKey, byte[] publicKey) =>
-        _sessionCrypto.GenerateSharedSecret(privateKey, publicKey, _sessionKeys.CryptoContext);
 }
