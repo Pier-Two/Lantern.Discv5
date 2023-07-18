@@ -285,6 +285,65 @@ public class WhoAreYouPacketHandlerTests
             .Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Never);
     }
     
+     [Test]
+    public async Task Test_HandlePacket_ShouldReturn_WhenIdSignatureIsNull()
+    {
+        // Test data
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        
+        // Arrange
+        mockRequestManager
+            .Setup(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()))
+            .Returns(new byte[32]);
+        mockRequestManager
+            .Setup(x => x.GetCachedRequest(It.IsAny<byte[]>()))
+            .Returns((CachedRequest?)null);
+        mockRequestManager
+            .Setup(x => x.GetPendingRequestByNodeId(It.IsAny<byte[]>()))
+            .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
+        mockRoutingTable
+            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+        mockSessionMain
+            .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
+            .Returns((byte[]?)null);
+        mockSessionMain
+            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
+                It.IsAny<byte[]>(), It.IsAny<byte[]>()))
+            .Returns((byte[]?)null);
+        mockSessionManager
+            .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
+            .Returns(mockSessionMain.Object);
+        mockPacketProcessor
+            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
+            .Returns(staticHeader);
+        
+        var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object,mockSessionManager.Object, mockRoutingTable.Object,
+            mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object, 
+            mockPacketProcessor.Object, mockLoggerFactory.Object);
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
+
+        // Act
+        await handler.HandlePacket(fakeResult);
+        
+        mockRequestManager
+            .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable
+            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+        mockSessionManager
+            .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
+        mockRequestManager
+            .Verify(x => x.GetCachedRequest(It.IsAny<byte[]>()), Times.Once);
+        mockRequestManager
+            .Verify(x => x.GetPendingRequestByNodeId(It.IsAny<byte[]>()), Times.Once);
+        mockSessionMain
+            .Verify(x => x.GenerateIdSignature(It.IsAny<byte[]>()), Times.Once);
+        mockSessionMain
+            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Never);
+
+    }
+    
     [Test]
     public async Task Test_HandlePacket_ShouldSendPacket_WhenEncryptedMessageIsNotNull()
     {
