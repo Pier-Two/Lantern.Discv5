@@ -48,9 +48,9 @@ public class HandshakePacketHandler : PacketHandlerBase
         _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
         var packet = returnedResult.Buffer;
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(_packetProcessor.GetStaticHeader(packet));
-        var result = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!, out var publicKey);
-
-        if (!result)
+        var publicKey = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!);
+        
+        if (publicKey == null)
         {
             _logger.LogWarning("Cannot obtain public key from record. Unable to verify ID signature from HANDSHAKE packet");
             return;
@@ -66,7 +66,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         
         var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.NodeId);
 
-        if (idSignatureVerificationResult == false)
+        if (!idSignatureVerificationResult)
         {
             _logger.LogError("ID signature verification failed. Cannot decrypt message in the HANDSHAKE packet");
             return;
@@ -91,10 +91,10 @@ public class HandshakePacketHandler : PacketHandlerBase
         _logger.LogDebug("Sent response to HANDSHAKE packet");
     }
 
-    private bool ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId, out byte[] senderPublicKey)
+    private byte[]? ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId)
     {
-        EnrRecord? senderRecord = null;
-    
+        EnrRecord? senderRecord = null; 
+        
         if (handshakePacketBase.Record?.Length > 0)
         {
             var recordFactory = new EnrRecordFactory();
@@ -107,21 +107,18 @@ public class HandshakePacketHandler : PacketHandlerBase
             if (nodeEntry != null)
             {
                 senderRecord = nodeEntry.Record;
-                senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
-                return true;
+                return senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
             }
         }
 
         if (senderRecord == null)
         {
-            senderPublicKey = Array.Empty<byte>();
-            return false;
+            return null;
         }
 
         _routingTable.UpdateFromEnr(senderRecord);
-    
-        senderPublicKey = senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
-        return true;
+        
+        return senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
     }
     
     private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 

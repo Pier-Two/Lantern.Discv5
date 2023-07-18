@@ -60,6 +60,7 @@ public class RequestManager : IRequestManager
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
         var result = _pendingRequests.ContainsKey(requestId);
+        
         _pendingRequests.AddOrUpdate(requestId, request, (_, _) => request);
 
         if (!result)

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
@@ -18,6 +17,7 @@ using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
 
+[TestFixture]
 public class HandshakePacketHandlerTests
 {
     private Mock<IIdentityManager> mockIdentityManager;
@@ -53,16 +53,14 @@ public class HandshakePacketHandlerTests
     }
     
     [Test]
-    public void Test_PacketType_ShouldReturn_HandshakeType()
+    public void Test_PacketHandlerType_ShouldReturn_HandshakeType()
     {
         Assert.AreEqual(PacketType.Handshake, new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object).PacketType);
     }
 
-
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldReturn_WhenPublicKeyIsUnknown(string ip, int port)
+    public async Task Test_HandlePacket_ShouldReturn_WhenPublicKeyIsUnknown()
     {
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var handShakePacket = Convert.FromHexString(
@@ -77,7 +75,7 @@ public class HandshakePacketHandlerTests
         // Arrange
         var handler = new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
@@ -87,10 +85,8 @@ public class HandshakePacketHandlerTests
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Never);
     }
     
-    
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldReturn_WhenSessionIsNull(string ip, int port)
+    public async Task Test_HandlePacket_ShouldReturn_WhenSessionIsNull()
     {
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("discv5", Convert.FromHexString("0001"), Convert.FromHexString("28422CCF35DCE7D21589520AF95E0C9AA0693CCD62E06E094E14C244EA3B735D40218E8CA024CD8B4EE54D247C5925CEF987DDF21E2868E4B9923EE7BAB9550D94330007BF291598DE6E790F6E857DF92422A8F24BBC08037861E0BDEBAB6E2199A8025E2C25291FA773566C3BC8E1C8025138393926452FA8666271579B399E32C91B"), 
@@ -114,7 +110,7 @@ public class HandshakePacketHandlerTests
         // Arrange
         var handler = new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
@@ -126,8 +122,7 @@ public class HandshakePacketHandlerTests
     }
     
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldReturn_WhenIdSignatureVerificationFails(string ip, int port)
+    public async Task Test_HandlePacket_ShouldReturn_WhenIdSignatureVerificationFails()
     {
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("discv5", Convert.FromHexString("0001"), Convert.FromHexString("28422CCF35DCE7D21589520AF95E0C9AA0693CCD62E06E094E14C244EA3B735D40218E8CA024CD8B4EE54D247C5925CEF987DDF21E2868E4B9923EE7BAB9550D94330007BF291598DE6E790F6E857DF92422A8F24BBC08037861E0BDEBAB6E2199A8025E2C25291FA773566C3BC8E1C8025138393926452FA8666271579B399E32C91B"), 
@@ -149,7 +144,7 @@ public class HandshakePacketHandlerTests
         // Arrange
         var handler = new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
@@ -162,8 +157,7 @@ public class HandshakePacketHandlerTests
     }
     
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldReturn_WhenMessageDecryptionFails(string ip, int port)
+    public async Task Test_HandlePacket_ShouldReturn_WhenMessageDecryptionFails()
     {
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("discv5", Convert.FromHexString("0001"), Convert.FromHexString("28422CCF35DCE7D21589520AF95E0C9AA0693CCD62E06E094E14C244EA3B735D40218E8CA024CD8B4EE54D247C5925CEF987DDF21E2868E4B9923EE7BAB9550D94330007BF291598DE6E790F6E857DF92422A8F24BBC08037861E0BDEBAB6E2199A8025E2C25291FA773566C3BC8E1C8025138393926452FA8666271579B399E32C91B"), 
@@ -188,7 +182,7 @@ public class HandshakePacketHandlerTests
         // Arrange
         var handler = new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
@@ -202,8 +196,7 @@ public class HandshakePacketHandlerTests
     }
     
     [Test]
-    [TestCase("18.223.219.100", 9000)]
-    public async Task Test_HandlePacket_ShouldReturn_WhenThereIsNoReplyCreated(string ip, int port)
+    public async Task Test_HandlePacket_ShouldReturn_WhenThereIsNoReplyCreated()
     {
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("discv5", Convert.FromHexString("0001"), Convert.FromHexString("28422CCF35DCE7D21589520AF95E0C9AA0693CCD62E06E094E14C244EA3B735D40218E8CA024CD8B4EE54D247C5925CEF987DDF21E2868E4B9923EE7BAB9550D94330007BF291598DE6E790F6E857DF92422A8F24BBC08037861E0BDEBAB6E2199A8025E2C25291FA773566C3BC8E1C8025138393926452FA8666271579B399E32C91B"), 
@@ -235,7 +228,7 @@ public class HandshakePacketHandlerTests
         // Arrange
         var handler = new HandshakePacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockMessageResponder.Object, mockUdpConnection.Object, mockPacketBuilder.Object, mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse(ip), port));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
 
         // Act
         await handler.HandlePacket(fakeResult);
