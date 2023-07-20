@@ -4,7 +4,6 @@ using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
-using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using NUnit.Framework;
 
