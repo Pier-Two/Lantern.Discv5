@@ -30,7 +30,21 @@ public class IdentityManagerTests
     }
     
     [Test]
-    public void Test_IdentityManager_ShouldUpdateIpAndPortCorrectly()
+    public void Test_IdentityManager_ShouldResultInTrueWhenIpV4AndPortIsSet()
+    {
+        _identityManager.UpdateIpAddressAndPort(new IPEndPoint(ConnectionUtility.GetLocalIpAddress(), 1234));
+        Assert.IsTrue(_identityManager.IsIpAddressAndPortSet());
+    }
+    
+    [Test]
+    public void Test_IdentityManager_ShouldResultInTrueWhenIpV6AndPortIsSet()
+    {
+        _identityManager.UpdateIpAddressAndPort(new IPEndPoint(IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), 1234));
+        Assert.IsTrue(_identityManager.IsIpAddressAndPortSet());
+    }
+    
+    [Test]
+    public void Test_IdentityManager_ShouldUpdateIpV4AndPortCorrectly()
     {
         var node = _identityManager.Record;
         
@@ -42,5 +56,20 @@ public class IdentityManagerTests
         
         Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp>(EnrContentKey.Ip).Value);
         Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+    }
+    
+    [Test]
+    public void Test_IdentityManager_ShouldUpdateIpV6AndPortCorrectly()
+    {
+        var node = _identityManager.Record;
+        
+        Assert.IsFalse(node.HasKey(EnrContentKey.Ip6));
+        Assert.IsFalse(node.HasKey(EnrContentKey.Udp6));
+        var endpoint = new IPEndPoint(IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), 1234);
+
+        _identityManager.UpdateIpAddressAndPort(endpoint);
+        
+        Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp6>(EnrContentKey.Ip6).Value);
+        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp6>(EnrContentKey.Udp6).Value);
     }
 }
