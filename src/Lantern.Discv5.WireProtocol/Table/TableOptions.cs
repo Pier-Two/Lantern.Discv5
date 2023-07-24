@@ -72,9 +72,12 @@ public class TableOptions
             return this;
         }
 
-        public Builder WithBootstrapEnrs(IEnumerable<EnrRecord> bootstrapEnrs)
+        public Builder WithBootstrapEnrs(string[] bootstrapEnrs)
         {
-            BootstrapEnrs = bootstrapEnrs.ToArray();
+            BootstrapEnrs = bootstrapEnrs
+                .Select(enr => new EnrRecordFactory().CreateFromString(enr))
+                .ToArray();
+            
             return this;
         }
 
