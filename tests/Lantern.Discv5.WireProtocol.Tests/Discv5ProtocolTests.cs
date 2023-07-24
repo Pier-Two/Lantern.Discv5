@@ -7,7 +7,7 @@ public class Discv5ProtocolTests
 {
     private Discv5Protocol _discv5Protocol = null!;
 
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
         var bootstrapEnrs = new[]
@@ -33,7 +33,5 @@ public class Discv5ProtocolTests
                 Console.WriteLine("Closest node: " + Convert.ToHexString(node.Id));
             }
         }
-
-        await _discv5Protocol.StopProtocolAsync();
     }
 } 

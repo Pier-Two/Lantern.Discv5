@@ -10,9 +10,6 @@ using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
-
-namespace Lantern.Discv5.WireProtocol.Tests;
 
 public class MockMessageResponderTests
 {

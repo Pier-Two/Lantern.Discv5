@@ -90,9 +90,9 @@ public class LookupManager : ILookupManager
     {
         foreach (var bucket in _pathBuckets.Where(bucket => !bucket.IsComplete && bucket.Responses.Any(node => node.Key.SequenceEqual(senderNodeId))))
         {
-            if (bucket.ExpectedResponses.ContainsKey(senderNodeId))
+            if (bucket.ExpectedResponses.TryGetValue(senderNodeId, out var value))
             {
-                bucket.ExpectedResponses[senderNodeId]--;
+                bucket.ExpectedResponses[senderNodeId] = value - 1;
             }
             else
             {
@@ -104,7 +104,7 @@ public class LookupManager : ILookupManager
                 if (!bucket.PendingQueries[senderNodeId].Task.IsCompleted)
                 {
                     bucket.PendingQueries[senderNodeId].SetResult(true);
-                    bucket.DisposeTimer(senderNodeId); // Stop timeout timer
+                    bucket.DisposeTimer(senderNodeId);
                 }
             }
             
