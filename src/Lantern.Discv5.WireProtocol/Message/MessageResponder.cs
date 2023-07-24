@@ -179,20 +179,14 @@ public class MessageResponder : IMessageResponder
         
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
-        
-        TalkRespMessage? talkRespMessage;
-        
         var result = _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
 
         if (result == null)
         {
-            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, Array.Empty<byte>());
+            return null;
         }
-        else
-        {
-            talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, result);
-        }
-        
+
+        var talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, result);
         return talkRespMessage.EncodeMessage();
     }
     
@@ -207,6 +201,14 @@ public class MessageResponder : IMessageResponder
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
         
         var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(message);
+        var pendingRequest = GetPendingRequest(decodedMessage);
+        
+        if (pendingRequest == null)
+        {
+            _logger.LogWarning("Received TALKRESP message with no pending request. Ignoring message");
+            return null; 
+        }
+        
         _talkResponder.HandleResponse(decodedMessage.Response);
 
         return null;

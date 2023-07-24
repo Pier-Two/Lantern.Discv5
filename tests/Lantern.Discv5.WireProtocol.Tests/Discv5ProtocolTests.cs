@@ -20,7 +20,7 @@ public class Discv5ProtocolTests
     }
     
     [Test]
-    public async Task Test()
+    public async Task Test_Discv5Protocol_PerformLookupAsync()
     {
         _discv5Protocol.StartProtocol();
 

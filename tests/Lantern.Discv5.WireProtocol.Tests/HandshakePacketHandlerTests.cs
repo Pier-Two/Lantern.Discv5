@@ -44,9 +44,6 @@ public class HandshakePacketHandlerTests
         logger = new Mock<ILogger<HandshakePacketHandler>>();
         mockPacketProcessor = new Mock<IPacketProcessor>();
         mockLoggerFactory = new Mock<ILoggerFactory>();
-        logger
-            .Setup(x => x.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
         mockLoggerFactory
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(logger.Object);
@@ -217,7 +214,7 @@ public class HandshakePacketHandlerTests
             .Returns(true);
         mockMessageResponder
             .Setup(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
-            .Returns(Task.FromResult<byte[]>(null));
+            .Returns(Task.FromResult<byte[]?>(null));
         mockSessionMain
             .Setup(x => x.DecryptMessageWithNewKeys(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<HandshakePacketBase>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);

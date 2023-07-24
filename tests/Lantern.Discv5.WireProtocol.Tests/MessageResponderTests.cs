@@ -8,6 +8,7 @@ using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -86,12 +87,12 @@ public class MessageResponderTests
 
     private class TestTalkReqAndRespHandler : ITalkReqAndRespHandler
     {
-        public byte[]? HandleRequest(byte[] protocol, byte[] request)
+        public byte[] HandleRequest(byte[] protocol, byte[] request)
         {
             return request;
         }
 
-        public byte[]? HandleResponse(byte[] response)
+        public byte[] HandleResponse(byte[] response)
         {
             return response;
         }
