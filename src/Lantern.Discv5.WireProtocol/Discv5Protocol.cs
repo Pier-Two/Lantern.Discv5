@@ -79,51 +79,59 @@ public class Discv5Protocol
         return null;
     }
     
-    public async Task SendPingAsync(EnrRecord destinationRecord)
+    public async Task<bool> SendPingAsync(EnrRecord destinationRecord)
     {
         try
         {
             await _packetManager.SendPacket(destinationRecord, MessageType.Ping);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destinationRecord);
+            return false;
         }
     }
 
-    public async Task SendFindNodeAsync(EnrRecord destinationRecord, byte[] nodeId)
+    public async Task<bool> SendFindNodeAsync(EnrRecord destinationRecord, byte[] nodeId)
     {
         try
         {
             await _packetManager.SendPacket(destinationRecord, MessageType.FindNode, nodeId);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destinationRecord);
+            return false;
         }
     }
     
-    public async Task SendTalkReqAsync(EnrRecord destinationRecord, byte[] protocol, byte[] request)
+    public async Task<bool> SendTalkReqAsync(EnrRecord destinationRecord, byte[] protocol, byte[] request)
     {
         try
         {
             await _packetManager.SendPacket(destinationRecord, MessageType.TalkReq, protocol, request);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destinationRecord);
+            return false;
         }
     }
     
-    public async Task SendTalkRespAsync(EnrRecord destinationRecord, byte[] response)
+    public async Task<bool> SendTalkRespAsync(EnrRecord destinationRecord, byte[] response)
     {
         try
         {
             await _packetManager.SendPacket(destinationRecord, MessageType.TalkResp, response);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destinationRecord);
+            return false;
         }
     }
 }

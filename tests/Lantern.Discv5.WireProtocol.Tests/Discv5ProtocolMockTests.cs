@@ -1,3 +1,4 @@
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
@@ -158,6 +159,135 @@ public class Discv5ProtocolMockTests
         SetupServices();
         var result = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
         Assert.IsNull(result);
+    }
+    
+    [Test]
+    public async Task SendPingAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    {
+        // Arrange
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        SetupServices();
+
+        // Act
+        var result  = await _discv5Protocol.SendPingAsync(enrRecord);
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.Ping, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsTrue(result);
+    }
+
+    [Test]
+    public async Task SendPingAsync_ShouldReturnFalse_WhenExceptionThrown()
+    {
+        // Arrange
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var exceptionToThrow = new Exception("Test exception");
+    
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .ThrowsAsync(exceptionToThrow);
+        
+        SetupServices();
+
+        // Act
+        var result  = await _discv5Protocol.SendPingAsync(enrRecord);
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.Ping, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsFalse(result);
+    }
+
+    [Test]
+    public async Task SendFindNodeAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Returns(Task.CompletedTask);
+        
+        SetupServices();
+        
+        var result = await _discv5Protocol.SendFindNodeAsync(enrRecord, RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.FindNode, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsTrue(result);
+    }
+    
+    [Test]
+    public async Task SendFindNodeAsync_ShouldReturnFalse_WhenExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var exceptionToThrow = new Exception("Test exception");
+    
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .ThrowsAsync(exceptionToThrow);
+
+        SetupServices();
+        
+        var result = await _discv5Protocol.SendFindNodeAsync(enrRecord, RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.FindNode, It.IsAny<byte[][]>()), Times.Once);
+        Assert.False(result);
+    }
+
+    [Test]
+    public async Task SendTalkReqAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Returns(Task.CompletedTask);
+        
+        SetupServices();
+        var result = await _discv5Protocol.SendTalkReqAsync(enrRecord, RandomUtility.GenerateRandomData(32), RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsTrue(result);
+    }
+
+    [Test]
+    public async Task SendTalkReqAsync_ShouldReturnFalse_WhenExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var exceptionToThrow = new Exception("Test exception");
+        
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .ThrowsAsync(exceptionToThrow);
+
+        SetupServices();
+        
+        var result = await _discv5Protocol.SendTalkReqAsync(enrRecord, RandomUtility.GenerateRandomData(32), RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsFalse(result);
+    }
+    
+    [Test]
+    public async Task SendTalkRespAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Returns(Task.CompletedTask);
+        
+        SetupServices();
+        var result = await _discv5Protocol.SendTalkRespAsync(enrRecord, RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkResp, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsTrue(result);
+    }
+
+    [Test]
+    public async Task SendTalkRespAsync_ShouldReturnFalse_WhenExceptionIsThrown()
+    {
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var exceptionToThrow = new Exception("Test exception");
+        
+        mockPacketManager
+            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .ThrowsAsync(exceptionToThrow);
+
+        SetupServices();
+        
+        var result = await _discv5Protocol.SendTalkRespAsync(enrRecord, RandomUtility.GenerateRandomData(32));
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkResp, It.IsAny<byte[][]>()), Times.Once);
+        Assert.IsFalse(result);
     }
 
     private void SetupServices()
