@@ -96,7 +96,7 @@ public class UdpConnection : IUdpConnection, IDisposable
         _udpClient.Dispose();
     }
 
-    private static void ValidatePacketSize(IReadOnlyCollection<byte> data)
+    public static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
         if (data.Count < PacketConstants.MinPacketSize) 
             throw new InvalidPacketException("Packet is too small");
