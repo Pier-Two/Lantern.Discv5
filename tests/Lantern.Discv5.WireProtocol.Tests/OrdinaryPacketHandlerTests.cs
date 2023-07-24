@@ -42,9 +42,6 @@ public class OrdinaryPacketHandlerTests
         mockSessionMain = new Mock<ISessionMain>();
         logger = new Mock<ILogger<OrdinaryPacketHandler>>();
         mockLoggerFactory = new Mock<ILoggerFactory>();
-        logger
-            .Setup(x => x.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
-            It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
         mockLoggerFactory
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(logger.Object);
