@@ -46,7 +46,7 @@ public sealed class ConnectionManager : IConnectionManager
         _connection.Close();        
     }
     
-    private async Task HandleIncomingPacketsAsync(CancellationToken token)
+    public async Task HandleIncomingPacketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting HandleIncomingPacketsAsync");
 

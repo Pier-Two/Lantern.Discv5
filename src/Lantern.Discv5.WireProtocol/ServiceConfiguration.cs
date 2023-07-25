@@ -37,8 +37,6 @@ public static class ServiceConfiguration
         services.AddSingleton<IRoutingTable, RoutingTable>();
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
         services.AddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
-        services.AddTransient<ICancellationHandler, CancellationHandler>();
-        services.AddSingleton<ITaskManager, TaskManager>( );
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
         services.AddSingleton<IAesCrypto, AesCrypto>();
