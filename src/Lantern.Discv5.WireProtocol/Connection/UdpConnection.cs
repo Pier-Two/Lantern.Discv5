@@ -4,25 +4,26 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
 using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 using IPEndPoint = System.Net.IPEndPoint;
 using OperationCanceledException = System.OperationCanceledException;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public class UdpConnection : IUdpConnection, IDisposable
+public class UdpConnection : IUdpConnection
 {
     private readonly UdpClient _udpClient;
     private readonly ILogger<UdpConnection> _logger;
     private readonly Channel<UdpReceiveResult> _messageChannel; 
-    private readonly ConnectionOptions _connectionOptions;
-
-    public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory)
+    private readonly IGracefulTaskRunner _taskRunner;
+  
+    public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory, IGracefulTaskRunner taskRunner)
     {
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
         _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
-        _connectionOptions = options;
         _logger = loggerFactory.CreateLogger<UdpConnection>(); 
+        _taskRunner = taskRunner;
     }
 
     public async Task SendAsync(byte[] data, IPEndPoint destination)
@@ -36,39 +37,15 @@ public class UdpConnection : IUdpConnection, IDisposable
     public async Task ListenAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting ListenAsync");
-        try
-        {
-            while (!token.IsCancellationRequested)
+        
+        await _taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
             {
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    var returnedResult = await ReceiveAsync(token).ConfigureAwait(false);
+                    var returnedResult = await ReceiveAsync(cancellationToken).ConfigureAwait(false);
                     _messageChannel.Writer.TryWrite(returnedResult);
                 }
-                catch (UdpTimeoutException)
-                {
-                    // Do nothing, continue listening
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error receiving packet");
-                }
-            }
-        }
-        finally
-        {
-            _logger.LogInformation("Stopped ListenAsync");
-            CompleteMessageChannel();
-        }
-    }
-
-    public async Task<UdpReceiveResult> ReceiveAsync(CancellationToken token = default)
-    {
-        var receiveResult = await ReceiveAsyncWithTimeout(token).ConfigureAwait(false);
-        ValidatePacketSize(receiveResult.Buffer);
-        
-        _logger.LogDebug("Received packet from {Source}", receiveResult.RemoteEndPoint);
-        return receiveResult;
+            }, "Listen", token);
     }
 
     public async IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync([EnumeratorCancellation] CancellationToken token = default)
@@ -79,49 +56,31 @@ public class UdpConnection : IUdpConnection, IDisposable
         }
     }
 
-    public void CompleteMessageChannel()
-    {
-        _messageChannel.Writer.TryComplete();
-    }
-
     public void Close()
     {
         _logger.LogInformation("Closing UdpConnection");
         _udpClient.Close();
-    }
-
-    public void Dispose()
-    {
-        _logger.LogInformation("Disposing UdpConnection");
         _udpClient.Dispose();
+        _messageChannel.Writer.TryComplete();
     }
 
     public static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
-        if (data.Count < PacketConstants.MinPacketSize) 
-            throw new InvalidPacketException("Packet is too small");
-
-        if (data.Count > PacketConstants.MaxPacketSize)
-            throw new InvalidPacketException("Packet is too large");
+        switch (data.Count)
+        {
+            case < PacketConstants.MinPacketSize:
+                throw new InvalidPacketException("Packet is too small");
+            case > PacketConstants.MaxPacketSize:
+                throw new InvalidPacketException("Packet is too large");
+        }
     }
-
-    private async Task<UdpReceiveResult> ReceiveAsyncWithTimeout(CancellationToken token = default)
+    
+    private async Task<UdpReceiveResult> ReceiveAsync(CancellationToken token = default)
     {
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        cts.CancelAfter(_connectionOptions.ReceiveTimeoutMs);
-
-        try
-        {
-            return await _udpClient.ReceiveAsync(cts.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            if (token.IsCancellationRequested)
-            {
-                _logger.LogInformation("ReceiveAsync was cancelled gracefully");
-            }
-
-            throw new UdpTimeoutException("Receive timed out");
-        }
+        var receiveResult = await _udpClient.ReceiveAsync(token).ConfigureAwait(false);
+        ValidatePacketSize(receiveResult.Buffer);
+        
+        _logger.LogDebug("Received packet from {Source}", receiveResult.RemoteEndPoint);
+        return receiveResult;
     }
 }

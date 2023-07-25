@@ -1,9 +1,6 @@
-
-using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrFactory;
-using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -15,6 +12,8 @@ public class TableManagerTests
     private Mock<IPacketManager> mockPacketManager = null!;
     private Mock<ILookupManager> mockLookupManager = null!;
     private Mock<IRoutingTable> mockRoutingTable = null!;
+    private Mock<ICancellationTokenSourceWrapper> mockCancellationTokenSource = null!;
+    private Mock<IGracefulTaskRunner> mockGracefulTaskRunner = null!;
     private Mock<ILogger<TableManager>> mockLogger = null!;
     private Mock<ILoggerFactory> mockLoggerFactory = null!;
     private TableOptions tableOptions = null!;
@@ -24,6 +23,8 @@ public class TableManagerTests
     {
         mockPacketManager = new Mock<IPacketManager>();
         mockLookupManager = new Mock<ILookupManager>();
+        mockCancellationTokenSource = new Mock<ICancellationTokenSourceWrapper>();
+        mockGracefulTaskRunner = new Mock<IGracefulTaskRunner>();
         mockRoutingTable = new Mock<IRoutingTable>();
         mockLogger = new Mock<ILogger<TableManager>>();
         tableOptions = TableOptions.Default;
@@ -46,13 +47,12 @@ public class TableManagerTests
             .Setup(x => x.GetTotalEntriesCount())
             .Returns(10);
 
-        var tableManager = new TableManager(mockPacketManager.Object, mockLookupManager.Object, mockRoutingTable.Object,
-            mockLoggerFactory.Object, tableOptions);
+        var tableManager = new TableManager(mockPacketManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
         tableManager.StartTableManagerAsync();
         await tableManager.StopTableManagerAsync();
 
-        Assert.IsTrue(tableManager.ShutdownCts.IsCancellationRequested);
+        mockCancellationTokenSource.Verify(x => x.Cancel(), Times.Once);
     }
 
     [Test]
@@ -68,11 +68,9 @@ public class TableManagerTests
             .Setup(x => x.GetTotalEntriesCount())
             .Returns(10);
         
-        var tableManager = new TableManager(mockPacketManager.Object, mockLookupManager.Object, mockRoutingTable.Object,
-            mockLoggerFactory.Object, tableOptions);
-        
+        var tableManager = new TableManager(mockPacketManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
+
         tableManager.StartTableManagerAsync();
-        await tableManager.PingNodeAsync();
+        await tableManager.StopTableManagerAsync();
     }
-    
 }

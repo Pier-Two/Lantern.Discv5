@@ -222,6 +222,7 @@ public class LookupManager : ILookupManager
             var unqueriedNode = bucket.DiscoveredNodes
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
+                .Where(node => node.Status == NodeStatus.None)
                 .FirstOrDefault(node => !_requestManager.ContainsCachedRequest(node.Id));
     
             if(unqueriedNode == null)

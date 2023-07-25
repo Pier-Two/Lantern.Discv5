@@ -70,5 +70,4 @@ public class LruCacheTests
         Assert.AreEqual(1, _lruCache.Count);
         Assert.AreEqual(sessionValue, value);
     }
-    
 }

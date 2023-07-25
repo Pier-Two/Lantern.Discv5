@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class MessageRequester : IMessageRequester // Combine cached and pending request methods
+public class MessageRequester : IMessageRequester 
 {
     private readonly IIdentityManager _identityManager;
     private readonly IRequestManager _requestManager;
@@ -26,7 +26,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var pendingRequest = new PendingRequest(destNodeId, pingMessage);
         var result = _requestManager.AddPendingRequest(pingMessage.RequestId, pendingRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(pingMessage.RequestId));
             return null;
@@ -43,7 +43,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var cachedRequest = new CachedRequest(destNodeId, pingMessage);
         var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
@@ -64,7 +64,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var pendingRequest = new PendingRequest(destNodeId, findNodesMessage);
         var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, pendingRequest);
 
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
@@ -85,7 +85,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var cachedRequest = new CachedRequest(destNodeId, findNodesMessage);
         var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
@@ -103,7 +103,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var pendingRequest = new PendingRequest(destNodeId, talkReqMessage);
         var result = _requestManager.AddPendingRequest(talkReqMessage.RequestId, pendingRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkReqMessage.RequestId));
             return null;
@@ -121,7 +121,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var pendingRequest = new PendingRequest(destNodeId, talkRespMessage);
         var result = _requestManager.AddPendingRequest(talkRespMessage.RequestId, pendingRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
             return null;
@@ -139,7 +139,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var cachedRequest = new CachedRequest(destNodeId, talkReqMessage);
         var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
@@ -157,7 +157,7 @@ public class MessageRequester : IMessageRequester // Combine cached and pending 
         var cachedRequest = new CachedRequest(destNodeId, talkRespMessage);
         var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
-        if(result == false)
+        if(!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
