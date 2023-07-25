@@ -5,7 +5,7 @@ public interface IRequestManager
     void StartRequestManager();
     
     Task StopRequestManagerAsync();
-    
+
     bool AddPendingRequest(byte[] requestId, PendingRequest request);
 
     bool AddCachedRequest(byte[] requestId, CachedRequest request);

@@ -5,6 +5,7 @@ using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Packet.Handlers;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -30,10 +31,14 @@ public static class ServiceConfiguration
         services.AddSingleton<IPacketManager, PacketManager>();
         services.AddSingleton<IIdentityManager, IdentityManager>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
+        services.AddTransient<ICancellationTokenSourceWrapper, CancellationTokenSourceWrapper>();
         services.AddSingleton<IConnectionManager, ConnectionManager>();
         services.AddSingleton<IRequestManager, RequestManager>();
         services.AddSingleton<IRoutingTable, RoutingTable>();
         services.AddSingleton<ISessionCrypto, SessionCrypto>();
+        services.AddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
+        services.AddTransient<ICancellationHandler, CancellationHandler>();
+        services.AddSingleton<ITaskManager, TaskManager>( );
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
         services.AddSingleton<IAesCrypto, AesCrypto>();

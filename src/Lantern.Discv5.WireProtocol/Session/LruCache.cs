@@ -70,7 +70,7 @@ public class LruCache<TKey, TValue>
         _cache.TryRemove(node.Value.Key, out _);
     }
 
-    private class CacheItem
+    private sealed class CacheItem
     {
         public CacheItem(TKey k, TValue v)
         {

@@ -12,43 +12,39 @@ public class TableManager : ITableManager
     private readonly IRoutingTable _routingTable;
     private readonly TableOptions _tableOptions;
     private readonly ILogger<TableManager> _logger;
+    private readonly ICancellationTokenSourceWrapper _shutdownCts;
+    private readonly IGracefulTaskRunner _taskRunner;
     private Task? _initializeTask;
     private Task? _refreshTask;
     private Task? _pingTask;
     
-    public TableManager(IPacketManager packetManager, ILookupManager lookupManager, IRoutingTable routingTable, ILoggerFactory loggerFactory, TableOptions tableOptions)
+    public TableManager(IPacketManager packetManager, ILookupManager lookupManager, IRoutingTable routingTable, ILoggerFactory loggerFactory, ICancellationTokenSourceWrapper cts, IGracefulTaskRunner taskRunner, TableOptions tableOptions)
     {
         _packetManager = packetManager;
         _lookupManager = lookupManager;
         _routingTable = routingTable;
         _tableOptions = tableOptions;
         _logger = loggerFactory.CreateLogger<TableManager>();
-        ShutdownCts = new CancellationTokenSource();
+        _taskRunner = taskRunner;
+        _shutdownCts = cts;
     }
-    
-    public CancellationTokenSource ShutdownCts { get; }
 
     public void StartTableManagerAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
         _initializeTask = InitialiseFromBootstrapAsync();
-        _refreshTask = RefreshBucketsAsync();
-        _pingTask = PingNodeAsync();
+        _refreshTask = _taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", _shutdownCts.GetToken());
+        _pingTask = _taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", _shutdownCts.GetToken());
     }
     
     public async Task StopTableManagerAsync()
     {
         _logger.LogInformation("Stopping TableManagerAsync");
-        ShutdownCts.Cancel();
-        
-        try
-        {
-            if (_initializeTask != null && _refreshTask != null && _pingTask != null)
-            {
-                await Task.WhenAll(_initializeTask, _refreshTask, _pingTask).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException) when (ShutdownCts.IsCancellationRequested)
+        _shutdownCts.Cancel();
+
+        await Task.WhenAll(_initializeTask, _refreshTask, _pingTask).ConfigureAwait(false);
+	
+        if (_shutdownCts.IsCancellationRequested())
         {
             _logger.LogInformation("TableManagerAsync was canceled gracefully");
         }
@@ -77,63 +73,36 @@ public class TableManager : ITableManager
         }
     }
 
-    public async Task RefreshBucketsAsync()
+    public async Task RefreshBucketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting RefreshBucketsAsync");
-        
-        try
+    
+        while (!token.IsCancellationRequested)
         {
-            while (!ShutdownCts.IsCancellationRequested)
-            {
-                await RefreshBucket();
-                await Task.Delay(_tableOptions.RefreshIntervalMilliseconds, ShutdownCts.Token)
-                    .ConfigureAwait(false);
-            }
+            await RefreshBucket().ConfigureAwait(false);
+            await Task.Delay(_tableOptions.RefreshIntervalMilliseconds, token).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (ShutdownCts.IsCancellationRequested)
-        {
-            _logger.LogInformation("RefreshBucketsAsync was canceled gracefully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in RefreshBucketsAsync");
-        }
-        
-        _logger.LogInformation("RefreshBucketsAsync completed");
     }
     
-    public async Task PingNodeAsync()
+    public async Task PingNodeAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting PingNodeAsync");
-        
-        try
+    
+        while (!token.IsCancellationRequested)
         {
-            while (!ShutdownCts.IsCancellationRequested)
-            {
-                if (_routingTable.GetTotalEntriesCount() <= 0) 
-                    continue;
-                
-                await Task.Delay(_tableOptions.PingIntervalMilliseconds, ShutdownCts.Token).ConfigureAwait(false);
-                
-                var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
-                var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();
-                
-                if (nodeEntry == null)
-                    continue;
+            if (_routingTable.GetTotalEntriesCount() <= 0) 
+                continue;
+        
+            await Task.Delay(_tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
+        
+            var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
+            var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();
+        
+            if (nodeEntry == null)
+                continue;
 
-                await _packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
-            }
+            await _packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
         }
-        catch (OperationCanceledException) when (ShutdownCts.IsCancellationRequested)
-        {
-            _logger.LogInformation("PingNodeAsync was canceled gracefully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in PingNodeAsync");
-        }
-        
-        _logger.LogInformation("PingNodeAsync completed");
     }
 
     public async Task RefreshBucket()

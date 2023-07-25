@@ -11,5 +11,5 @@ public interface IUdpConnection
 
     IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync(CancellationToken token = default);
 
-    void CompleteMessageChannel();
+    void Close();
 }
