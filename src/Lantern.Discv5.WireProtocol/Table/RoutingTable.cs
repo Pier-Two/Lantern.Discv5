@@ -22,11 +22,10 @@ public class RoutingTable : IRoutingTable
     
     public TableOptions TableOptions { get; }
 
-    public int GetTotalEntriesCount() => _buckets.Sum(bucket => bucket.Nodes.Count() + bucket.ReplacementCache.Count());
+    public int GetTotalEntriesCount() => _buckets.ToList().Sum(bucket => bucket.Nodes.Count() + bucket.ReplacementCache.Count());
 
-    public int GetTotalActiveNodesCount() => _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive) + bucket.ReplacementCache.Count(IsNodeConsideredLive));
-
-    public NodeTableEntry[] GetAllNodeEntries() => _buckets.SelectMany(bucket => bucket.Nodes.Concat(bucket.ReplacementCache)).ToArray();
+    public int GetTotalActiveNodesCount() => _buckets.ToList().Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive) + bucket.ReplacementCache.Count(IsNodeConsideredLive));
+    public NodeTableEntry[] GetAllNodeEntries() => _buckets.ToList().SelectMany(bucket => bucket.Nodes.Concat(bucket.ReplacementCache)).ToArray();
     
     public void UpdateFromEntry(NodeTableEntry nodeEntry)
     {
