@@ -33,7 +33,7 @@ public class AesCrypto : IAesCrypto
         return cipherText;
     }
 
-    public byte[] AesCtrDecrypt(byte[] maskingKey, byte[] maskingIv, byte[] maskedHeader)
+    public byte[]? AesCtrDecrypt(byte[] maskingKey, byte[] maskingIv, byte[] maskedHeader)
     {
         if (maskingKey.Length != AesBlockSize || maskingIv.Length != AesBlockSize)
         {
@@ -44,8 +44,18 @@ public class AesCrypto : IAesCrypto
         var parameters = CreateAesCtrCipherParameters(maskingKey, maskingIv);
 
         cipher.Init(false, parameters);
+        byte[]? result;
+        
+        try
+        {
+            result = cipher.DoFinal(maskedHeader);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
 
-        return cipher.DoFinal(maskedHeader);
+        return result;
     }
     
     public byte[] AesGcmEncrypt(byte[] key, byte[] nonce, byte[] plaintext, byte[] ad)
@@ -63,7 +73,7 @@ public class AesCrypto : IAesCrypto
         return ciphertext;
     }
     
-    public byte[] AesGcmDecrypt(byte[] key, byte[] nonce, byte[] ciphertext, byte[] ad)
+    public byte[]? AesGcmDecrypt(byte[] key, byte[] nonce, byte[] ciphertext, byte[] ad)
     {
         var cipher = new GcmBlockCipher(new AesEngine());
         var parameters = new AeadParameters(new KeyParameter(key), GcmTagSize, nonce, ad);
@@ -72,8 +82,16 @@ public class AesCrypto : IAesCrypto
 
         var plaintext = new byte[cipher.GetOutputSize(ciphertext.Length)];
         var len = cipher.ProcessBytes(ciphertext, 0, ciphertext.Length, plaintext, 0);
-        cipher.DoFinal(plaintext, len);
 
+        try
+        {
+            cipher.DoFinal(plaintext, len);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+        
         return plaintext;
     }
     

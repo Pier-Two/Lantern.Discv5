@@ -82,13 +82,16 @@ public class HandshakePacketHandler : PacketHandlerBase
         
         _logger.LogDebug("Successfully decrypted HANDSHAKE packet");
         
-        var replyPacket = await PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
+        var replies = await PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
         
-        if(replyPacket == null)
+        if(replies == null || replies.Length == 0)
             return;
-        
-        await _connection.SendAsync(replyPacket, returnedResult.RemoteEndPoint);
-        _logger.LogDebug("Sent response to HANDSHAKE packet");
+
+        foreach (var reply in replies)
+        {
+            await _connection.SendAsync(reply, returnedResult.RemoteEndPoint);
+            _logger.LogInformation("Sent response to HANDSHAKE packet");
+        }
     }
 
     private byte[]? ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId)
@@ -121,19 +124,25 @@ public class HandshakePacketHandler : PacketHandlerBase
         return senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
     }
     
-    private async Task <byte[]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 
+    private async Task <byte[][]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 
     {
-        var response = await _messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
+        var responses = await _messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
 
-        if (response == null)
+        if (responses == null || responses.Length == 0)
         {
             return null;
         }
-        
-        var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(response, senderNodeId, maskingIv, sessionMain.MessageCount);
-        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
-        
-        return ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
+
+        var responsesList = new List<byte[]>();
+
+        foreach (var response in responses)
+        {
+            var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
+            var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(response, senderNodeId, maskingIv, sessionMain.MessageCount);
+            var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
+            responsesList.Add(ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage));
+        }
+
+        return responsesList.ToArray();
     }
 }

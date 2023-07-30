@@ -353,7 +353,7 @@ public class MockMessageResponderTests
             .Returns(talkReqMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns((byte[]?)null);
+            .Returns((byte[][]?)null);
         
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkReqMessage.EncodeMessage(), sender);
@@ -374,7 +374,7 @@ public class MockMessageResponderTests
             .Returns(talkReqMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns(new byte[32]);
+            .Returns(new List<byte[]>().ToArray);
         
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkReqMessage.EncodeMessage(), sender);
@@ -410,7 +410,7 @@ public class MockMessageResponderTests
             .Returns(talkRespMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns((byte[]?)null);
+            .Returns((byte[][]?)null);
         
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkRespMessage.EncodeMessage(), sender);
@@ -438,7 +438,7 @@ public class MockMessageResponderTests
             .Returns(talkRespMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns((byte[]?)null);
+            .Returns((byte[][]?)null);
         
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkRespMessage.EncodeMessage(), sender);

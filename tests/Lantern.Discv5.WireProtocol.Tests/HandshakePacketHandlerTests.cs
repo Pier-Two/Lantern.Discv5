@@ -214,7 +214,7 @@ public class HandshakePacketHandlerTests
             .Returns(true);
         mockMessageResponder
             .Setup(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
-            .Returns(Task.FromResult<byte[]?>(null));
+            .Returns(Task.FromResult<byte[][]?>(null));
         mockSessionMain
             .Setup(x => x.DecryptMessageWithNewKeys(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<HandshakePacketBase>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);
@@ -247,7 +247,8 @@ public class HandshakePacketHandlerTests
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("discv5", Convert.FromHexString("0001"), Convert.FromHexString("28422CCF35DCE7D21589520AF95E0C9AA0693CCD62E06E094E14C244EA3B735D40218E8CA024CD8B4EE54D247C5925CEF987DDF21E2868E4B9923EE7BAB9550D94330007BF291598DE6E790F6E857DF92422A8F24BBC08037861E0BDEBAB6E2199A8025E2C25291FA773566C3BC8E1C8025138393926452FA8666271579B399E32C91B"), 
             2, Convert.FromHexString("0000000149A934A922AA1308"), 29);
-
+        var data = new List<byte[]> { new byte[32] }.ToArray();
+        
         mockPacketProcessor
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
@@ -263,6 +264,9 @@ public class HandshakePacketHandlerTests
         mockSessionMain
             .Setup(x => x.DecryptMessageWithNewKeys(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<HandshakePacketBase>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);
+        mockMessageResponder
+            .Setup(x=>x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
+            .Returns(Task.FromResult<byte[][]?>(data));
         mockPacketBuilder
             .Setup(x => x.BuildOrdinaryPacket(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>()))
@@ -285,5 +289,4 @@ public class HandshakePacketHandlerTests
         mockSessionMain.Verify(x=> x.EncryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }
-    
 }

@@ -50,7 +50,7 @@ public class MessageResponderTests
         var pingMessage = new PingMessage((int)_identityManager.Record.SequenceNumber);
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9989);
         var response = await _messageResponder.HandleMessageAsync(pingMessage.EncodeMessage(), ipEndPoint);
-        var pongMessage = (PongMessage)new MessageDecoder().DecodeMessage(response!);
+        var pongMessage = (PongMessage)new MessageDecoder().DecodeMessage(response[0]!);
         
         Assert.NotNull(pongMessage);
         Assert.AreEqual(MessageType.Pong, pongMessage.MessageType);
@@ -66,7 +66,7 @@ public class MessageResponderTests
         var findNodesMessage = new FindNodeMessage(distances);
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9319);
         var response = await _messageResponder.HandleMessageAsync(findNodesMessage.EncodeMessage(), ipEndPoint);
-        var nodesMessage = (NodesMessage)new MessageDecoder().DecodeMessage(response!);
+        var nodesMessage = (NodesMessage)new MessageDecoder().DecodeMessage(response[0]!);
         Assert.NotNull(nodesMessage);
         Assert.AreEqual(MessageType.Nodes, nodesMessage.MessageType);
         Assert.AreEqual(0, nodesMessage.Total);
@@ -79,7 +79,7 @@ public class MessageResponderTests
         var talkRequestMessage = new TalkReqMessage("protocol"u8.ToArray(), "request"u8.ToArray());
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9312);
         var response = await _messageResponder.HandleMessageAsync(talkRequestMessage.EncodeMessage(), ipEndPoint);
-        var talkRespMessage = (TalkRespMessage)new MessageDecoder().DecodeMessage(response!);
+        var talkRespMessage = (TalkRespMessage)new MessageDecoder().DecodeMessage(response[0]!);
         Assert.NotNull(talkRespMessage);
         Assert.AreEqual(MessageType.TalkResp, talkRespMessage.MessageType);
         Assert.AreEqual("request"u8.ToArray(), talkRespMessage.Response);
@@ -87,9 +87,9 @@ public class MessageResponderTests
 
     private class TestTalkReqAndRespHandler : ITalkReqAndRespHandler
     {
-        public byte[] HandleRequest(byte[] protocol, byte[] request)
+        public byte[][] HandleRequest(byte[] protocol, byte[] request)
         {
-            return request;
+            return new []{ request};
         }
 
         public byte[] HandleResponse(byte[] response)
