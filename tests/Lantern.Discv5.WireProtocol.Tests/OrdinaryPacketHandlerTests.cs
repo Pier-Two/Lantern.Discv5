@@ -194,7 +194,8 @@ public class OrdinaryPacketHandlerTests
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
-        
+        var data = new List<byte[]> { new byte[32] }.ToArray();
+
         // Arrange
         mockPacketProcessor
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
@@ -210,6 +211,9 @@ public class OrdinaryPacketHandlerTests
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
+        mockMessageResponder
+            .Setup(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
+            .Returns( Task.FromResult<byte[][]?>(data));
         mockPacketBuilder
             .Setup(x => x.BuildOrdinaryPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(packetTuple);
@@ -229,6 +233,7 @@ public class OrdinaryPacketHandlerTests
         mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockSessionMain.Verify(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
+        mockMessageResponder.Verify(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockPacketBuilder.Verify(x => x.BuildOrdinaryPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }

@@ -1,4 +1,5 @@
 using System.Net;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
@@ -10,6 +11,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 public class MessageResponder : IMessageResponder
 {
     private const int RecordLimit = 16;
+    private const int MaxRecordsPerMessage = 3;
     private readonly IIdentityManager _identityManager;
     private readonly IRoutingTable _routingTable;
     private readonly IRequestManager _requestManager;
@@ -114,11 +116,18 @@ public class MessageResponder : IMessageResponder
         _logger.LogInformation("Received message type => {MessageType}", MessageType.FindNode);
         var decodedMessage = (FindNodeMessage)_messageDecoder.DecodeMessage(message);
         var closestNodes = _routingTable.GetEnrRecordsAtDistances(decodedMessage.Distances).Take(RecordLimit).ToArray();
-        var chunkedRecords = SplitIntoChunks(closestNodes, 3);
+        var chunkedRecords = SplitIntoChunks(closestNodes, MaxRecordsPerMessage);
         var responses = chunkedRecords.Select(chunk => new NodesMessage(decodedMessage.RequestId, chunk.Length, chunk)).Select(nodesMessage => nodesMessage.EncodeMessage()).ToArray();
         
+        if(responses.Length == 0)
+        {
+            var response = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, Array.Empty<EnrRecord>())
+                .EncodeMessage();
+            return new List<byte[]> { response }.ToArray();
+        }
+        
         _logger.LogInformation("Sending a total of {EnrRecords} with {Responses} responses", closestNodes.Length, responses.Length);
-
+        
         return responses;
     }
 
