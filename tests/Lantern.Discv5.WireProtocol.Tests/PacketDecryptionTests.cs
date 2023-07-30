@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace Lantern.Discv5.WireProtocol.Tests;
 
 [TestFixture]
-public class PacketTests
+public class PacketDecryptionTests
 {
     private static readonly SessionCrypto SessionCrypto = new();
     private static readonly AesCrypto AesCrypto = new();
@@ -62,7 +62,7 @@ public class PacketTests
         var maskedIv = Convert.FromHexString("00000000000000000000000000000000");
         var whoAreYouPacket = new WhoAreYouPacketBase(idNonce, 0);
         var staticHeader = new StaticHeader(ProtocolConstants.ProtocolId, ProtocolConstants.Version,
-            whoAreYouPacket.AuthData, (byte)PacketType.WhoAreYou, nonce);
+            whoAreYouPacket.AuthData,(byte)PacketType.WhoAreYou, nonce);
         var maskedHeader = new MaskedHeader(nodeBId, maskedIv);
         var packet = ByteArrayUtils.JoinByteArrays(maskedIv, maskedHeader.GetMaskedHeader(staticHeader.GetHeader(), AesCrypto));
         var expectedWhoAreYouPacket =

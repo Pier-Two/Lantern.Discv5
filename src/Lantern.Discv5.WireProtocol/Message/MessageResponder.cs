@@ -29,7 +29,7 @@ public class MessageResponder : IMessageResponder
         _logger = loggerFactory.CreateLogger<MessageResponder>();
     }
     
-    public async Task<byte[]?> HandleMessageAsync(byte[] message, IPEndPoint endPoint)
+    public async Task<byte[][]?> HandleMessageAsync(byte[] message, IPEndPoint endPoint)
     {
         var messageType = (MessageType)message[0];
 
@@ -45,17 +45,18 @@ public class MessageResponder : IMessageResponder
         };
     }
 
-    private byte[] HandlePingMessage(byte[] message, IPEndPoint endPoint)
+    private byte[][] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Ping);
         var decodedMessage = _messageDecoder.DecodeMessage(message);
         var localEnrSeq = _identityManager.Record.SequenceNumber;
         var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
-        
-        return pongMessage.EncodeMessage();
+        var responseMessage = new List<byte[]> { pongMessage.EncodeMessage() };
+
+        return responseMessage.ToArray();
     }
     
-    private byte[]? HandlePongMessage(byte[] message)
+    private byte[][]? HandlePongMessage(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
@@ -95,7 +96,6 @@ public class MessageResponder : IMessageResponder
         
         var distance = new []{ 0 };
         var findNodesMessage = new FindNodeMessage(distance);
-        
         var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(pendingRequest.NodeId, findNodesMessage));
 
         if(!result)
@@ -104,21 +104,25 @@ public class MessageResponder : IMessageResponder
             return null;
         }
 
-        return findNodesMessage.EncodeMessage();
+        var responseMessage = new List<byte[]> { findNodesMessage.EncodeMessage() };
+
+        return responseMessage.ToArray();
     }
     
-    private byte[] HandleFindNodeMessage(byte[] message)
+    private byte[][] HandleFindNodeMessage(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.FindNode);
         var decodedMessage = (FindNodeMessage)_messageDecoder.DecodeMessage(message);
-        var distances = decodedMessage.Distances.Take(RecordLimit);
-        var closestNodes = _routingTable.GetEnrRecordsAtDistances(distances).ToArray();
-        var nodesMessage = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, closestNodes);
+        var closestNodes = _routingTable.GetEnrRecordsAtDistances(decodedMessage.Distances).Take(RecordLimit).ToArray();
+        var chunkedRecords = SplitIntoChunks(closestNodes, 3);
+        var responses = chunkedRecords.Select(chunk => new NodesMessage(decodedMessage.RequestId, chunk.Length, chunk)).Select(nodesMessage => nodesMessage.EncodeMessage()).ToArray();
         
-        return nodesMessage.EncodeMessage();
+        _logger.LogInformation("Sending a total of {EnrRecords} with {Responses} responses", closestNodes.Length, responses.Length);
+
+        return responses;
     }
-    
-    private async Task <byte[]?> HandleNodesMessageAsync(byte[] message)
+
+    private async Task <byte[][]?> HandleNodesMessageAsync(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Nodes);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(message);
@@ -169,7 +173,7 @@ public class MessageResponder : IMessageResponder
         return null;
     }
     
-    private byte[]? HandleTalkReqMessage(byte[] message)
+    private byte[][]? HandleTalkReqMessage(byte[] message)
     {
         if (_talkResponder == null)
         {
@@ -179,18 +183,25 @@ public class MessageResponder : IMessageResponder
         
         _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(message);
-        var result = _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
+        var responses = _talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
 
-        if (result == null)
+        if (responses == null)
         {
             return null;
         }
+        
+        var responseMessages = new List<byte[]>();
 
-        var talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, result);
-        return talkRespMessage.EncodeMessage();
+        foreach (var response in responses)
+        {
+            var talkRespMessage = new TalkRespMessage(decodedMessage.RequestId, response);
+            responseMessages.Add(talkRespMessage.EncodeMessage());
+        }
+        
+        return responseMessages.ToArray();
     }
     
-    private byte[]? HandleTalkRespMessage(byte[] message)
+    private byte[][]? HandleTalkRespMessage(byte[] message)
     {
         if (_talkResponder == null)
         {
@@ -228,5 +239,13 @@ public class MessageResponder : IMessageResponder
         _routingTable.MarkNodeAsResponded(pendingRequest.NodeId);
 
         return _requestManager.GetPendingRequest(message.RequestId);
+    }
+    
+    private static IEnumerable<T[]> SplitIntoChunks<T>(IReadOnlyCollection<T> array, int chunkSize)
+    {
+        for (var i = 0; i < array.Count; i += chunkSize)
+        {
+            yield return array.Skip(i).Take(chunkSize).ToArray();
+        }
     }
 }

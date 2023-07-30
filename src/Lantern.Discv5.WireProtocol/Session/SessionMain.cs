@@ -106,8 +106,11 @@ public class SessionMain : ISessionMain
         
         _logger.LogDebug("Decrypting message with new keys");
         var decryptedResult = _aesCrypto.AesGcmDecrypt(sharedKeys.InitiatorKey, header.Nonce, encryptedMessage, messageAd);
-        
-        _currentSharedKeys = sharedKeys;
+
+        if (decryptedResult != null)
+        {
+            _currentSharedKeys = sharedKeys;
+        }
 
         return decryptedResult;
     }
@@ -144,7 +147,7 @@ public class SessionMain : ISessionMain
         _logger.LogDebug("Decrypting message");
         var decryptedMessage = _aesCrypto.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
 
-        if (!IsEstablished)
+        if (!IsEstablished && decryptedMessage != null)
         {
             IsEstablished = true;
             _logger.LogDebug("Session established");

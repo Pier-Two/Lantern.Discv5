@@ -49,7 +49,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if(nodeEntry == null)
         {
-            _logger.LogWarning("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
+            _logger.LogInformation("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
             await SendWhoAreYouPacketWithoutEnrAsync(staticHeader, returnedResult.RemoteEndPoint, _connection);
             return;
         }
@@ -58,7 +58,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         
         if (session == null)
         {
-            _logger.LogWarning("Cannot decrypt ORDINARY packet. No session found, sending WHOAREYOU packet");
+            _logger.LogInformation("Cannot decrypt ORDINARY packet. No session found, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
@@ -67,18 +67,21 @@ public class OrdinaryPacketHandler : PacketHandlerBase
 
         if (decryptedMessage == null)
         {
-            _logger.LogWarning("Cannot decrypt ORDINARY packet. Decryption failed, sending WHOAREYOU packet");
+            _logger.LogInformation("Cannot decrypt ORDINARY packet. Decryption failed, sending WHOAREYOU packet");
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, _connection);
             return;
         }
         
         _logger.LogDebug("Successfully decrypted ORDINARY packet");
 
-        var reply = await _messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
+        var replies = await _messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
         
-        if (reply != null)
+        if (replies != null && replies.Any())
         {
-            await SendResponseToOrdinaryPacketAsync(staticHeader, session, returnedResult.RemoteEndPoint, _connection, reply);
+            foreach (var reply in replies)
+            {
+                await SendResponseToOrdinaryPacketAsync(staticHeader, session, returnedResult.RemoteEndPoint, _connection, reply);
+            }
         }
     }
 

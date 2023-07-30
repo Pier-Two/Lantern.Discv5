@@ -57,7 +57,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(nodeEntry == null)
         {
-            _logger.LogWarning("Failed to get node entry from the ENR table at node id: {NodeId}", Convert.ToHexString(destNodeId));
+            _logger.LogWarning("Cannot get node entry from the ENR table at node id: {NodeId}", Convert.ToHexString(destNodeId));
             return;
         }
         
@@ -72,7 +72,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(message == null)
         {
-            _logger.LogWarning("Failed to construct message in response to WHOAREYOU packet. Sending RANDOM packet");
+            _logger.LogInformation("Cannot construct message in response to WHOAREYOU packet. Sending RANDOM packet to re-initiate handshake");
             await SendRandomOrdinaryPacketAsync(returnedResult.RemoteEndPoint, destNodeId, _connection);
             return;
         }
@@ -90,7 +90,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(encryptedMessage == null)
         {
-            _logger.LogWarning("Failed to encrypt message with new keys");
+            _logger.LogWarning("Cannot encrypt message with new keys");
             return;
         }
         

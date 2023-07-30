@@ -103,9 +103,8 @@ public class PacketManager : IPacketManager
         }
         catch (Exception e)
         {
-            _logger.LogWarning(
-                "An error occurred when trying to handle the received packet. Could not handle as it may have been reordered");
-            _logger.LogDebug(e, "Exception details");
+            _logger.LogDebug("Failed to process the packet received from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
+            _logger.LogDebug("Exception: {Exception}", e);
         }
     }
 

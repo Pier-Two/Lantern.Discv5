@@ -222,7 +222,6 @@ public class LookupManager : ILookupManager
             var unqueriedNode = bucket.DiscoveredNodes
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
-                .Where(node => node.Status == NodeStatus.None)
                 .FirstOrDefault(node => !_requestManager.ContainsCachedRequest(node.Id));
     
             if(unqueriedNode == null)
@@ -234,7 +233,7 @@ public class LookupManager : ILookupManager
             bucket.PendingQueries.TryAdd(unqueriedNode.Id, new TaskCompletionSource<bool>());
             bucket.PendingTimers[unqueriedNode.Id] = new Timer(_ => QueryTimeoutCallback(unqueriedNode.Id, bucket), null, _connectionOptions.RequestTimeoutMs, Timeout.Infinite);
     
-            _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(unqueriedNode.Id), bucket.Index);
+            _logger.LogDebug("Querying a replaced node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(unqueriedNode.Id), bucket.Index);
             await _packetManager.SendPacket(unqueriedNode.Record, MessageType.FindNode, bucket.TargetNodeId);
 
             _lookupSemaphore.Release();

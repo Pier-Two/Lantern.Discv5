@@ -214,7 +214,7 @@ public class HandshakePacketHandlerTests
             .Returns(true);
         mockMessageResponder
             .Setup(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
-            .Returns(Task.FromResult<byte[]?>(null));
+            .Returns(Task.FromResult<byte[][]?>(null));
         mockSessionMain
             .Setup(x => x.DecryptMessageWithNewKeys(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<HandshakePacketBase>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);

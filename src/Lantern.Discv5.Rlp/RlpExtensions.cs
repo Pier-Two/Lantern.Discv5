@@ -17,7 +17,7 @@ public static class RlpExtensions
 
     public static ulong ByteArrayToUInt64(byte[] bytes)
     {
-        return ByteArrayToNumber(bytes, 8, BitConverter.ToUInt64);
+        return ByteArrayToNumber(bytes, Int64ByteLength, BitConverter.ToUInt64);
     }
 
     private static T ByteArrayToNumber<T>(byte[] bytes, int targetLength, Func<byte[], int, T> converter)
