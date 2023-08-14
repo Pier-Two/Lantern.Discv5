@@ -199,7 +199,7 @@ public class WhoAreYouPacketHandlerTests
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object,mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object, 
             mockPacketProcessor.Object, mockLoggerFactory.Object);
-        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9000));
+        var fakeResult = new UdpReceiveResult(new byte[32], new IPEndPoint(IPAddress.Parse("18.223.219.100"), 9009));
 
         // Act
         await handler.HandlePacket(fakeResult);
