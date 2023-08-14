@@ -167,7 +167,7 @@ public class WhoAreYouPacketHandlerTests
     }
     
     [Test]
-    public async Task Test_HandlePacket_ShouldSendRandomPacket_WhenNoReplyMessageIsCreated()
+    public async Task Test_HandlePacket_ShouldReturn_WhenNoReplyMessageIsCreated()
     {
         // Test data
         var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
@@ -214,10 +214,8 @@ public class WhoAreYouPacketHandlerTests
             .Verify(x => x.GetCachedRequest(It.IsAny<byte[]>()), Times.Once);
         mockRequestManager
             .Verify(x => x.GetPendingRequestByNodeId(It.IsAny<byte[]>()), Times.Once);
-        mockPacketBuilder
-            .Verify(x => x.BuildRandomOrdinaryPacket(It.IsAny<byte[]>()), Times.Once);
         mockUdpConnection
-            .Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
+            .Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Never);
         mockSessionMain
             .Verify(x => x.GenerateIdSignature(It.IsAny<byte[]>()), Times.Never);
     }

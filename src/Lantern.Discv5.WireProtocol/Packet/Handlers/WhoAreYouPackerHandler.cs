@@ -72,8 +72,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         if(message == null)
         {
-            _logger.LogInformation("Cannot construct message in response to WHOAREYOU packet. Sending RANDOM packet to re-initiate handshake");
-            await SendRandomOrdinaryPacketAsync(returnedResult.RemoteEndPoint, destNodeId, _connection);
+            _logger.LogDebug("Received unknown WHOAREYOU packet. Ignoring attempt to initiate a handshake");
             return;
         }
         
@@ -148,12 +147,5 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         _requestManager.AddPendingRequest(cachedRequest.Message.RequestId, pendingRequest);
 
         return cachedRequest.Message.EncodeMessage();
-    }
-    
-    private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId, IUdpConnection connection)
-    {
-        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
-        await connection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
-        _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
 }
