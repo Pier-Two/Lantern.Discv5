@@ -1,5 +1,5 @@
 # Lantern.Discv5 
-Lantern.Discv5 is a C# implementation of the Ethereum Discovery Protocol Version 5.1 (Discv5) which provides a robust and efficient peer-to-peer network communication. This project aims to offer a reliable, extensible, and compatible solution for modern applications.
+This is a .NET implementation of the Discv5 protocol as a class library.
 
 The Discv5 specification is available at the [Ethereum devp2p repository](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md).
 
