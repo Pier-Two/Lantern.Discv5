@@ -22,5 +22,7 @@ public class NodeTableEntry
     
     public bool HasRespondedEver { get; set; }
     
+    public bool RequestSent { get; set; }
+    
     public DateTime LastSeen { get; set; }
 }

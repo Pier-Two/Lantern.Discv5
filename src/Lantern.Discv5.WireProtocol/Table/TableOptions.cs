@@ -9,6 +9,7 @@ public class TableOptions
     public int RefreshIntervalMilliseconds { get; }
     public int LookupTimeoutMilliseconds { get; }
     public int MaxAllowedFailures { get; }
+    public int ReplacementCacheSize { get; }
     public int ConcurrencyParameter { get; }
     public int LookupParallelism { get; }
     public EnrRecord[] BootstrapEnrs { get; }
@@ -21,6 +22,7 @@ public class TableOptions
         RefreshIntervalMilliseconds = builder.RefreshIntervalMilliseconds;
         LookupTimeoutMilliseconds = builder.LookupTimeoutMilliseconds;
         MaxAllowedFailures = builder.MaxAllowedFailures;
+        ReplacementCacheSize = builder.ReplacementCacheSize;
         ConcurrencyParameter = builder.ConcurrencyParameter;
         LookupParallelism = builder.LookupParallelism;
         BootstrapEnrs = builder.BootstrapEnrs;
@@ -32,6 +34,7 @@ public class TableOptions
         public int RefreshIntervalMilliseconds { get; private set; } = 300000;
         public int LookupTimeoutMilliseconds { get; private set; } = 60000;
         public int MaxAllowedFailures { get; private set; } = 3;
+        public int ReplacementCacheSize { get; private set; } = 300;
         public int ConcurrencyParameter { get; private set; } = 3;
         public int LookupParallelism { get; private set; } = 2;
         public EnrRecord[] BootstrapEnrs { get; private set; } = Array.Empty<EnrRecord>();
@@ -57,6 +60,12 @@ public class TableOptions
         public Builder WithMaxAllowedFailures(int maxAllowedFailures)
         {
             MaxAllowedFailures = maxAllowedFailures;
+            return this;
+        }
+        
+        public Builder WithReplacementCacheSize(int replacementCacheSize)
+        {
+            ReplacementCacheSize = replacementCacheSize;
             return this;
         }
         

@@ -199,6 +199,30 @@ public class LookupManager : ILookupManager
         }
     }
     
+    private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
+    {
+        var nodesToQuery = bucket.Responses[senderNodeId]
+            .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
+            .Where(node => _routingTable.GetNodeEntry(node.Id) != null)
+            .Where(node => !_requestManager.ContainsCachedRequest(node.Id))
+            .Take(_tableOptions.ConcurrencyParameter).ToList();
+            
+        _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
+
+        foreach (var node in nodesToQuery)
+        {
+            if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize) 
+                return;
+            
+            if (_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
+                continue;
+            
+            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
+            bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, 1000, Timeout.Infinite);
+            await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
+        }
+    }
+    
     private async Task QueryTimeoutCallback(byte[] nodeId, PathBucket bucket)
     {
         try
@@ -220,6 +244,7 @@ public class LookupManager : ILookupManager
             }
 
             var unqueriedNode = bucket.DiscoveredNodes
+                .Where(node => _routingTable.GetNodeEntry(node.Id) != null)
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
                 .FirstOrDefault(node => !_requestManager.ContainsCachedRequest(node.Id));
@@ -242,26 +267,6 @@ public class LookupManager : ILookupManager
         {
             _lookupSemaphore.Release();
             _logger.LogError(e, "Error in QueryTimeoutCallback");
-        }
-    }
-
-    private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
-    {
-        var nodesToQuery = bucket.Responses[senderNodeId].Take(_tableOptions.ConcurrencyParameter).ToList();
-            
-        _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}", nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
-
-        foreach (var node in nodesToQuery)
-        {
-            if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize) 
-                return;
-            
-            if (_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
-                continue;
-            
-            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
-            bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, 1000, Timeout.Infinite);
-            await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
         }
     }
 
