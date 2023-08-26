@@ -32,7 +32,7 @@ public class KBucketTests
     public void Test_KBucket_EmptyBucketAndCache()
     {
         var node = GenerateRandomNodeEntries(1).First();
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
         node.Status = NodeStatus.Dead;
         bucket.ReplaceDeadNode(node);
@@ -45,7 +45,7 @@ public class KBucketTests
     public void Test_KBucket_NodeOrder()
     {
         var nodes = GenerateRandomNodeEntries(16);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
         for(var i = 0; i < 16; i++)
         {
@@ -64,7 +64,7 @@ public class KBucketTests
     public void Test_KBucket_AddingNodesToNonFullBucket()
     {
         var nodes = GenerateRandomNodeEntries(10);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
         for (var i = 0; i < 10; i++)
         {
@@ -79,7 +79,7 @@ public class KBucketTests
     public void Test_RoutingTable_ShouldStoreNodesCorrectly()
     {
         var nodes = GenerateRandomNodeEntries(20);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         
         for (var i = 0; i < 16; i++)
         {
@@ -99,7 +99,7 @@ public class KBucketTests
     public void Test_KBucket_ShouldReplaceDeadNodesCorrectly()
     {
         var nodes = GenerateRandomNodeEntries(20);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         
         for (var i = 0; i < 16; i++)
         {
@@ -124,7 +124,7 @@ public class KBucketTests
     public void Test_KBucket_LeastRecentlySeenNodeRevalidation()
     {
         var nodes = GenerateRandomNodeEntries(20);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
         for (var i = 0; i < 16; i++)
         {
@@ -143,7 +143,7 @@ public class KBucketTests
     public void Test_KBucket_ConcurrentAccess()
     {
         var nodes = GenerateRandomNodeEntries(100);
-        var bucket = new KBucket(LoggingOptions.Default);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         var tasks = new List<Task>();
 
         for(var i = 0; i < 100; i++)

@@ -1,3 +1,4 @@
+using Discv5ConsoleApp.Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;

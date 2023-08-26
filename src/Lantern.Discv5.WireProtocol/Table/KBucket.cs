@@ -8,13 +8,15 @@ public class KBucket
     private readonly LinkedList<NodeTableEntry> _replacementCache;
     private readonly ILogger<KBucket> _logger;
     private readonly object _lock;
+    private readonly int _replacementCacheSize;
 
-    public KBucket(ILoggerFactory loggerFactory)
+    public KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
     {
         _nodes = new LinkedList<NodeTableEntry>();
         _replacementCache = new LinkedList<NodeTableEntry>();
         _logger = loggerFactory.CreateLogger<KBucket>();
         _lock = new object();
+        _replacementCacheSize = replacementCacheSize;
     }
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
@@ -33,7 +35,8 @@ public class KBucket
     {
         lock (_lock)
         {
-            return _nodes.FirstOrDefault(node => node.Id.SequenceEqual(nodeId));
+            var node = _nodes.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
+            return node ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
         }
     }
     
@@ -92,8 +95,19 @@ public class KBucket
     
     public void AddToReplacementCache(NodeTableEntry nodeEntry)
     {
+        if (_replacementCache.Count >= _replacementCacheSize)
+        {
+            var leastRecentlySeen = _replacementCache
+                .Where(node => node.RequestSent == false)
+                .OrderBy(node => node.LastSeen).First();
+            
+            _replacementCache.Remove(leastRecentlySeen);
+            _logger.LogDebug("Replacement cache full. Removed least recently seen node {NodeId} with status {RequestStatus}", Convert.ToHexString(leastRecentlySeen.Id), leastRecentlySeen.RequestSent);
+        }
+
         _replacementCache.AddLast(nodeEntry);
-        _logger.LogDebug("Added node {NodeId} to replacement cache", Convert.ToHexString(nodeEntry.Id));
+        _logger.LogDebug("Added node {NodeId} to replacement cache. There are {Count} nodes in the cache",
+            Convert.ToHexString(nodeEntry.Id), _replacementCache.Count);
     }
 
     private void UpdateExistingNode(NodeTableEntry nodeEntry, NodeTableEntry existingNode)

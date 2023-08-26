@@ -1,5 +1,6 @@
 using Epoche;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Rlp;
 using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.Enr.IdentityScheme.V4;
@@ -20,7 +21,6 @@ public class IdentitySchemeV4Signer : IIdentitySchemeSigner
         _privateKey.TrySignECDSA(Keccak256.ComputeHash(record.EncodeContent()), out var signature);
 
         if (signature == null) throw new InvalidOperationException("Failed to sign ENR record.");
-
-        return signature.r.ToBytes().Concat(signature.s.ToBytes()).ToArray();
+        return ByteArrayUtils.JoinByteArrays(signature.r.ToBytes(), signature.s.ToBytes());
     }
 }

@@ -2,6 +2,7 @@ using Epoche;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Rlp;
 using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.Enr.IdentityScheme.V4;
@@ -25,7 +26,7 @@ public class IdentitySchemeV4Verifier : IIdentitySchemeVerifier
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
         var xBytes = publicKey.Q.x.ToBytes();
         var yBytes = publicKey.Q.y.ToBytes();
-        var publicKeyUncompressed = xBytes.Concat(yBytes);
-        return Keccak256.ComputeHash(publicKeyUncompressed.ToArray());
+        var publicKeyUncompressed =  ByteArrayUtils.JoinByteArrays(xBytes, yBytes);
+        return Keccak256.ComputeHash(publicKeyUncompressed);
     }
 }
