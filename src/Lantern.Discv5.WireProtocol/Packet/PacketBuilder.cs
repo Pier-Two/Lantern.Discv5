@@ -47,7 +47,7 @@ public class PacketBuilder : IPacketBuilder
         var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
 
-        _logger.LogInformation("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
+        _logger.LogDebug("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
         
         _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
         

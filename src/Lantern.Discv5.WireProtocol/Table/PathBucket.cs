@@ -37,8 +37,11 @@ public class PathBucket
     // Method of setting completion status
     public void SetComplete()
     {
+        if (Completion.Task.IsCompleted) 
+            return;
+        
         IsComplete = true;
-        Completion.SetResult(true);  
+        Completion.SetResult(true);
     }
     
     public void DisposeTimer(byte[] nodeId)

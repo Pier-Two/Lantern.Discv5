@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -144,7 +145,7 @@ public class RequestManager : IRequestManager
     // CheckRequests and RemoveFulfilledRequests can likely be merged into one method
     private void CheckRequests()
     {
-        _logger.LogDebug("Checking for pending and cached requests");
+        _logger.LogInformation("Checking for pending and cached requests");
 
         var currentPendingRequests = _pendingRequests.Values.ToList();
         var currentCachedRequests = _cachedRequests.Values.ToList();
@@ -164,8 +165,12 @@ public class RequestManager : IRequestManager
     {
         _logger.LogDebug("Removing fulfilled requests");
 
-        var completedTasks = _pendingRequests.Values.ToList().Where(x => x.IsFulfilled).ToList();
-
+        var completedTasks = _pendingRequests.Values
+            .Where(x => x.IsFulfilled)
+            .ToList();
+        
+        //_logger.LogInformation("There are total {PendingRequests} pending requests with {FindNodeRequestsCount} FindNode requests and {} Ping requests", _pendingRequests.Count, _pendingRequests.Values.Count(x => x.Message.MessageType == MessageType.FindNode), _pendingRequests.Values.Count(x => x.Message.MessageType == MessageType.Ping));
+        
         foreach (var task in completedTasks)
         {
             if (task.Message.MessageType == MessageType.FindNode)
@@ -187,9 +192,10 @@ public class RequestManager : IRequestManager
         if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogDebug("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
+        _logger.LogWarning("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
+        
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
 
         if (nodeEntry == null) 
@@ -198,7 +204,7 @@ public class RequestManager : IRequestManager
         if(nodeEntry.FailureCounter >= _tableOptions.MaxAllowedFailures)
         {
             _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
-            _routingTable.MarkNodeAsDead(request.NodeId);
+           
         }
         else
         {
@@ -212,7 +218,7 @@ public class RequestManager : IRequestManager
         if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogDebug("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
+        _logger.LogWarning("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
@@ -223,9 +229,6 @@ public class RequestManager : IRequestManager
             return;
         }
 
-        if (!nodeEntry.HasRespondedEver)
-        {
-            _routingTable.MarkNodeAsDead(request.NodeId);
-        }
+        _routingTable.MarkNodeAsDead(request.NodeId);
     }
 }

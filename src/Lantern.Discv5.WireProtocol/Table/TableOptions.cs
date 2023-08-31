@@ -32,7 +32,7 @@ public class TableOptions
     {
         public int PingIntervalMilliseconds { get; private set; } = 5000;
         public int RefreshIntervalMilliseconds { get; private set; } = 300000;
-        public int LookupTimeoutMilliseconds { get; private set; } = 60000;
+        public int LookupTimeoutMilliseconds { get; private set; } = 10000;
         public int MaxAllowedFailures { get; private set; } = 3;
         public int ReplacementCacheSize { get; private set; } = 300;
         public int ConcurrencyParameter { get; private set; } = 3;

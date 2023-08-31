@@ -115,7 +115,7 @@ public class MockMessageResponderTests
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
         
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
+        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.UpdateFromEnr(It.IsAny<EnrRecord>()), Times.Once);
         mockIdentityManager.Verify(x => x.UpdateIpAddressAndPort(It.IsAny<IPEndPoint>()), Times.Never);
@@ -150,7 +150,7 @@ public class MockMessageResponderTests
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
         
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
+        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.UpdateFromEnr(It.IsAny<EnrRecord>()), Times.Once);
         mockIdentityManager.Verify(x => x.UpdateIpAddressAndPort(It.IsAny<IPEndPoint>()), Times.Once);

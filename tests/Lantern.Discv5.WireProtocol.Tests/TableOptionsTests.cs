@@ -15,7 +15,7 @@ public class TableOptionsTests
         Assert.NotNull(_tableOptions);
         Assert.AreEqual(5000, _tableOptions.PingIntervalMilliseconds);
         Assert.AreEqual(300000, _tableOptions.RefreshIntervalMilliseconds);
-        Assert.AreEqual(60000, _tableOptions.LookupTimeoutMilliseconds);
+        Assert.AreEqual(10000, _tableOptions.LookupTimeoutMilliseconds);
         Assert.AreEqual(3, _tableOptions.MaxAllowedFailures);
         Assert.AreEqual(3, _tableOptions.ConcurrencyParameter);
         Assert.AreEqual(2, _tableOptions.LookupParallelism);

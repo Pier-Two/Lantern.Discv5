@@ -80,7 +80,6 @@ public class MessageResponder : IMessageResponder
         if (nodeEntry.Status != NodeStatus.Live)
         {
             _routingTable.UpdateFromEnr(nodeEntry.Record);
-            _routingTable.MarkNodeAsLive(nodeEntry.Id);
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
@@ -96,13 +95,14 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
+        _logger.LogInformation("Received PONG message from node {NodeId} with higher ENR sequence number. Updating ENR record", Convert.ToHexString(pendingRequest.NodeId));
+        
         var distance = new []{ 0 };
         var findNodesMessage = new FindNodeMessage(distance);
         var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(pendingRequest.NodeId, findNodesMessage));
 
         if(!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
         }
 
@@ -151,30 +151,44 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
+        _logger.LogDebug("Received {NodesCount} nodes from node {NodeId}", decodedMessage.Enrs.Length, Convert.ToHexString(pendingRequest.NodeId));
+        
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var receivedNodes = new List<NodeTableEntry>();
 
-        foreach (var distance in findNodesRequest.Distances)
+        try
         {
-            foreach (var enr in decodedMessage.Enrs)
+            foreach (var distance in findNodesRequest.Distances)
             {
-                var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
-                var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
+                foreach (var enr in decodedMessage.Enrs)
+                {
+                    var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
+                    var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
 
-                if (distance != distanceToNode) 
-                    continue;
+                    if (distance != distanceToNode)
+                    {
+                        _logger.LogWarning("Received node with incorrect distance. Expected distance: {ExpectedDistance}, Received distance: {ReceivedDistance}", distance, distanceToNode);
+                        continue;
+                    }
                 
-                if (_routingTable.GetNodeEntry(nodeId) == null)
-                {
-                    _routingTable.UpdateFromEnr(enr);
-                }
+                    if (_routingTable.GetNodeEntry(nodeId) == null)
+                    {
+                        _routingTable.UpdateFromEnr(enr);
+                    }
                     
-                var nodeEntry = _routingTable.GetNodeEntry(nodeId);
-                if (nodeEntry != null)
-                {
-                    receivedNodes.Add(nodeEntry);
+                    var nodeEntry = _routingTable.GetNodeEntry(nodeId);
+                
+                    if (nodeEntry != null)
+                    {
+                        receivedNodes.Add(nodeEntry);
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while processing NODES message");
+            return null;
         }
         
         await _lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
