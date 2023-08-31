@@ -14,7 +14,7 @@ public interface IRoutingTable
 
     NodeTableEntry? GetLeastRecentlySeenNode();
 
-    void UpdateFromEntry(NodeTableEntry nodeEntry);
+    void ClearCacheInAllBuckets();
     
     void UpdateFromEnr(EnrRecord enrRecord);
     

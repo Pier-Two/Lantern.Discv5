@@ -8,11 +8,12 @@ public class CachedRequest
     
     public Message Message { get; }
 
-    public Stopwatch ElapsedTime { get; } = Stopwatch.StartNew();
+    public Stopwatch ElapsedTime { get; } 
     
     public CachedRequest(byte[] nodeId, Message message)
     {
         NodeId = nodeId;
         Message = message;
+        ElapsedTime = new Stopwatch();
     }
 }

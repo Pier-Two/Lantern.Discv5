@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Table;
@@ -54,19 +53,12 @@ public class RoutingTable : IRoutingTable
         {
             return _buckets
                 .SelectMany(bucket => bucket.Nodes)
-                .Where(IsNodeConsideredLive)
+                .Where(node => node.HasRespondedEver)
                 .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
                 .ToList(); 
         }
     }
-
-    public void UpdateFromEntry(NodeTableEntry nodeEntry)
-    {
-        var bucketIndex = GetBucketIndex(nodeEntry.Id);
-        _buckets[bucketIndex].Update(nodeEntry);
-        _logger.LogDebug("Updated table with node entry {NodeId}", Convert.ToHexString(nodeEntry.Id));
-    }
-
+    
     public void UpdateFromEnr(EnrRecord enrRecord)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
@@ -89,8 +81,20 @@ public class RoutingTable : IRoutingTable
         }
     }
 
+    public void ClearCacheInAllBuckets()
+    {
+        lock (_buckets)
+        {
+            foreach (var bucket in _buckets)
+            {
+                bucket.ClearReplacementCache();
+            }
+        }
+    }
+
     public void MarkNodeAsResponded(byte[] nodeId)
     {
+        _logger.LogDebug("Marking node {NodeId} as responded", Convert.ToHexString(nodeId));
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -101,40 +105,10 @@ public class RoutingTable : IRoutingTable
         nodeEntry.HasRespondedEver = true;
     }
 
-    public void MarkNodeAsRequestSentToTrue(byte[] nodeId)
-    {
-        var bucketIndex = GetBucketIndex(nodeId);
-        var bucket = _buckets[bucketIndex];
-        var nodeEntry = bucket.GetNodeById(nodeId);
-
-        if (nodeEntry == null)
-        {
-            _logger.LogWarning("Unable to mark node {NodeId} as request sent. Node not found", Convert.ToHexString(nodeId));
-            return;
-        }
-
-        nodeEntry.RequestSent = true;
-        _logger.LogDebug("Marked node {NodeId} as request sent", Convert.ToHexString(nodeId));
-    }
-
-    public void MarkNodeAsRequestSentToFalse(byte[] nodeId)
-    {
-        var bucketIndex = GetBucketIndex(nodeId);
-        var bucket = _buckets[bucketIndex];
-        var nodeEntry = bucket.GetNodeById(nodeId);
-
-        if (nodeEntry == null)
-        {
-            _logger.LogWarning("Unable to mark node {NodeId} as request sent. Node not found", Convert.ToHexString(nodeId));
-            return;
-        }
-            
-        nodeEntry.RequestSent = false;
-        _logger.LogDebug("Marked node {NodeId} as request not sent", Convert.ToHexString(nodeId));
-    }
-
     public void MarkNodeAsPending(byte[] nodeId)
     {
+        _logger.LogDebug("Marking node {NodeId} as pending", Convert.ToHexString(nodeId));
+        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -147,6 +121,8 @@ public class RoutingTable : IRoutingTable
 
     public void MarkNodeAsLive(byte[] nodeId)
     {
+        _logger.LogDebug("Marking node {NodeId} as live", Convert.ToHexString(nodeId));
+        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -160,6 +136,8 @@ public class RoutingTable : IRoutingTable
 
     public void MarkNodeAsDead(byte[] nodeId)
     {
+        _logger.LogInformation("Marking node {NodeId} as dead", Convert.ToHexString(nodeId));
+        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);

@@ -35,8 +35,7 @@ public class KBucket
     {
         lock (_lock)
         {
-            var node = _nodes.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
-            return node ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
+            return _nodes.FirstOrDefault(n => n.Id.SequenceEqual(nodeId)) ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
         }
     }
     
@@ -47,7 +46,15 @@ public class KBucket
             return _nodes.First?.Value;
         }
     }
-
+    
+    public void ClearReplacementCache()
+    {
+        lock (_lock)
+        {
+            _replacementCache.Clear();
+        }
+    }
+    
     public void Update(NodeTableEntry nodeEntry)
     {
         lock (_lock)
@@ -97,12 +104,8 @@ public class KBucket
     {
         if (_replacementCache.Count >= _replacementCacheSize)
         {
-            var leastRecentlySeen = _replacementCache
-                .Where(node => node.RequestSent == false)
-                .OrderBy(node => node.LastSeen).First();
-            
-            _replacementCache.Remove(leastRecentlySeen);
-            _logger.LogDebug("Replacement cache full. Removed least recently seen node {NodeId} with status {RequestStatus}", Convert.ToHexString(leastRecentlySeen.Id), leastRecentlySeen.RequestSent);
+            _logger.LogDebug("Replacement cache full. Removed last from the bucket");
+            _replacementCache.RemoveFirst();
         }
 
         _replacementCache.AddLast(nodeEntry);

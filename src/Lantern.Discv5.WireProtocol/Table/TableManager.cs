@@ -118,7 +118,8 @@ public class TableManager : ITableManager
         {
             foreach(var node in closestNodes)
             {
-                _routingTable.UpdateFromEntry(node);
+                var enr = node.Record;
+                _routingTable.UpdateFromEnr(enr);
             }
         }
     }
