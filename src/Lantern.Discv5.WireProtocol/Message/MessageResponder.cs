@@ -80,8 +80,6 @@ public class MessageResponder : IMessageResponder
         if (nodeEntry.Status != NodeStatus.Live)
         {
             _routingTable.UpdateFromEnr(nodeEntry.Record);
-            _routingTable.MarkNodeAsLive(nodeEntry.Id);
-            _routingTable.MarkNodeAsResponded(nodeEntry.Id);
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
