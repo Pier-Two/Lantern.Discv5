@@ -25,6 +25,7 @@ public class KBucketTests
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
+        
     }
     
     [Test]
@@ -45,7 +46,8 @@ public class KBucketTests
     {
         var nodes = GenerateRandomNodeEntries(16);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
-
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        
         for(var i = 0; i < 16; i++)
         {
             bucket.Update(nodes[i]);
@@ -65,6 +67,8 @@ public class KBucketTests
         var nodes = GenerateRandomNodeEntries(10);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        
         for (var i = 0; i < 10; i++)
         {
             bucket.Update(nodes[i]);
@@ -79,6 +83,11 @@ public class KBucketTests
     {
         var nodes = GenerateRandomNodeEntries(20);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
+        
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
         
         for (var i = 0; i < 16; i++)
         {
@@ -100,6 +109,10 @@ public class KBucketTests
         var nodes = GenerateRandomNodeEntries(20);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
         for (var i = 0; i < 16; i++)
         {
             bucket.Update(nodes[i]);
@@ -124,7 +137,12 @@ public class KBucketTests
     {
         var nodes = GenerateRandomNodeEntries(20);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
-
+        
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
+        
         for (var i = 0; i < 16; i++)
         {
             bucket.Update(nodes[i]);
@@ -144,6 +162,11 @@ public class KBucketTests
         var nodes = GenerateRandomNodeEntries(100);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         var tasks = new List<Task>();
+        
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
 
         for(var i = 0; i < 100; i++)
         {
