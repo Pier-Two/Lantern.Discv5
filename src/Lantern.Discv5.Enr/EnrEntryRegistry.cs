@@ -4,7 +4,7 @@ using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.Enr.EnrFactory;
+namespace Lantern.Discv5.Enr;
 
 public sealed class EnrEntryRegistry
 {

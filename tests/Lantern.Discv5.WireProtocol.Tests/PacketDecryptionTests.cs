@@ -1,6 +1,9 @@
-using Lantern.Discv5.Enr.EnrFactory;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.Rlp;
+using Lantern.Discv5.WireProtocol.Connection;
+using Lantern.Discv5.WireProtocol.Identity;
+using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -16,11 +19,25 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class PacketDecryptionTests
 {
-    private static readonly SessionCrypto SessionCrypto = new();
-    private static readonly AesCrypto AesCrypto = new();
-    private static readonly IMessageDecoder MessageDecoder = new MessageDecoder();
-    private static readonly ILoggerFactory LoggerFactory = new LoggerFactory();
+    private static SessionCrypto SessionCrypto = new();
+    private static AesCrypto AesCrypto = new();
+    private static IEnrRecordFactory _enrRecordFactory = null!;
+    private static IIdentityManager _identityManager = null!;
+    private static IMessageDecoder _messageDecoder = null!;
+    private static ILoggerFactory LoggerFactory = new LoggerFactory();
 
+    [SetUp]
+    public void Setup()
+    {
+        var connectionOptions = ConnectionOptions.Default;
+        var sessionOptions = SessionOptions.Default;
+        var loggerFactory = LoggingOptions.Default;
+        
+        _enrRecordFactory = new EnrRecordFactory();
+        _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
+        _messageDecoder = new MessageDecoder(_identityManager, _enrRecordFactory);
+    }
+    
     [Test]
     public void Test_OrdinaryPacket_ShouldGeneratePacketCorrectly()
     {
@@ -151,7 +168,7 @@ public class PacketDecryptionTests
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCrypto.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
             encryptedMessage, messageAd);
-        var pingMessage = (PingMessage)MessageDecoder.DecodeMessage(decryptedMessage);
+        var pingMessage = (PingMessage)_messageDecoder.DecodeMessage(decryptedMessage);
         var expectedRequestId = Convert.FromHexString("00000001");
         var expectedEnrSeq = 1;
         
@@ -175,7 +192,7 @@ public class PacketDecryptionTests
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(staticHeader);
         var identityVerifier = new IdentitySchemeV4Verifier();
-        var enr = new EnrRecordFactory().CreateFromBytes(handshakePacket.Record!);
+        var enr = new EnrRecordFactory().CreateFromBytes(handshakePacket.Record!, new IdentitySchemeV4Verifier());
         var enrRecordSignatureVerify = identityVerifier.VerifyRecord(enr);
         var idSignature = handshakePacket.IdSignature;
         var maskingIv = packet[..16];
@@ -189,7 +206,7 @@ public class PacketDecryptionTests
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCrypto.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce, encryptedMessage, messageAd);
-        var pingMessage = (PingMessage)MessageDecoder.DecodeMessage(decryptedMessage);
+        var pingMessage = (PingMessage)_messageDecoder.DecodeMessage(decryptedMessage);
         var expectedRequestId = Convert.FromHexString("00000001");
         var expectedEnrSeq = 1;
         

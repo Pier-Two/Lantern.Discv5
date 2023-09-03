@@ -24,9 +24,15 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
     private readonly IPacketProcessor _packetProcessor;
     private readonly ILogger<WhoAreYouPacketHandler> _logger;
 
-    public WhoAreYouPacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, 
-        IRoutingTable routingTable, IRequestManager requestManager, IUdpConnection udpConnection, 
-        IPacketBuilder packetBuilder, IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
+    public WhoAreYouPacketHandler(
+        IIdentityManager identityManager, 
+        ISessionManager sessionManager, 
+        IRoutingTable routingTable,
+        IRequestManager requestManager,
+        IUdpConnection udpConnection, 
+        IPacketBuilder packetBuilder, 
+        IPacketProcessor packetProcessor, 
+        ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
@@ -85,7 +91,7 @@ public class WhoAreYouPacketHandler : PacketHandlerBase
         
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var handshakePacket = _packetBuilder.BuildHandshakePacket(idSignature, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
-        var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.NodeId, message, maskingIv);
+        var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, _identityManager.Record.NodeId, message, maskingIv);
         
         if(encryptedMessage == null)
         {

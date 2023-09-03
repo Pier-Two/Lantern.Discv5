@@ -1,4 +1,5 @@
 using Discv5ConsoleApp.Lantern.Discv5.WireProtocol.Table;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
@@ -19,7 +20,9 @@ public static class ServiceConfiguration
         TableOptions tableOptions, ITalkReqAndRespHandler? talkResponder = null)
     {
         var services = new ServiceCollection();
-
+        
+        services.AddSingleton(loggerFactory);
+        services.AddSingleton(loggerFactory.CreateLogger<Discv5Protocol>());
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
@@ -41,6 +44,7 @@ public static class ServiceConfiguration
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
         services.AddSingleton<IAesCrypto, AesCrypto>();
+        services.AddSingleton<IEnrRecordFactory, EnrRecordFactory>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
@@ -52,7 +56,8 @@ public static class ServiceConfiguration
         services.AddTransient<OrdinaryPacketHandler>();
         services.AddTransient<WhoAreYouPacketHandler>();
         services.AddTransient<HandshakePacketHandler>();
-        
+        services.AddSingleton<Discv5Protocol>();
+
         return services;
     }
 }

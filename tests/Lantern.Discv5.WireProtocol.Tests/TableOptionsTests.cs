@@ -31,7 +31,7 @@ public class TableOptionsTests
             "enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA"
         };
         var pingIntervalMilliseconds = 1000;
-        var refreshIntervalMilliseconds = 10000;
+        var refreshIntervalMilliseconds = 20000;
         var lookupTimeoutMilliseconds = 1000;
         var maxAllowedFailures = 5;
         var concurrencyParameter = 5;

@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Table;
@@ -8,14 +9,14 @@ namespace Discv5ConsoleApp.Lantern.Discv5.WireProtocol.Table;
 public class RoutingTable : IRoutingTable
 {
     private readonly IIdentityManager _identityManager;
+    private readonly IEnrRecordFactory _enrRecordFactory;
     private readonly ILogger<RoutingTable> _logger;
-    private readonly byte[] _localNodeId;
     private readonly List<KBucket> _buckets;
 
-    public RoutingTable(IIdentityManager identityManager, ILoggerFactory loggerFactory, TableOptions options)
+    public RoutingTable(IIdentityManager identityManager, IEnrRecordFactory enrRecordFactory, ILoggerFactory loggerFactory, TableOptions options)
     {
         _identityManager = identityManager;
-        _localNodeId = identityManager.NodeId;
+        _enrRecordFactory = enrRecordFactory;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
         _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory, options.ReplacementCacheSize)).ToList();
         TableOptions = options;
@@ -53,13 +54,13 @@ public class RoutingTable : IRoutingTable
         {
             return _buckets
                 .SelectMany(bucket => bucket.Nodes)
-                .Where(node => node.HasRespondedEver)
+                .Where(nodeEntry => nodeEntry.HasRespondedEver)
                 .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
                 .ToList(); 
         }
     }
-    
-    public void UpdateFromEnr(EnrRecord enrRecord)
+
+    public void UpdateFromEnr(IEnrRecord enrRecord)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
         var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enrRecord, _identityManager.Verifier);
@@ -81,20 +82,8 @@ public class RoutingTable : IRoutingTable
         }
     }
 
-    public void ClearCacheInAllBuckets()
-    {
-        lock (_buckets)
-        {
-            foreach (var bucket in _buckets)
-            {
-                bucket.ClearReplacementCache();
-            }
-        }
-    }
-
     public void MarkNodeAsResponded(byte[] nodeId)
     {
-        _logger.LogDebug("Marking node {NodeId} as responded", Convert.ToHexString(nodeId));
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -107,8 +96,6 @@ public class RoutingTable : IRoutingTable
 
     public void MarkNodeAsPending(byte[] nodeId)
     {
-        _logger.LogDebug("Marking node {NodeId} as pending", Convert.ToHexString(nodeId));
-        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -121,8 +108,6 @@ public class RoutingTable : IRoutingTable
 
     public void MarkNodeAsLive(byte[] nodeId)
     {
-        _logger.LogDebug("Marking node {NodeId} as live", Convert.ToHexString(nodeId));
-        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -136,8 +121,6 @@ public class RoutingTable : IRoutingTable
 
     public void MarkNodeAsDead(byte[] nodeId)
     {
-        _logger.LogInformation("Marking node {NodeId} as dead", Convert.ToHexString(nodeId));
-        
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
@@ -167,7 +150,9 @@ public class RoutingTable : IRoutingTable
         if (nodeEntry != null)
             return nodeEntry;
 
-        var bootstrapEnrs = TableOptions.BootstrapEnrs;
+        var bootstrapEnrs = TableOptions.BootstrapEnrs
+            .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+            .ToArray();
 
         foreach (var bootstrapEnr in bootstrapEnrs)
         {
@@ -190,9 +175,9 @@ public class RoutingTable : IRoutingTable
         return nodeEntry;
     }
 
-    public List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances)
+    public List<IEnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances)
     {
-        var enrRecords = new List<EnrRecord>();
+        var enrRecords = new List<IEnrRecord>();
 
         foreach (var distance in distances)
         {
@@ -216,7 +201,9 @@ public class RoutingTable : IRoutingTable
 
     public void PopulateFromBootstrapEnrs()
     {
-        var enrs = TableOptions.BootstrapEnrs;
+        var enrs = TableOptions.BootstrapEnrs
+            .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+            .ToArray();
 
         foreach (var enr in enrs)
         {
@@ -261,7 +248,7 @@ public class RoutingTable : IRoutingTable
                         continue;
                     }
 
-                    var currentDistance = TableUtility.Log2Distance(_localNodeId, node.Id);
+                    var currentDistance = TableUtility.Log2Distance(_identityManager.Record.NodeId, node.Id);
 
                     if (currentDistance == distance)
                     {
@@ -276,7 +263,7 @@ public class RoutingTable : IRoutingTable
 
     private int GetBucketIndex(byte[] nodeId)
     {
-        var distance = TableUtility.Log2Distance(_localNodeId, nodeId);
+        var distance = TableUtility.Log2Distance(_identityManager.Record.NodeId, nodeId);
         return distance == 256 ? 255 : distance;
     }
 }

@@ -65,7 +65,7 @@ public class SessionMain : ISessionMain
         return _sessionCrypto.VerifyIdSignature(handshakePacket.IdSignature, _challengeData,publicKey, handshakePacket.EphPubkey, selfNodeId, _sessionKeys.CryptoContext);
     }
 
-    public byte[]? EncryptMessageWithNewKeys(EnrRecord destRecord, StaticHeader header, byte[] selfNodeId, byte[] message, byte[] maskingIv)
+    public byte[]? EncryptMessageWithNewKeys(IEnrRecord destRecord, StaticHeader header, byte[] selfNodeId, byte[] message, byte[] maskingIv)
     {
         var publicKey = destRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         var destNodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(destRecord);

@@ -26,9 +26,15 @@ public class PacketManager : IPacketManager
     private readonly IPacketBuilder _packetBuilder;
     private readonly ILogger<PacketManager> _logger;
 
-    public PacketManager(IPacketHandlerFactory packetHandlerFactory, IIdentityManager identityManager,
-        ISessionManager sessionManager, IMessageRequester messageRequester, IUdpConnection udpConnection,
-        IPacketProcessor packetProcessor, IPacketBuilder packetBuilder, ILoggerFactory loggerFactory)
+    public PacketManager(
+        IPacketHandlerFactory packetHandlerFactory, 
+        IIdentityManager identityManager,
+        ISessionManager sessionManager, 
+        IMessageRequester messageRequester, 
+        IUdpConnection udpConnection,
+        IPacketProcessor packetProcessor, 
+        IPacketBuilder packetBuilder, 
+        ILoggerFactory loggerFactory)
     {
         _packetHandlerFactory = packetHandlerFactory;
         _identityManager = identityManager;
@@ -40,7 +46,7 @@ public class PacketManager : IPacketManager
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
 
-    public async Task SendPacket(EnrRecord destRecord, MessageType messageType, params byte[][] args)
+    public async Task SendPacket(IEnrRecord destRecord, MessageType messageType, params byte[][] args)
     {
         var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
         var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);

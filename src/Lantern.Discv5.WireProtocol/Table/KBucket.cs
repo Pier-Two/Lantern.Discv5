@@ -35,7 +35,8 @@ public class KBucket
     {
         lock (_lock)
         {
-            return _nodes.FirstOrDefault(n => n.Id.SequenceEqual(nodeId)) ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
+            var node = _nodes.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
+            return node ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
         }
     }
     
@@ -46,15 +47,7 @@ public class KBucket
             return _nodes.First?.Value;
         }
     }
-    
-    public void ClearReplacementCache()
-    {
-        lock (_lock)
-        {
-            _replacementCache.Clear();
-        }
-    }
-    
+
     public void Update(NodeTableEntry nodeEntry)
     {
         lock (_lock)

@@ -6,11 +6,11 @@ namespace Lantern.Discv5.WireProtocol.Identity;
 
 public interface IIdentityManager
 {
+    IIdentitySchemeSigner Signer { get; }
+    
     IIdentitySchemeVerifier Verifier { get; }
     
-    EnrRecord Record { get; }
-    
-    byte[] NodeId { get; }
+    IEnrRecord Record { get; }
     
     bool IsIpAddressAndPortSet();
 

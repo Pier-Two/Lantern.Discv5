@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -25,11 +24,19 @@ public class HandshakePacketHandler : PacketHandlerBase
     private readonly IUdpConnection _connection;
     private readonly IPacketBuilder _packetBuilder;
     private readonly IPacketProcessor _packetProcessor;
+    private readonly IEnrRecordFactory _enrRecordFactory;
     private readonly ILogger<HandshakePacketHandler> _logger;
 
-    public HandshakePacketHandler(IIdentityManager identityManager, ISessionManager sessionManager, 
-        IRoutingTable routingTable, IMessageResponder messageResponder, IUdpConnection udpConnection, 
-        IPacketBuilder packetBuilder, IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
+    public HandshakePacketHandler(
+        IIdentityManager identityManager, 
+        ISessionManager sessionManager, 
+        IRoutingTable routingTable, 
+        IMessageResponder messageResponder, 
+        IUdpConnection udpConnection, 
+        IPacketBuilder packetBuilder, 
+        IPacketProcessor packetProcessor, 
+        IEnrRecordFactory enrRecordFactory, 
+        ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
         _sessionManager = sessionManager;
@@ -38,6 +45,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         _connection = udpConnection;
         _packetBuilder = packetBuilder;
         _packetProcessor = packetProcessor;
+        _enrRecordFactory = enrRecordFactory;
         _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
     }
 
@@ -64,7 +72,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
         
-        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.NodeId);
+        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.Record.NodeId);
 
         if (!idSignatureVerificationResult)
         {
@@ -72,7 +80,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
 
-        var decryptedMessage = session.DecryptMessageWithNewKeys(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), _packetProcessor.GetEncryptedMessage(packet),handshakePacket, _identityManager.NodeId);
+        var decryptedMessage = session.DecryptMessageWithNewKeys(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), _packetProcessor.GetEncryptedMessage(packet),handshakePacket, _identityManager.Record.NodeId);
 
         if (decryptedMessage == null)
         {
@@ -96,12 +104,11 @@ public class HandshakePacketHandler : PacketHandlerBase
 
     private byte[]? ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId)
     {
-        EnrRecord? senderRecord = null; 
+        IEnrRecord? senderRecord = null; 
         
         if (handshakePacketBase.Record?.Length > 0)
         {
-            var recordFactory = new EnrRecordFactory();
-            senderRecord = recordFactory.CreateFromBytes(handshakePacketBase.Record);
+            senderRecord = _enrRecordFactory.CreateFromBytes(handshakePacketBase.Record, _identityManager.Verifier);
         }
         else if (senderNodeId != null)
         {

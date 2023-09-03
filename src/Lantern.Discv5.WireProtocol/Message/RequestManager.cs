@@ -20,7 +20,13 @@ public class RequestManager : IRequestManager
     private readonly IGracefulTaskRunner _taskRunner;
     private Task _checkAllRequestsTask;
 
-    public RequestManager(IRoutingTable routingTable, ILoggerFactory loggerFactory, ICancellationTokenSourceWrapper cts, IGracefulTaskRunner taskRunner, TableOptions tableOptions, ConnectionOptions connectionOptions)
+    public RequestManager(
+        IRoutingTable routingTable, 
+        ILoggerFactory loggerFactory, 
+        ICancellationTokenSourceWrapper cts, 
+        IGracefulTaskRunner taskRunner, 
+        TableOptions tableOptions, 
+        ConnectionOptions connectionOptions)
     {
         _pendingRequests = new ConcurrentDictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
         _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
@@ -31,6 +37,7 @@ public class RequestManager : IRequestManager
         _connectionOptions = connectionOptions;
         _cts = cts;
         _taskRunner = taskRunner;
+        _checkAllRequestsTask = Task.CompletedTask;
     }
     
     public void StartRequestManager()
@@ -145,7 +152,7 @@ public class RequestManager : IRequestManager
     // CheckRequests and RemoveFulfilledRequests can likely be merged into one method
     private void CheckRequests()
     {
-        _logger.LogInformation("Checking for pending and cached requests");
+        _logger.LogDebug("Checking for pending and cached requests");
 
         var currentPendingRequests = _pendingRequests.Values.ToList();
         var currentCachedRequests = _cachedRequests.Values.ToList();
@@ -169,8 +176,6 @@ public class RequestManager : IRequestManager
             .Where(x => x.IsFulfilled)
             .ToList();
         
-        //_logger.LogInformation("There are total {PendingRequests} pending requests with {FindNodeRequestsCount} FindNode requests and {} Ping requests", _pendingRequests.Count, _pendingRequests.Values.Count(x => x.Message.MessageType == MessageType.FindNode), _pendingRequests.Values.Count(x => x.Message.MessageType == MessageType.Ping));
-        
         foreach (var task in completedTasks)
         {
             if (task.Message.MessageType == MessageType.FindNode)
@@ -192,7 +197,7 @@ public class RequestManager : IRequestManager
         if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
         
-        _logger.LogWarning("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
+        _logger.LogDebug("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
         
@@ -217,8 +222,6 @@ public class RequestManager : IRequestManager
     {
         if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
             return;
-        
-        _logger.LogWarning("Cached request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);

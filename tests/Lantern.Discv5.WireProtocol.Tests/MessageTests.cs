@@ -1,8 +1,12 @@
 using System.Net;
-using Lantern.Discv5.Enr.EnrFactory;
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.WireProtocol.Connection;
+using Lantern.Discv5.WireProtocol.Identity;
+using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using NUnit.Framework;
 
@@ -10,8 +14,22 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 
 [TestFixture]
 public class MessageTests
-{
-    private static readonly IMessageDecoder MessageDecoder = new MessageDecoder();
+{    
+    private static IEnrRecordFactory _enrRecordFactory = null!;
+    private static IIdentityManager _identityManager = null!;
+    private static IMessageDecoder _messageDecoder = null!;
+
+    [SetUp]
+    public void Setup()
+    {
+        var connectionOptions = ConnectionOptions.Default;
+        var sessionOptions = SessionOptions.Default;
+        var loggerFactory = LoggingOptions.Default;
+        
+        _enrRecordFactory = new EnrRecordFactory();
+        _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
+        _messageDecoder = new MessageDecoder(_identityManager, _enrRecordFactory);
+    }
     
     [Test]
     public void Test_PingMessage_ShouldEncodeCorrectly()
@@ -28,7 +46,7 @@ public class MessageTests
     public void Test_PingMessage_ShouldDecodeCorrectly()
     {
         var pingMessage = new PingMessage(12);
-        var newPingMessage = (PingMessage)MessageDecoder.DecodeMessage(pingMessage.EncodeMessage());
+        var newPingMessage = (PingMessage)_messageDecoder.DecodeMessage(pingMessage.EncodeMessage());
         Assert.AreEqual(pingMessage.RequestId, newPingMessage.RequestId);
         Assert.AreEqual(pingMessage.EnrSeq, newPingMessage.EnrSeq);
     }
@@ -52,7 +70,7 @@ public class MessageTests
     {
         var recipientIp = IPAddress.Loopback;
         var pongMessage = new PongMessage(12, recipientIp, 3402);
-        var newPongMessage = (PongMessage)MessageDecoder.DecodeMessage(pongMessage.EncodeMessage());
+        var newPongMessage = (PongMessage)_messageDecoder.DecodeMessage(pongMessage.EncodeMessage());
         Assert.AreEqual(pongMessage.RequestId, newPongMessage.RequestId);
         Assert.AreEqual(pongMessage.EnrSeq, newPongMessage.EnrSeq);
         Assert.AreEqual(pongMessage.RecipientIp, newPongMessage.RecipientIp);
@@ -89,7 +107,7 @@ public class MessageTests
         var secondDistance = TableUtility.Log2Distance(thirdNodeId, fourthNodeId);
         var distances = new[] { firstDistance, secondDistance };
         var findNodeMessage = new FindNodeMessage(distances);
-        var newFindNodeMessage = (FindNodeMessage)MessageDecoder.DecodeMessage(findNodeMessage.EncodeMessage());
+        var newFindNodeMessage = (FindNodeMessage)_messageDecoder.DecodeMessage(findNodeMessage.EncodeMessage());
         Assert.AreEqual(findNodeMessage.Distances, newFindNodeMessage.Distances);
     }
 
@@ -101,7 +119,10 @@ public class MessageTests
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
         var enrs = new[]
-            { new EnrRecordFactory().CreateFromString(firstEnrString), new EnrRecordFactory().CreateFromString(secondEnrString) };
+        {
+            new EnrRecordFactory().CreateFromString(firstEnrString, _identityManager.Verifier), 
+            new EnrRecordFactory().CreateFromString(secondEnrString, _identityManager.Verifier), 
+        };
         var nodesMessage = new NodesMessage(2, enrs);
         var encodedMessage = nodesMessage.EncodeMessage();
         var expectedPrefix = new[] { 4, 249, 1, 81, 136 };
@@ -135,9 +156,12 @@ public class MessageTests
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
         var enrs = new[]
-            { new EnrRecordFactory().CreateFromString(firstEnrString), new EnrRecordFactory().CreateFromString(secondEnrString) };
+        {
+            new EnrRecordFactory().CreateFromString(firstEnrString, _identityManager.Verifier), 
+            new EnrRecordFactory().CreateFromString(secondEnrString, _identityManager.Verifier)
+        };
         var nodesMessage = new NodesMessage(2, enrs);
-        var decodedMessage = (NodesMessage)MessageDecoder.DecodeMessage(nodesMessage.EncodeMessage());
+        var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(nodesMessage.EncodeMessage());
         
         Assert.AreEqual(decodedMessage.RequestId, nodesMessage.RequestId);
         Assert.AreEqual(decodedMessage.Total, nodesMessage.Total);
@@ -168,7 +192,7 @@ public class MessageTests
         var protocol = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var request = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var talkReqMessage = new TalkReqMessage(protocol, request);
-        var decodedMessage = (TalkReqMessage)MessageDecoder.DecodeMessage(talkReqMessage.EncodeMessage());
+        var decodedMessage = (TalkReqMessage)_messageDecoder.DecodeMessage(talkReqMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Protocol, talkReqMessage.Protocol);
         Assert.AreEqual(decodedMessage.Request, talkReqMessage.Request);
     }
@@ -191,7 +215,7 @@ public class MessageTests
     {
         var response = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var talkRespMessage = new TalkRespMessage(response);
-        var decodedMessage = (TalkRespMessage)MessageDecoder.DecodeMessage(talkRespMessage.EncodeMessage());
+        var decodedMessage = (TalkRespMessage)_messageDecoder.DecodeMessage(talkRespMessage.EncodeMessage());
         Assert.AreEqual(decodedMessage.Response, talkRespMessage.Response);
     }
 
@@ -200,7 +224,7 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = new EnrRecordFactory().CreateFromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString, _identityManager.Verifier);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
@@ -228,12 +252,12 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = new EnrRecordFactory().CreateFromString(enrString);
+        var enr = new EnrRecordFactory().CreateFromString(enrString, _identityManager.Verifier);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
         var encodedMessage = regTopicMessage.EncodeMessage();
-        var decodedMessage = (RegTopicMessage)MessageDecoder.DecodeMessage(encodedMessage);
+        var decodedMessage = (RegTopicMessage)_messageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regTopicMessage.Topic);
         Assert.AreEqual(regTopicMessage.Enr.ToString(), decodedMessage.Enr.ToString());
         Assert.AreEqual(decodedMessage.Ticket, regTopicMessage.Ticket);
@@ -261,7 +285,7 @@ public class MessageTests
         var waitTime = 100;
         var ticketRespMessage = new TicketMessage(ticket, waitTime);
         var encodedMessage = ticketRespMessage.EncodeMessage();
-        var decodedMessage = (TicketMessage)MessageDecoder.DecodeMessage(encodedMessage);
+        var decodedMessage = (TicketMessage)_messageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Ticket, ticketRespMessage.Ticket);
         Assert.AreEqual(decodedMessage.WaitTime, ticketRespMessage.WaitTime);
     }
@@ -285,7 +309,7 @@ public class MessageTests
         var topic = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regConfirmationMessage = new RegConfirmationMessage(topic);
         var encodedMessage = regConfirmationMessage.EncodeMessage();
-        var decodedMessage = (RegConfirmationMessage)MessageDecoder.DecodeMessage(encodedMessage);
+        var decodedMessage = (RegConfirmationMessage)_messageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, regConfirmationMessage.Topic);
     }
 
@@ -320,7 +344,7 @@ public class MessageTests
         };
         var topicQueryMessage = new TopicQueryMessage(topicHash);
         var encodedMessage = topicQueryMessage.EncodeMessage();
-        var decodedMessage = (TopicQueryMessage)MessageDecoder.DecodeMessage(encodedMessage);
+        var decodedMessage = (TopicQueryMessage)_messageDecoder.DecodeMessage(encodedMessage);
         Assert.AreEqual(decodedMessage.Topic, topicQueryMessage.Topic);
     }
 }

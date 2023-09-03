@@ -23,7 +23,7 @@ public class RegTopicMessage : Message
         var messageId = new[] { (byte)MessageType };
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
         var encodedTopic = RlpEncoder.EncodeBytes(Topic);
-        var encodedEnr = Enr.EncodeEnrRecord();
+        var encodedEnr = Enr.EncodeRecord();
         var encodedTicket = RlpEncoder.EncodeBytes(Ticket);
         var encodedMessage =
             RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedTopic,

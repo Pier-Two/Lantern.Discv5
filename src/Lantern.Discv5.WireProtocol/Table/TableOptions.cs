@@ -1,5 +1,4 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrFactory;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
@@ -12,7 +11,7 @@ public class TableOptions
     public int ReplacementCacheSize { get; }
     public int ConcurrencyParameter { get; }
     public int LookupParallelism { get; }
-    public EnrRecord[] BootstrapEnrs { get; }
+    public string[] BootstrapEnrs { get; }
     
     public static TableOptions Default => new Builder().Build();
 
@@ -37,7 +36,7 @@ public class TableOptions
         public int ReplacementCacheSize { get; private set; } = 300;
         public int ConcurrencyParameter { get; private set; } = 3;
         public int LookupParallelism { get; private set; } = 2;
-        public EnrRecord[] BootstrapEnrs { get; private set; } = Array.Empty<EnrRecord>();
+        public string[] BootstrapEnrs { get; private set; } = Array.Empty<string>();
         
         public Builder WithPingIntervalMilliseconds(int pingIntervalMilliseconds)
         {
@@ -80,31 +79,16 @@ public class TableOptions
             LookupParallelism = lookupParallelism; 
             return this;
         }
-
+        
         public Builder WithBootstrapEnrs(string[] bootstrapEnrs)
         {
-            BootstrapEnrs = bootstrapEnrs
-                .Select(enr => new EnrRecordFactory().CreateFromString(enr))
-                .ToArray();
-            
+            BootstrapEnrs = bootstrapEnrs;
             return this;
         }
 
-        public TableOptions Build(string[]? bootstrapEnrs = null)
+        public TableOptions Build()
         {
-            if (bootstrapEnrs != null)
-            {
-                BootstrapEnrs = GetBootstrapEnrRecords(bootstrapEnrs);
-            }
-
             return new TableOptions(this);
-        }
-        
-        private static EnrRecord[] GetBootstrapEnrRecords(string[] bootstrapEnrs)
-        {
-            return bootstrapEnrs
-                .Select(enr => new EnrRecordFactory().CreateFromString(enr))
-                .ToArray();
         }
     }
 }

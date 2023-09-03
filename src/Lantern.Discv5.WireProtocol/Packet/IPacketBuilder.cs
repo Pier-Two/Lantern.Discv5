@@ -13,7 +13,7 @@ public interface IPacketBuilder
         byte[] maskingIv);
 
     Tuple<byte[], StaticHeader> BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce,
-        EnrRecord destRecord, byte[] maskingIv);
+        IEnrRecord destRecord, byte[] maskingIv);
 
     Tuple<byte[], StaticHeader> BuildHandshakePacket(byte[] idSignature, byte[] ephemeralPubKey, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
 }

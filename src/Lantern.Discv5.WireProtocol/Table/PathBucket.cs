@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Table;

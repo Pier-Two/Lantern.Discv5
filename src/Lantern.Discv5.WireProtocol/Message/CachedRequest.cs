@@ -14,6 +14,6 @@ public class CachedRequest
     {
         NodeId = nodeId;
         Message = message;
-        ElapsedTime = new Stopwatch();
+        ElapsedTime = Stopwatch.StartNew();
     }
 }

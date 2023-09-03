@@ -5,13 +5,13 @@ namespace Lantern.Discv5.WireProtocol.Message.Responses;
 
 public class NodesMessage : Message
 {
-    public NodesMessage(int total, EnrRecord[] enrs) : base(MessageType.Nodes)
+    public NodesMessage(int total, IEnrRecord[] enrs) : base(MessageType.Nodes)
     {
         Total = total;
         Enrs = enrs;
     }
 
-    public NodesMessage(byte[] requestId, int total, EnrRecord[] enrs) : base(MessageType.Nodes, requestId)
+    public NodesMessage(byte[] requestId, int total, IEnrRecord[] enrs) : base(MessageType.Nodes, requestId)
     {
         Total = total;
         Enrs = enrs;
@@ -19,7 +19,7 @@ public class NodesMessage : Message
 
     public int Total { get; }
 
-    public EnrRecord[] Enrs { get; }
+    public IEnrRecord[] Enrs { get; }
     
     public override byte[] EncodeMessage()
     {
@@ -36,7 +36,7 @@ public class NodesMessage : Message
     private byte[] EncodeEnrs()
     {
         using var stream = new MemoryStream();
-        foreach (var enr in Enrs) stream.Write(enr.EncodeEnrRecord());
+        foreach (var enr in Enrs) stream.Write(enr.EncodeRecord());
         return RlpEncoder.EncodeCollectionOfBytes(stream.ToArray());
     }
 }

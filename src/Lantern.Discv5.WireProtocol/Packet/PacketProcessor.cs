@@ -17,7 +17,7 @@ public class PacketProcessor : IPacketProcessor
 
     public StaticHeader GetStaticHeader(byte[] rawPacket)
     {
-        var decryptedPacket = _aesCrypto.AesCtrDecrypt(_identityManager.NodeId[..16], rawPacket[..16], rawPacket[16..]);
+        var decryptedPacket = _aesCrypto.AesCtrDecrypt(_identityManager.Record.NodeId[..16], rawPacket[..16], rawPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
         
         return staticHeader;

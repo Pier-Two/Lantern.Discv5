@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -126,7 +125,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenSessionCannotBeCreated()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -170,7 +169,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenNoReplyMessageIsCreated()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -224,7 +223,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenEncryptedMessageIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -246,6 +245,9 @@ public class WhoAreYouPacketHandlerTests
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
             .Returns(new byte[32]);
+        mockIdentityManager
+            .SetupGet(x => x.Record.NodeId)
+            .Returns(enrRecord.NodeId);
         mockSessionMain
             .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -287,7 +289,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenIdSignatureIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -346,7 +348,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendPacket_WhenEncryptedMessageIsNotNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -356,6 +358,9 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Setup(x => x.GetCachedRequest(It.IsAny<byte[]>()))
             .Returns((CachedRequest?)null);
+        mockIdentityManager
+            .SetupGet(x => x.Record.NodeId)
+            .Returns(enrRecord.NodeId);
         mockRequestManager
             .Setup(x => x.GetPendingRequestByNodeId(It.IsAny<byte[]>()))
             .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
