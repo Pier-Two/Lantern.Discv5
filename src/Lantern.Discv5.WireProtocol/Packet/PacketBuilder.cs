@@ -32,7 +32,7 @@ public class PacketBuilder : IPacketBuilder
         
         _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
         
-        var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
+        var ordinaryPacket = new OrdinaryPacketBase(_identityManager.Record.NodeId);
         var packetStaticHeader = ConstructStaticHeader(PacketType.Ordinary, ordinaryPacket.AuthData, packetNonce);
         var maskedHeader = new MaskedHeader(destNodeId, maskingIv);
         var encryptedMaskedHeader = maskedHeader.GetMaskedHeader(packetStaticHeader.GetHeader(), _aesCrypto);
@@ -44,10 +44,10 @@ public class PacketBuilder : IPacketBuilder
 
     public Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] message, byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
     {
-        var ordinaryPacket = new OrdinaryPacketBase(_identityManager.NodeId);
+        var ordinaryPacket = new OrdinaryPacketBase(_identityManager.Record.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
 
-        _logger.LogDebug("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
+        _logger.LogInformation("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
         
         _requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
         
@@ -70,7 +70,7 @@ public class PacketBuilder : IPacketBuilder
         return Tuple.Create(packet, packetStaticHeader);
     }
 
-    public Tuple<byte[], StaticHeader> BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce, EnrRecord destRecord, byte[] maskingIv)
+    public Tuple<byte[], StaticHeader> BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce, IEnrRecord destRecord, byte[] maskingIv)
     {
         var whoAreYouPacket = new WhoAreYouPacketBase(RandomUtility.GenerateRandomData(PacketConstants.IdNonceSize), destRecord.SequenceNumber);
         var packetStaticHeader = ConstructStaticHeader(PacketType.WhoAreYou, whoAreYouPacket.AuthData, packetNonce);
@@ -83,7 +83,7 @@ public class PacketBuilder : IPacketBuilder
     
     public Tuple<byte[], StaticHeader> BuildHandshakePacket(byte[] idSignature, byte[] ephemeralPubKey, byte[] destNodeId, byte[] maskingIv, byte[] messageCount)
     {
-        var handshakePacket = new HandshakePacketBase(idSignature, ephemeralPubKey,_identityManager.NodeId, _identityManager.Record.EncodeEnrRecord());
+        var handshakePacket = new HandshakePacketBase(idSignature, ephemeralPubKey,_identityManager.Record.NodeId, _identityManager.Record.EncodeRecord());
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
         var packetStaticHeader =
             ConstructStaticHeader(PacketType.Handshake, handshakePacket.AuthData, packetNonce);

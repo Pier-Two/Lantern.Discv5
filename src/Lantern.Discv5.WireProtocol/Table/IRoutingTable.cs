@@ -13,10 +13,8 @@ public interface IRoutingTable
     NodeTableEntry[] GetAllNodeEntries();
 
     NodeTableEntry? GetLeastRecentlySeenNode();
-
-    void ClearCacheInAllBuckets();
     
-    void UpdateFromEnr(EnrRecord enrRecord);
+    void UpdateFromEnr(IEnrRecord enrRecord);
     
     void MarkNodeAsResponded(byte[] nodeId);
 
@@ -34,5 +32,5 @@ public interface IRoutingTable
 
     List<NodeTableEntry> GetClosestNodes(byte[] targetNodeId);
 
-    List<EnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances);
+    List<IEnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances);
 }

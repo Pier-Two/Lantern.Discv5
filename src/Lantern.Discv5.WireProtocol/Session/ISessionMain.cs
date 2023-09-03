@@ -20,7 +20,7 @@ public interface ISessionMain
     
     bool VerifyIdSignature(HandshakePacketBase handshakePacket, byte[] publicKey, byte[] selfNodeId);
     
-    byte[]? EncryptMessageWithNewKeys(EnrRecord destRecord, StaticHeader header, byte[] selfNodeId, byte[] message,
+    byte[]? EncryptMessageWithNewKeys(IEnrRecord destRecord, StaticHeader header, byte[] selfNodeId, byte[] message,
         byte[] maskingIv);
 
     byte[]? DecryptMessageWithNewKeys(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage,

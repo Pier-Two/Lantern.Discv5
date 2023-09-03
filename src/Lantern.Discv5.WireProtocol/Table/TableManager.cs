@@ -1,3 +1,5 @@
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -8,9 +10,11 @@ namespace Lantern.Discv5.WireProtocol.Table;
 public class TableManager : ITableManager
 {
     private readonly IPacketManager _packetManager;
+    private readonly IIdentityManager _identityManager;
     private readonly ILookupManager _lookupManager;
     private readonly IRoutingTable _routingTable;
     private readonly TableOptions _tableOptions;
+    private readonly IEnrRecordFactory _enrRecordFactory;
     private readonly ILogger<TableManager> _logger;
     private readonly ICancellationTokenSourceWrapper _shutdownCts;
     private readonly IGracefulTaskRunner _taskRunner;
@@ -18,12 +22,23 @@ public class TableManager : ITableManager
     private Task? _refreshTask;
     private Task? _pingTask;
     
-    public TableManager(IPacketManager packetManager, ILookupManager lookupManager, IRoutingTable routingTable, ILoggerFactory loggerFactory, ICancellationTokenSourceWrapper cts, IGracefulTaskRunner taskRunner, TableOptions tableOptions)
+    public TableManager(
+        IPacketManager packetManager, 
+        IIdentityManager identityManager, 
+        ILookupManager lookupManager, 
+        IRoutingTable routingTable, 
+        IEnrRecordFactory enrRecordFactory, 
+        ILoggerFactory loggerFactory, 
+        ICancellationTokenSourceWrapper cts, 
+        IGracefulTaskRunner taskRunner, 
+        TableOptions tableOptions)
     {
         _packetManager = packetManager;
+        _identityManager = identityManager;
         _lookupManager = lookupManager;
         _routingTable = routingTable;
         _tableOptions = tableOptions;
+        _enrRecordFactory = enrRecordFactory;
         _logger = loggerFactory.CreateLogger<TableManager>();
         _taskRunner = taskRunner;
         _shutdownCts = cts;
@@ -57,7 +72,9 @@ public class TableManager : ITableManager
             _logger.LogInformation("Initialising from bootstrap ENRs");
             _routingTable.PopulateFromBootstrapEnrs();
 
-            var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs;
+            var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs
+                .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+                .ToArray();
 
             foreach (var bootstrapEnr in bootstrapEnrs)
             {
@@ -118,8 +135,7 @@ public class TableManager : ITableManager
         {
             foreach(var node in closestNodes)
             {
-                var enr = node.Record;
-                _routingTable.UpdateFromEnr(enr);
+                _routingTable.UpdateFromEnr(node.Record);
             }
         }
     }

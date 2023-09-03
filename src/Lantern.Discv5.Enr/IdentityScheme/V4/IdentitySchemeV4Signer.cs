@@ -16,7 +16,7 @@ public class IdentitySchemeV4Signer : IIdentitySchemeSigner
 
     public byte[] PublicKey => _privateKey.CreatePubKey().ToBytes();
 
-    public byte[] SignRecord(EnrRecord record)
+    public byte[] SignRecord(IEnrRecord record)
     {
         _privateKey.TrySignECDSA(Keccak256.ComputeHash(record.EncodeContent()), out var signature);
 

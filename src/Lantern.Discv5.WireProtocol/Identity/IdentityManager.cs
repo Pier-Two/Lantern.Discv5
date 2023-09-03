@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
@@ -13,23 +12,23 @@ namespace Lantern.Discv5.WireProtocol.Identity;
 
 public class IdentityManager: IIdentityManager
 {
-    private readonly IIdentitySchemeSigner _signer;
     private readonly ILogger<IdentityManager> _logger;
-
-    public IIdentitySchemeVerifier Verifier { get; }
-
-    public EnrRecord Record { get; }
-    
-    public byte[] NodeId => Verifier.GetNodeIdFromRecord(Record);
     
     public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions, ILoggerFactory loggerFactory)
     {
-        _signer = sessionOptions.Signer;
-        _logger = loggerFactory.CreateLogger<IdentityManager>();
+        Signer = sessionOptions.Signer;
         Verifier = sessionOptions.Verifier;
-        Record = CreateNewRecord(connectionOptions, _signer);
+        _logger = loggerFactory.CreateLogger<IdentityManager>();
+        Record = CreateNewRecord(connectionOptions, Verifier, Signer);
+        
     }
+    
+    public IIdentitySchemeVerifier Verifier { get; }
+    
+    public IIdentitySchemeSigner Signer { get; }
 
+    public IEnrRecord Record { get; }
+    
     public bool IsIpAddressAndPortSet()
     {
         return Record.HasKey(EnrContentKey.Ip) && Record.HasKey(EnrContentKey.Udp) || (Record.HasKey(EnrContentKey.Ip6) && Record.HasKey(EnrContentKey.Udp6));
@@ -39,27 +38,27 @@ public class IdentityManager: IIdentityManager
     {
         if (endpoint.AddressFamily == AddressFamily.InterNetwork)
         {
-            Record.UpdateEntry(EnrContentKey.Ip, new EntryIp(endpoint.Address));
-            Record.UpdateEntry(EnrContentKey.Udp, new EntryUdp(endpoint.Port));
+            Record.UpdateEntry(new EntryIp(endpoint.Address));
+            Record.UpdateEntry(new EntryUdp(endpoint.Port));
         }
         else if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
         {
-            Record.UpdateEntry(EnrContentKey.Ip6, new EntryIp6(endpoint.Address));
-            Record.UpdateEntry(EnrContentKey.Udp6, new EntryUdp6(endpoint.Port));
+            Record.UpdateEntry(new EntryIp6(endpoint.Address));
+            Record.UpdateEntry(new EntryUdp6(endpoint.Port));
         }
         
-        Record.UpdateSignature(_signer);
+        Record.UpdateSignature();
+        
         _logger.LogInformation("Self ENR record updated => {Record}", Record);
     }
 
-    private EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeSigner signer)
+    private EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
     {
         EnrRecord record;
         
         if (options.IpAddress != null)
         {
-            record = new EnrBuilder()
-                .WithSigner(signer)
+            record = new EnrBuilder(verifier, signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
                 .WithEntry(EnrContentKey.Ip, new EntryIp(options.IpAddress)) 
                 .WithEntry(EnrContentKey.Udp, new EntryUdp(options.Port))
@@ -68,8 +67,7 @@ public class IdentityManager: IIdentityManager
         }
         else
         {
-            record = new EnrBuilder()
-                .WithSigner(signer)
+            record = new EnrBuilder(verifier, signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
                 .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();

@@ -22,20 +22,29 @@ public class Discv5Protocol
     private readonly ILookupManager _lookupManager;
     private readonly ILogger<Discv5Protocol> _logger;
     
-    public Discv5Protocol(IServiceProvider serviceProvider)
+    public Discv5Protocol(
+        IConnectionManager connectionManager,
+        IIdentityManager identityManager,
+        ITableManager tableManager,
+        IRequestManager requestManager,
+        IPacketManager packetManager,
+        IRoutingTable routingTable,
+        ISessionManager sessionManager,
+        ILookupManager lookupManager,
+        ILogger<Discv5Protocol> logger)
     {
-        _connectionManager = serviceProvider.GetRequiredService<IConnectionManager>();
-        _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
-        _tableManager = serviceProvider.GetRequiredService<ITableManager>();
-        _requestManager = serviceProvider.GetRequiredService<IRequestManager>();
-        _packetManager = serviceProvider.GetRequiredService<IPacketManager>();
-        _routingTable = serviceProvider.GetRequiredService<IRoutingTable>();
-        _sessionManager = serviceProvider.GetRequiredService<ISessionManager>();
-        _lookupManager = serviceProvider.GetRequiredService<ILookupManager>();
-        _logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<Discv5Protocol>();
+        _connectionManager = connectionManager;
+        _identityManager = identityManager;
+        _tableManager = tableManager;
+        _requestManager = requestManager;
+        _packetManager = packetManager;
+        _routingTable = routingTable;
+        _sessionManager = sessionManager;
+        _lookupManager = lookupManager;
+        _logger = logger;
     }
     
-    public EnrRecord SelfEnrRecord => _identityManager.Record;
+    public IEnrRecord SelfEnrRecord => _identityManager.Record;
     
     public int NodesCount => _routingTable.GetTotalEntriesCount();
     
@@ -79,7 +88,7 @@ public class Discv5Protocol
         return null;
     }
     
-    public async Task<bool> SendPingAsync(EnrRecord destinationRecord)
+    public async Task<bool> SendPingAsync(IEnrRecord destinationRecord)
     {
         try
         {

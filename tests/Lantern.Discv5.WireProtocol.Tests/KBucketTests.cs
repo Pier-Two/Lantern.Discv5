@@ -2,7 +2,6 @@ using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -181,8 +180,7 @@ public class KBucketTests
             var signer = new IdentitySchemeV4Signer(RandomUtility.GenerateRandomData(32));
             var ipAddress = new IPAddress(RandomUtility.GenerateRandomData(4));
             
-            enrs[i] = new EnrBuilder()
-                .WithSigner(signer)
+            enrs[i] = new EnrBuilder(_identityManager.Verifier, _identityManager.Signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4"))
                 .WithEntry(EnrContentKey.Ip, new EntryIp(ipAddress))
                 .WithEntry(EnrContentKey.Udp, new EntryUdp(Random.Shared.Next(0, 9000)))

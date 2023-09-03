@@ -23,9 +23,14 @@ public class OrdinaryPacketHandler : PacketHandlerBase
     private readonly IPacketProcessor _packetProcessor;
     private readonly ILogger<OrdinaryPacketHandler> _logger;
 
-    public OrdinaryPacketHandler(ISessionManager sessionManager, IRoutingTable routingTable, 
-        IMessageResponder messageResponder, IUdpConnection udpConnection, IPacketBuilder packetBuilder, 
-        IPacketProcessor packetProcessor, ILoggerFactory loggerFactory)
+    public OrdinaryPacketHandler(
+        ISessionManager sessionManager, 
+        IRoutingTable routingTable, 
+        IMessageResponder messageResponder, 
+        IUdpConnection udpConnection, 
+        IPacketBuilder packetBuilder, 
+        IPacketProcessor packetProcessor, 
+        ILoggerFactory loggerFactory)
     {
         _sessionManager = sessionManager;
         _routingTable = routingTable;
@@ -97,7 +102,7 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
 
-    private async Task SendWhoAreYouPacketAsync(StaticHeader staticHeader, EnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
+    private async Task SendWhoAreYouPacketAsync(StaticHeader staticHeader, IEnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNodeRecord, maskingIv);

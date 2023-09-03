@@ -20,7 +20,14 @@ public class MessageResponder : IMessageResponder
     private readonly IMessageDecoder _messageDecoder;
     private readonly ILogger<MessageResponder> _logger;
 
-    public MessageResponder(IIdentityManager identityManager, IRoutingTable routingTable, IRequestManager requestManager, ILookupManager lookupManager, IMessageDecoder messageDecoder, ILoggerFactory loggerFactory, ITalkReqAndRespHandler? talkResponder = null)
+    public MessageResponder(
+        IIdentityManager identityManager, 
+        IRoutingTable routingTable, 
+        IRequestManager requestManager, 
+        ILookupManager lookupManager, 
+        IMessageDecoder messageDecoder, 
+        ILoggerFactory loggerFactory, 
+        ITalkReqAndRespHandler? talkResponder = null)
     {
         _identityManager = identityManager;
         _routingTable = routingTable;
@@ -80,6 +87,8 @@ public class MessageResponder : IMessageResponder
         if (nodeEntry.Status != NodeStatus.Live)
         {
             _routingTable.UpdateFromEnr(nodeEntry.Record);
+            _routingTable.MarkNodeAsLive(nodeEntry.Id);
+            _routingTable.MarkNodeAsResponded(pendingRequest.NodeId);
 
             if (!_identityManager.IsIpAddressAndPortSet())
             {
@@ -95,14 +104,13 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        _logger.LogInformation("Received PONG message from node {NodeId} with higher ENR sequence number. Updating ENR record", Convert.ToHexString(pendingRequest.NodeId));
-        
         var distance = new []{ 0 };
         var findNodesMessage = new FindNodeMessage(distance);
         var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, new PendingRequest(pendingRequest.NodeId, findNodesMessage));
 
         if(!result)
         {
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
         }
 
@@ -151,8 +159,6 @@ public class MessageResponder : IMessageResponder
             return null;
         }
         
-        _logger.LogDebug("Received {NodesCount} nodes from node {NodeId}", decodedMessage.Enrs.Length, Convert.ToHexString(pendingRequest.NodeId));
-        
         var findNodesRequest = (FindNodeMessage)_messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var receivedNodes = new List<NodeTableEntry>();
 
@@ -165,11 +171,8 @@ public class MessageResponder : IMessageResponder
                     var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
                     var distanceToNode = TableUtility.Log2Distance(nodeId, pendingRequest.NodeId);
 
-                    if (distance != distanceToNode)
-                    {
-                        _logger.LogWarning("Received node with incorrect distance. Expected distance: {ExpectedDistance}, Received distance: {ReceivedDistance}", distance, distanceToNode);
+                    if (distance != distanceToNode) 
                         continue;
-                    }
                 
                     if (_routingTable.GetNodeEntry(nodeId) == null)
                     {
@@ -177,17 +180,16 @@ public class MessageResponder : IMessageResponder
                     }
                     
                     var nodeEntry = _routingTable.GetNodeEntry(nodeId);
-                
                     if (nodeEntry != null)
                     {
                         receivedNodes.Add(nodeEntry);
                     }
                 }
-            }
+            }  
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while processing NODES message");
+            _logger.LogError(ex, "Error handling NODES message");
             return null;
         }
         

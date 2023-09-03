@@ -1,6 +1,5 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrFactory;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
@@ -93,7 +92,7 @@ public class MockMessageResponderTests
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var pongMessage = new PongMessage(1, sender.Address, sender.Port);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
         
         mockMessageDecoder
@@ -115,8 +114,8 @@ public class MockMessageResponderTests
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
         
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
+        mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Exactly(2));
         mockRoutingTable.Verify(x => x.UpdateFromEnr(It.IsAny<EnrRecord>()), Times.Once);
         mockIdentityManager.Verify(x => x.UpdateIpAddressAndPort(It.IsAny<IPEndPoint>()), Times.Never);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Never);
@@ -128,7 +127,7 @@ public class MockMessageResponderTests
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var pongMessage = new PongMessage(1, sender.Address, sender.Port);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
         
         mockMessageDecoder
@@ -150,8 +149,8 @@ public class MockMessageResponderTests
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
         
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
+        mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Exactly(2));
         mockRoutingTable.Verify(x => x.UpdateFromEnr(It.IsAny<EnrRecord>()), Times.Once);
         mockIdentityManager.Verify(x => x.UpdateIpAddressAndPort(It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Never);
@@ -163,12 +162,11 @@ public class MockMessageResponderTests
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var pongMessage = new PongMessage(1, sender.Address, sender.Port);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
         var nodeEntry = new NodeTableEntry(enr, new IdentitySchemeV4Verifier());
 
         nodeEntry.Status = NodeStatus.Live;
-        nodeEntry.Record.SequenceNumber = 3;
         
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
@@ -200,15 +198,11 @@ public class MockMessageResponderTests
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var pongMessage = new PongMessage(4, sender.Address, sender.Port);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
         var nodeEntry = new NodeTableEntry(enr, new IdentitySchemeV4Verifier())
         {
             Status = NodeStatus.Live,
-            Record =
-            {
-                SequenceNumber = 3
-            }
         };
 
         mockMessageDecoder
@@ -245,12 +239,11 @@ public class MockMessageResponderTests
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var pongMessage = new PongMessage(4, sender.Address, sender.Port);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
         var nodeEntry = new NodeTableEntry(enr, new IdentitySchemeV4Verifier());
 
         nodeEntry.Status = NodeStatus.Live;
-        nodeEntry.Record.SequenceNumber = 3;
         
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
@@ -285,7 +278,7 @@ public class MockMessageResponderTests
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var nodesMessage = new NodesMessage(1, new[] { enr });
         
         mockRequestManager
@@ -307,7 +300,7 @@ public class MockMessageResponderTests
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var enr = new EnrRecordFactory().CreateFromString(
-            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g");
+            "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentitySchemeV4Verifier());
         var nodesMessage = new NodesMessage(5, new[] { enr });
         var pendingRequest = new PendingRequest(new byte[32], nodesMessage);
         

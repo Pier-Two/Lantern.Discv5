@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public class NodeTableEntry
 {
-    public NodeTableEntry(EnrRecord record, IIdentitySchemeVerifier verifier)
+    public NodeTableEntry(IEnrRecord record, IIdentitySchemeVerifier verifier)
     {
         Record = record;
         Id = verifier.GetNodeIdFromRecord(record);
@@ -14,7 +14,7 @@ public class NodeTableEntry
 
     public byte[] Id { get; }
     
-    public EnrRecord Record { get; }
+    public IEnrRecord Record { get; }
 
     public NodeStatus Status { get; set; }
 

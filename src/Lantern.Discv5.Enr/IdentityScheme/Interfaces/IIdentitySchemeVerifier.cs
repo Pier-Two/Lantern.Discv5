@@ -2,7 +2,7 @@ namespace Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 
 public interface IIdentitySchemeVerifier
 {
-    bool VerifyRecord(EnrRecord record);
+    bool VerifyRecord(IEnrRecord record);
     
-    byte[] GetNodeIdFromRecord(EnrRecord record);
+    byte[] GetNodeIdFromRecord(IEnrRecord record);
 }

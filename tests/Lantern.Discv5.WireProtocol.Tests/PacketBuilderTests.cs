@@ -1,4 +1,4 @@
-using Lantern.Discv5.Enr.EnrFactory;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -41,11 +41,11 @@ public class PacketBuilderTests
     [Test]
     public void BuildRandomOrdinaryPacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var nodeId = _identitySchemeVerifier.GetNodeIdFromRecord(enrRecord);
         
         _identityManagerMock
-            .SetupGet(x => x.NodeId)
+            .SetupGet(x => x.Record.NodeId)
             .Returns(nodeId);
 
         _packetBuilder = new PacketBuilder(_identityManagerMock.Object, new AesCrypto(), _requestManagerMock.Object, _loggerFactoryMock.Object);
@@ -81,7 +81,7 @@ public class PacketBuilderTests
         var maskingIv = Convert.FromHexString("EE1A7C1BB363686AACDAF6E84C66EB7A");
 
         _identityManagerMock
-            .SetupGet(x => x.NodeId)
+            .SetupGet(x => x.Record.NodeId)
             .Returns(destNodeId);
 
         _packetBuilder = new PacketBuilder(_identityManagerMock.Object, new AesCrypto(), _requestManagerMock.Object, _loggerFactoryMock.Object);
@@ -112,13 +112,13 @@ public class PacketBuilderTests
     [Test]
     public void BuildWhoAreYouPacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var destNodeId = Convert.FromHexString("F92B82F11AF5ED0959135CDE8E64B626CAC4F16D05E43087224DEED25D1DBD72");
         var packetNonce = RandomUtility.GenerateRandomData(12);
         var maskingIv = Convert.FromHexString("EE1A7C1BB363686AACDAF6E84C66EB7A");
 
         _identityManagerMock
-            .SetupGet(x => x.NodeId)
+            .SetupGet(x => x.Record.NodeId)
             .Returns(destNodeId);
 
         _packetBuilder = new PacketBuilder(_identityManagerMock.Object, new AesCrypto(), _requestManagerMock.Object, _loggerFactoryMock.Object);
@@ -149,7 +149,7 @@ public class PacketBuilderTests
     [Test]
     public void BuildHandshakePacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var idSignature =
             Convert.FromHexString(
                 "933468458F4F3DE637D9B84917DEDD8103C4A297A4980B703A727D017B92B2713A95FD12F0AD9264845FC6F1FF29F6E0706075019F43E8C624F4E58F78A6ED8C");
@@ -158,13 +158,14 @@ public class PacketBuilderTests
         var destNodeId = Convert.FromHexString("F92B82F11AF5ED0959135CDE8E64B626CAC4F16D05E43087224DEED25D1DBD72");
         var maskingIv = Convert.FromHexString("13E5792577482999855F3C5BE73FC550");
         var messageCount = Convert.FromHexString("00000000");
-
+        
         _identityManagerMock
-            .SetupGet(x => x.NodeId)
+            .Setup(x => x.Record.EncodeRecord())
+            .Returns(enrRecord.EncodeRecord);
+        
+        _identityManagerMock
+            .SetupGet(x => x.Record.NodeId)
             .Returns(destNodeId);
-        _identityManagerMock
-            .SetupGet(x => x.Record)
-            .Returns(enrRecord);
 
         _packetBuilder = new PacketBuilder(_identityManagerMock.Object, new AesCrypto(), _requestManagerMock.Object, _loggerFactoryMock.Object);
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
@@ -184,8 +185,10 @@ public class PacketBuilderTests
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Item1[..16]));
 
         Assert.IsTrue(result.Item2.Nonce.Length == PacketConstants.NonceSize);
-        Assert.IsTrue(result.Item2.AuthData.Length == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeEnrRecord().Length);
-        Assert.IsTrue(result.Item2.AuthDataSize == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeEnrRecord().Length);
+        Console.WriteLine(result.Item2.AuthData.Length);
+        Console.WriteLine(PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeRecord().Length);
+        Assert.IsTrue(result.Item2.AuthData.Length == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeRecord().Length);
+        Assert.IsTrue(result.Item2.AuthDataSize == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeRecord().Length);
         Assert.IsTrue(result.Item2.Version.Length == PacketConstants.VersionSize);
         Assert.IsTrue(result.Item2.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);

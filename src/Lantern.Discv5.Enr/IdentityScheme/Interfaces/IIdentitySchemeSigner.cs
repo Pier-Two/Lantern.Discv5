@@ -4,5 +4,5 @@ public interface IIdentitySchemeSigner
 {
     byte[] PublicKey { get; }
     
-    byte[] SignRecord(EnrRecord record);
+    byte[] SignRecord(IEnrRecord record);
 }

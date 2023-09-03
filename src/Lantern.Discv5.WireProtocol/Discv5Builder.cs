@@ -13,13 +13,15 @@ public static class Discv5Builder
     {
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
-        var tableOptions = new TableOptions.Builder().Build(bootstrapEnrs);
+        var tableOptions = new TableOptions.Builder()
+            .WithBootstrapEnrs(bootstrapEnrs)
+            .Build();
         var loggerFactory = LoggingOptions.Default;
         var services = ServiceConfiguration.ConfigureServices(
             loggerFactory, connectionOptions, sessionOptions, tableOptions, talkResponder
         );
         var serviceProvider = services.BuildServiceProvider();
         
-        return new Discv5Protocol(serviceProvider);
+        return serviceProvider.GetRequiredService<Discv5Protocol>();
     }
 }

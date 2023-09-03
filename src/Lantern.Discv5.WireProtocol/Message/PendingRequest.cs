@@ -8,7 +8,7 @@ public class PendingRequest
     
     public Message Message { get; }
 
-    public Stopwatch ElapsedTime { get; set; } 
+    public Stopwatch ElapsedTime { get; } 
     
     public bool IsFulfilled { get; set; }
     
@@ -20,6 +20,6 @@ public class PendingRequest
     {
         NodeId = nodeId;
         Message = message;
-        ElapsedTime = new Stopwatch();
+        ElapsedTime = Stopwatch.StartNew();
     }
 }

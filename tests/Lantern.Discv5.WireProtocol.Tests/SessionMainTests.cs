@@ -1,4 +1,5 @@
-using Lantern.Discv5.Enr.EnrFactory;
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.IdentityScheme.V4;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
@@ -84,7 +85,7 @@ public class SessionMainTests
     [Test]
     public void Test_EncryptMessageWithNewKeys_ShouldReturnNull_WhenChallengeDataIsNull()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.EncryptMessageWithNewKeys(enrRecord,staticHeader, null, null,null);
@@ -102,7 +103,7 @@ public class SessionMainTests
             .Setup(x => x.AesGcmEncrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(encryptedMessage);
         
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8");
+        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);

@@ -17,8 +17,13 @@ public class LookupManager : ILookupManager
     private readonly ConcurrentBag<PathBucket> _pathBuckets;
     private readonly SemaphoreSlim _lookupSemaphore;
 
-    public LookupManager(IRoutingTable routingTable, IPacketManager packetManager, IRequestManager requestManager,
-        ILoggerFactory loggerFactory, ConnectionOptions connectionOptions, TableOptions tableOptions)
+    public LookupManager(
+        IRoutingTable routingTable, 
+        IPacketManager packetManager, 
+        IRequestManager requestManager,
+        ILoggerFactory loggerFactory, 
+        ConnectionOptions connectionOptions, 
+        TableOptions tableOptions)
     {
         _routingTable = routingTable;
         _packetManager = packetManager;

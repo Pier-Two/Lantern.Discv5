@@ -9,7 +9,7 @@ namespace Lantern.Discv5.Enr.IdentityScheme.V4;
 
 public class IdentitySchemeV4Verifier : IIdentitySchemeVerifier
 {
-    public bool VerifyRecord(EnrRecord record)
+    public bool VerifyRecord(IEnrRecord record)
     {
         var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
@@ -20,7 +20,7 @@ public class IdentitySchemeV4Verifier : IIdentitySchemeVerifier
         return publicKey.SigVerify(signature, Keccak256.ComputeHash(record.EncodeContent()));
     }
 
-    public byte[] GetNodeIdFromRecord(EnrRecord record)
+    public byte[] GetNodeIdFromRecord(IEnrRecord record)
     {
         var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
