@@ -71,6 +71,30 @@ public class Discv5Protocol
         
         await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
     }
+    
+    public event Action<NodeTableEntry> NodeAdded
+    {
+        add => _routingTable.NodeAdded += value;
+        remove => _routingTable.NodeAdded -= value;
+    }
+    
+    public event Action<NodeTableEntry> NodeRemoved
+    {
+        add => _routingTable.NodeRemoved += value;
+        remove => _routingTable.NodeRemoved -= value;
+    }
+    
+    public event Action<NodeTableEntry> NodeAddedToCache
+    {
+        add => _routingTable.NodeAddedToCache += value;
+        remove => _routingTable.NodeAddedToCache -= value;
+    }
+
+    public event Action<NodeTableEntry> NodeRemovedFromCache
+    {
+        add => _routingTable.NodeRemovedFromCache += value;
+        remove => _routingTable.NodeRemovedFromCache -= value;
+    }
 
     public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
     {

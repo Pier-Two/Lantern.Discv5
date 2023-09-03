@@ -4,6 +4,14 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface IRoutingTable
 {
+    event Action<NodeTableEntry> NodeAdded;
+    
+    event Action<NodeTableEntry> NodeRemoved;
+    
+    event Action<NodeTableEntry> NodeAddedToCache;
+    
+    event Action<NodeTableEntry> NodeRemovedFromCache;
+    
     TableOptions TableOptions { get; }
     
     int GetTotalEntriesCount();
