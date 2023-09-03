@@ -18,6 +18,14 @@ public class KBucket
         _lock = new object();
         _replacementCacheSize = replacementCacheSize;
     }
+    
+    public event Action<NodeTableEntry> NodeAdded;
+    
+    public event Action<NodeTableEntry> NodeRemoved;
+    
+    public event Action<NodeTableEntry> NodeAddedToCache;
+    
+    public event Action<NodeTableEntry> NodeRemovedFromCache;
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
     
@@ -65,6 +73,7 @@ public class KBucket
             else
             {
                 AddNewNode(nodeEntry);
+                NodeAdded.Invoke(nodeEntry); 
             }
         }
     }
@@ -79,17 +88,21 @@ public class KBucket
             _logger.LogDebug("Replacing dead node {NodeId} with node {ReplacementNodeId}", Convert.ToHexString(deadNodeEntry.Id), Convert.ToHexString(_replacementCache.First.Value.Id));
         
             var replacementNode = _replacementCache.First.Value;
+            
             _replacementCache.RemoveFirst();
+            NodeRemovedFromCache.Invoke(replacementNode); 
         
             var deadNode = _nodes.FirstOrDefault(node => node.Id.SequenceEqual(deadNodeEntry.Id));
             
             if(deadNode != null)
             {
                 _nodes.Remove(deadNode);
+                NodeRemoved.Invoke(deadNode);
             }
         
             replacementNode.LastSeen = DateTime.UtcNow;
             _nodes.AddLast(replacementNode);
+            NodeAdded.Invoke(replacementNode); 
         }
     }
     
@@ -97,11 +110,16 @@ public class KBucket
     {
         if (_replacementCache.Count >= _replacementCacheSize)
         {
-            _logger.LogDebug("Replacement cache full. Removed last from the bucket");
+            _logger.LogDebug("Replacement cache full. Removed first node from the bucket's replacement cache");
+            
+            var nodeToRemove = _replacementCache.First.Value;
+            
             _replacementCache.RemoveFirst();
+            NodeRemovedFromCache.Invoke(nodeToRemove);
         }
 
         _replacementCache.AddLast(nodeEntry);
+        NodeAddedToCache.Invoke(nodeEntry); 
         _logger.LogDebug("Added node {NodeId} to replacement cache. There are {Count} nodes in the cache",
             Convert.ToHexString(nodeEntry.Id), _replacementCache.Count);
     }

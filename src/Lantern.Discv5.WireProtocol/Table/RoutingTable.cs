@@ -19,8 +19,17 @@ public class RoutingTable : IRoutingTable
         _enrRecordFactory = enrRecordFactory;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
         _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory, options.ReplacementCacheSize)).ToList();
+        ConfigureBucketEventHandlers();
         TableOptions = options;
     }
+    
+    public event Action<NodeTableEntry> NodeAdded;
+    
+    public event Action<NodeTableEntry> NodeRemoved;
+    
+    public event Action<NodeTableEntry> NodeAddedToCache;
+    
+    public event Action<NodeTableEntry> NodeRemovedFromCache;
 
     public TableOptions TableOptions { get; }
 
@@ -258,6 +267,17 @@ public class RoutingTable : IRoutingTable
             }
 
             return nodesAtDistance;
+        }
+    }
+    
+    private void ConfigureBucketEventHandlers()
+    {
+        foreach (var bucket in _buckets)
+        {
+            bucket.NodeAdded += node => NodeAdded.Invoke(node);
+            bucket.NodeRemoved += node => NodeRemoved.Invoke(node);
+            bucket.NodeAddedToCache += node => NodeAddedToCache.Invoke(node);
+            bucket.NodeRemovedFromCache += node => NodeRemovedFromCache.Invoke(node);
         }
     }
 
