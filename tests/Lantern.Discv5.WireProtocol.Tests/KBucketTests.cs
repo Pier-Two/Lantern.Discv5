@@ -24,8 +24,7 @@ public class KBucketTests
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
-        
+        _identityManager = new IdentityManager(sessionOptions, Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
     }
     
     [Test]
@@ -203,7 +202,8 @@ public class KBucketTests
             var signer = new IdentitySchemeV4Signer(RandomUtility.GenerateRandomData(32));
             var ipAddress = new IPAddress(RandomUtility.GenerateRandomData(4));
             
-            enrs[i] = new EnrBuilder(_identityManager.Verifier, _identityManager.Signer)
+            enrs[i] = new EnrBuilder()
+                .WithIdentityScheme(_identityManager.Verifier, _identityManager.Signer)
                 .WithEntry(EnrContentKey.Id, new EntryId("v4"))
                 .WithEntry(EnrContentKey.Ip, new EntryIp(ipAddress))
                 .WithEntry(EnrContentKey.Udp, new EntryUdp(Random.Shared.Next(0, 9000)))

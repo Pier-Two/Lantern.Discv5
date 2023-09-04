@@ -31,7 +31,7 @@ public class MessageResponderTests
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        var serviceProvider = ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, tableOptions, new TestTalkReqAndRespHandler()).BuildServiceProvider();
+        var serviceProvider = ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions, new TestTalkReqAndRespHandler()).BuildServiceProvider();
         
         _messageResponder = serviceProvider.GetRequiredService<IMessageResponder>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();

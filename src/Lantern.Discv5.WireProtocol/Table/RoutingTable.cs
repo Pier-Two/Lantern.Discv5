@@ -18,18 +18,21 @@ public class RoutingTable : IRoutingTable
         _identityManager = identityManager;
         _enrRecordFactory = enrRecordFactory;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
-        _buckets = Enumerable.Range(0, TableConstants.NumberOfBuckets).Select(_ => new KBucket(loggerFactory, options.ReplacementCacheSize)).ToList();
-        ConfigureBucketEventHandlers();
+        _buckets = Enumerable
+            .Range(0, TableConstants.NumberOfBuckets)
+            .Select(_ => new KBucket(loggerFactory, options.ReplacementCacheSize))
+            .ToList();
         TableOptions = options;
+        ConfigureBucketEventHandlers();
     }
     
-    public event Action<NodeTableEntry> NodeAdded;
+    public event Action<NodeTableEntry> NodeAdded = delegate { };
     
-    public event Action<NodeTableEntry> NodeRemoved;
+    public event Action<NodeTableEntry> NodeRemoved = delegate { };
     
-    public event Action<NodeTableEntry> NodeAddedToCache;
+    public event Action<NodeTableEntry> NodeAddedToCache = delegate { };
     
-    public event Action<NodeTableEntry> NodeRemovedFromCache;
+    public event Action<NodeTableEntry> NodeRemovedFromCache = delegate { };
 
     public TableOptions TableOptions { get; }
 
@@ -63,7 +66,7 @@ public class RoutingTable : IRoutingTable
         {
             return _buckets
                 .SelectMany(bucket => bucket.Nodes)
-                .Where(nodeEntry => nodeEntry.HasRespondedEver)
+                .Where(IsNodeConsideredLive)
                 .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
                 .ToList(); 
         }
@@ -252,7 +255,7 @@ public class RoutingTable : IRoutingTable
             {
                 foreach (var node in bucket.Nodes)
                 {
-                    if (!IsNodeConsideredLive(node))
+                    if (!node.HasRespondedEver)
                     {
                         continue;
                     }

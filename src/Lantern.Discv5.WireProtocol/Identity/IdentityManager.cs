@@ -4,7 +4,6 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
-using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
 using Microsoft.Extensions.Logging;
 
@@ -14,13 +13,13 @@ public class IdentityManager: IIdentityManager
 {
     private readonly ILogger<IdentityManager> _logger;
     
-    public IdentityManager(ConnectionOptions connectionOptions, SessionOptions sessionOptions, ILoggerFactory loggerFactory)
+    public IdentityManager(SessionOptions sessionOptions, IEnrRecord enrRecord, ILoggerFactory loggerFactory)
     {
         Signer = sessionOptions.Signer;
         Verifier = sessionOptions.Verifier;
+        Record = enrRecord;
         _logger = loggerFactory.CreateLogger<IdentityManager>();
-        Record = CreateNewRecord(connectionOptions, Verifier, Signer);
-        
+        _logger.LogInformation("Self ENR record created => {Record}", Record);
     }
     
     public IIdentitySchemeVerifier Verifier { get; }
@@ -50,30 +49,5 @@ public class IdentityManager: IIdentityManager
         Record.UpdateSignature();
         
         _logger.LogInformation("Self ENR record updated => {Record}", Record);
-    }
-
-    private EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
-    {
-        EnrRecord record;
-        
-        if (options.IpAddress != null)
-        {
-            record = new EnrBuilder(verifier, signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-                .WithEntry(EnrContentKey.Ip, new EntryIp(options.IpAddress)) 
-                .WithEntry(EnrContentKey.Udp, new EntryUdp(options.Port))
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
-                .Build();
-        }
-        else
-        {
-            record = new EnrBuilder(verifier, signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
-                .Build();
-        }
-        
-        _logger.LogInformation("New ENR record created => {Record}", record);
-        return record;
     }
 }

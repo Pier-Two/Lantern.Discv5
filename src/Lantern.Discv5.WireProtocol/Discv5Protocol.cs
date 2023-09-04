@@ -100,7 +100,6 @@ public class Discv5Protocol
     {
         if (_routingTable.GetTotalActiveNodesCount() > 0)
         {
-            _logger.LogInformation("Performing lookup...");
             var closestNodes = await _lookupManager.LookupAsync(targetNodeId);
             
             if (closestNodes != null)

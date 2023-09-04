@@ -68,11 +68,13 @@ public class MessageResponder : IMessageResponder
     private byte[][]? HandlePongMessage(byte[] message)
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
+        
         var decodedMessage = (PongMessage)_messageDecoder.DecodeMessage(message);
         var pendingRequest = GetPendingRequest(decodedMessage);
 
         if (pendingRequest == null)
         {
+            _logger.LogWarning("Received PONG message with no pending request. Ignoring message");
             return null;
         }
 

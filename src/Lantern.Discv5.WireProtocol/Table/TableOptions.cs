@@ -4,7 +4,7 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public class TableOptions
 {
-    public int PingIntervalMilliseconds { get; }
+    public int PingIntervalMilliseconds { get;  }
     public int RefreshIntervalMilliseconds { get; }
     public int LookupTimeoutMilliseconds { get; }
     public int MaxAllowedFailures { get; }

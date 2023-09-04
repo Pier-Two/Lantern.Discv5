@@ -35,7 +35,7 @@ public class MessageRequesterTests
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default; 
         var serviceProvider =
-            ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, tableOptions).BuildServiceProvider();
+            ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
         
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrRecordFactory = serviceProvider.GetRequiredService<IEnrRecordFactory>();

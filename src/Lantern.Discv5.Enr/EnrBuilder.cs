@@ -1,23 +1,26 @@
 using Lantern.Discv5.Enr.EnrContent;
+using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 
 namespace Lantern.Discv5.Enr;
 
 public class EnrBuilder
 {
-    private readonly IIdentitySchemeVerifier _verifier;
-    private readonly IIdentitySchemeSigner _signer;
-    private readonly Dictionary<string, IContentEntry> _entries = new();
-    
-    public EnrBuilder(IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
+    private Dictionary<string, IContentEntry> _entries = new();
+    private IIdentitySchemeVerifier _verifier;
+    private IIdentitySchemeSigner _signer;
+
+    public EnrBuilder WithIdentityScheme(IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
     {
         _verifier = verifier;
         _signer = signer;
+        return this;
     }
 
-    public EnrBuilder WithEntry(string key, IContentEntry entry)
+    public EnrBuilder WithEntry(string key, IContentEntry? entry)
     {
-        _entries[key] = entry;
+        if(entry != null)
+            _entries[key] = entry;
         return this;
     }
 
