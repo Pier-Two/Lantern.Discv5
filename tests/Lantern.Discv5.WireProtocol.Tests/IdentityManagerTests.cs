@@ -1,4 +1,5 @@
 using System.Net;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.EnrContent;
 using Lantern.Discv5.Enr.EnrContent.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
@@ -20,7 +21,7 @@ public class IdentityManagerTests
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer),loggerFactory);
     }
     
     [Test]

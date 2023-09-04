@@ -34,7 +34,7 @@ public class PacketDecryptionTests
         var loggerFactory = LoggingOptions.Default;
         
         _enrRecordFactory = new EnrRecordFactory();
-        _identityManager = new IdentityManager(connectionOptions, sessionOptions, loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
         _messageDecoder = new MessageDecoder(_identityManager, _enrRecordFactory);
     }
     

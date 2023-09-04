@@ -19,13 +19,13 @@ public class KBucket
         _replacementCacheSize = replacementCacheSize;
     }
     
-    public event Action<NodeTableEntry> NodeAdded;
+    public event Action<NodeTableEntry> NodeAdded = delegate { };
     
-    public event Action<NodeTableEntry> NodeRemoved;
+    public event Action<NodeTableEntry> NodeRemoved = delegate { };
     
-    public event Action<NodeTableEntry> NodeAddedToCache;
+    public event Action<NodeTableEntry> NodeAddedToCache = delegate { };
     
-    public event Action<NodeTableEntry> NodeRemovedFromCache;
+    public event Action<NodeTableEntry> NodeRemovedFromCache = delegate { };
 
     public IEnumerable<NodeTableEntry> Nodes => _nodes;
     
