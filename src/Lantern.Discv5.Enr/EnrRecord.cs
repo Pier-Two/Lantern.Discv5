@@ -9,7 +9,7 @@ namespace Lantern.Discv5.Enr;
 
 public class EnrRecord : IEnrRecord
 {
-    private readonly Dictionary<string, IContentEntry> _entries;
+    private readonly IDictionary<string, IContentEntry> _entries;
     private readonly IIdentitySchemeSigner? _signer;
     private readonly IIdentitySchemeVerifier? _verifier;
 
@@ -20,7 +20,7 @@ public class EnrRecord : IEnrRecord
         byte[]? signature = null, 
         ulong sequenceNumber = 1)
     {
-        _entries = InitialiseEntries(initialEntries);
+        _entries = initialEntries;
         _verifier = verifier ?? throw new ArgumentNullException(nameof(verifier));
         _signer = signer;
 
@@ -107,18 +107,6 @@ public class EnrRecord : IEnrRecord
         var multihash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
     
         return Multibase.Encode(MultibaseEncoding.Base58Btc, multihash).Remove(0, 1);
-    }
-    
-    private static Dictionary<string, IContentEntry> InitialiseEntries(IDictionary<string, IContentEntry> initialEntries)
-    {
-        var entries = new Dictionary<string, IContentEntry>();
-        
-        foreach (var entry in initialEntries)
-        {
-            entries[entry.Key] = entry.Value;
-        }
-        
-        return entries;
     }
     
     private void IncrementSequenceNumber()
