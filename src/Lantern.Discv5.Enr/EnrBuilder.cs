@@ -6,7 +6,7 @@ namespace Lantern.Discv5.Enr;
 
 public class EnrBuilder
 {
-    private Dictionary<string, IContentEntry> _entries = new();
+    private readonly Dictionary<string, IContentEntry> _entries = new();
     private IIdentitySchemeVerifier _verifier;
     private IIdentitySchemeSigner _signer;
 
@@ -21,6 +21,7 @@ public class EnrBuilder
     {
         if(entry != null)
             _entries[key] = entry;
+        
         return this;
     }
 

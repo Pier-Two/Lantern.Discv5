@@ -87,8 +87,8 @@ public class Discv5Builder
         var tableOptions = new TableOptions.Builder()
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();
+        
         var loggerFactory = LoggingOptions.Default;
-        var enrRecord = CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer);
         var discv5 = new Discv5Builder()
             .WithConnectionOptions(connectionOptions)
             .WithSessionOptions(sessionOptions)

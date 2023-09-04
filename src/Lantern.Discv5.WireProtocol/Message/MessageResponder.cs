@@ -92,11 +92,11 @@ public class MessageResponder : IMessageResponder
             _routingTable.MarkNodeAsLive(nodeEntry.Id);
             _routingTable.MarkNodeAsResponded(pendingRequest.NodeId);
 
-            if (!_identityManager.IsIpAddressAndPortSet())
-            {
-                var endpoint = new IPEndPoint(decodedMessage.RecipientIp, decodedMessage.RecipientPort);
-                _identityManager.UpdateIpAddressAndPort(endpoint);
-            }
+            if (_identityManager.IsIpAddressAndPortSet()) 
+                return null;
+            
+            var endpoint = new IPEndPoint(decodedMessage.RecipientIp, decodedMessage.RecipientPort);
+            _identityManager.UpdateIpAddressAndPort(endpoint);
 
             return null;
         }
