@@ -85,6 +85,7 @@ public static class RlpEncoder
     public static IEnumerable<byte> EncodeByteItemsAsCollection(IEnumerable<byte> items)
     {
         using var stream = new MemoryStream();
+        
         foreach (var item in items)
         {
             stream.Write(Encode(new[] { item }, false));
@@ -111,6 +112,7 @@ public static class RlpEncoder
     public static byte[] EncodeCollectionsOfBytes(params byte[][] items)
     {
         using var stream = new MemoryStream();
+        
         foreach (var item in items)
         {
             stream.Write(EncodeCollectionOfBytes(item));

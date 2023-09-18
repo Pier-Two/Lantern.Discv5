@@ -22,7 +22,7 @@ public interface IRoutingTable
 
     NodeTableEntry? GetLeastRecentlySeenNode();
     
-    void UpdateFromEnr(IEnrRecord enrRecord);
+    void UpdateFromEnr(IEnr enr);
     
     void MarkNodeAsResponded(byte[] nodeId);
 
@@ -40,5 +40,5 @@ public interface IRoutingTable
 
     List<NodeTableEntry> GetClosestNodes(byte[] targetNodeId);
 
-    List<IEnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances);
+    List<IEnr> GetEnrRecordsAtDistances(IEnumerable<int> distances);
 }

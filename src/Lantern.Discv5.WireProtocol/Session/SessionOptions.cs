@@ -1,13 +1,13 @@
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionOptions
 {
-    public IIdentitySchemeSigner Signer { get; }
-    public IIdentitySchemeVerifier Verifier { get; }
+    public IIdentitySigner Signer { get; }
+    public IIdentityVerifier Verifier { get; }
     public ISessionKeys SessionKeys { get; }
     public int CacheSize { get; }
 
@@ -24,8 +24,8 @@ public class SessionOptions
     private static SessionOptions CreateDefault()
     {
         var privateKey = RandomUtility.GenerateRandomData(32);
-        var signer = new IdentitySchemeV4Signer(privateKey);
-        var verifier = new IdentitySchemeV4Verifier();
+        var signer = new IdentitySignerV4(privateKey);
+        var verifier = new IdentityVerifierV4();
         var sessionKeys = new SessionKeys(privateKey);
         
         return new Builder()
@@ -37,18 +37,18 @@ public class SessionOptions
     
     public class Builder
     {
-        public IIdentitySchemeSigner Signer { get; private set; }
-        public IIdentitySchemeVerifier Verifier { get; private set; }
+        public IIdentitySigner Signer { get; private set; }
+        public IIdentityVerifier Verifier { get; private set; }
         public ISessionKeys SessionKeys { get; private set; }
         public int CacheSize { get; private set; } = 1000;
 
-        public Builder WithSigner(IIdentitySchemeSigner signer)
+        public Builder WithSigner(IIdentitySigner signer)
         {
             Signer = signer;
             return this;
         }
 
-        public Builder WithVerifier(IIdentitySchemeVerifier verifier)
+        public Builder WithVerifier(IIdentityVerifier verifier)
         {
             Verifier = verifier;
             return this;

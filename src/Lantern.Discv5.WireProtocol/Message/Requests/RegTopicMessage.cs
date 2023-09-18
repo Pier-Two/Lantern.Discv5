@@ -5,7 +5,7 @@ namespace Lantern.Discv5.WireProtocol.Message.Requests;
 
 public class RegTopicMessage : Message
 {
-    public RegTopicMessage(byte[] topic, EnrRecord enr, byte[] ticket) : base(MessageType.RegTopic)
+    public RegTopicMessage(byte[] topic, Enr.Enr enr, byte[] ticket) : base(MessageType.RegTopic)
     {
         Topic = topic;
         Enr = enr;
@@ -14,7 +14,7 @@ public class RegTopicMessage : Message
 
     public byte[] Topic { get; }
 
-    public EnrRecord Enr { get; }
+    public Enr.Enr Enr { get; }
 
     public byte[] Ticket { get; }
 

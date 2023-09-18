@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -95,7 +95,8 @@ public class OrdinaryPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenSessionIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         
@@ -105,7 +106,7 @@ public class OrdinaryPacketHandlerTests
             .Returns(staticHeader);
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns((ISessionMain?)null);
@@ -113,7 +114,7 @@ public class OrdinaryPacketHandlerTests
             .Setup(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketBuilder
-            .Setup(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<EnrRecord>(), It.IsAny<byte[]>()))
+            .Setup(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()))
             .Returns(packetTuple);
         mockUdpConnection
             .Setup(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -131,7 +132,7 @@ public class OrdinaryPacketHandlerTests
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
-        mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<EnrRecord>(), It.IsAny<byte[]>()), Times.Once);
+        mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }
@@ -140,7 +141,8 @@ public class OrdinaryPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendWhoAreYouPacket_WhenDecryptedMessageIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         
@@ -150,7 +152,7 @@ public class OrdinaryPacketHandlerTests
             .Returns(staticHeader);
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[]?)null);
@@ -163,7 +165,7 @@ public class OrdinaryPacketHandlerTests
             .Setup(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketBuilder
-            .Setup(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<EnrRecord>(), It.IsAny<byte[]>()))
+            .Setup(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()))
             .Returns(packetTuple);
         mockUdpConnection
             .Setup(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -181,7 +183,7 @@ public class OrdinaryPacketHandlerTests
         mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockSessionMain.Verify(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
-        mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<EnrRecord>(), It.IsAny<byte[]>()), Times.Once);
+        mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }
@@ -190,7 +192,8 @@ public class OrdinaryPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendResponseToOrdinaryPacket_WhenReplyIsNotNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
         var data = new List<byte[]> { new byte[32] }.ToArray();
@@ -201,7 +204,7 @@ public class OrdinaryPacketHandlerTests
             .Returns(staticHeader);
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);

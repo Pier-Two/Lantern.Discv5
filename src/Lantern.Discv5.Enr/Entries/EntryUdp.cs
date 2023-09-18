@@ -1,18 +1,18 @@
 using System.Text;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.Enr.EnrContent.Entries;
+namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryUdp6 : IContentEntry
+public class EntryUdp : IEntry
 {
-    public EntryUdp6(int value)
+    public EntryUdp(int value)
     {
         Value = value;
     }
 
     public int Value { get; }
 
-    public EnrContentKey Key => EnrContentKey.Udp6;
+    public EnrEntryKey Key => EnrEntryKey.Udp;
 
     public IEnumerable<byte> EncodeEntry()
     {

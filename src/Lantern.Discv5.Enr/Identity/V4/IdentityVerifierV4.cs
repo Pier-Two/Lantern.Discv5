@@ -1,17 +1,15 @@
 using Epoche;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Rlp;
 using NBitcoin.Secp256k1;
 
-namespace Lantern.Discv5.Enr.IdentityScheme.V4;
+namespace Lantern.Discv5.Enr.Identity.V4;
 
-public class IdentitySchemeV4Verifier : IIdentitySchemeVerifier
+public class IdentityVerifierV4 : IIdentityVerifier
 {
-    public bool VerifyRecord(IEnrRecord record)
+    public bool VerifyRecord(IEnr record)
     {
-        var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
+        var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
         SecpECDSASignature.TryCreateFromCompact(record.Signature, out var signature);
 
@@ -20,9 +18,9 @@ public class IdentitySchemeV4Verifier : IIdentitySchemeVerifier
         return publicKey.SigVerify(signature, Keccak256.ComputeHash(record.EncodeContent()));
     }
 
-    public byte[] GetNodeIdFromRecord(IEnrRecord record)
+    public byte[] GetNodeIdFromRecord(IEnr record)
     {
-        var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
+        var publicKeyBytes = record.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
         var xBytes = publicKey.Q.x.ToBytes();
         var yBytes = publicKey.Q.y.ToBytes();

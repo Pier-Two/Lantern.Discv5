@@ -1,5 +1,5 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
@@ -41,9 +41,10 @@ public class LookupManagerTests
     [Test]
     public async Task Test_LookupManager_ShouldReturnNull_WhenLookupIsInProgress()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var targetNodeId = RandomUtility.GenerateRandomData(32);
-        var nodeTableEntry = new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier());
+        var nodeTableEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
 
         mockRoutingTable
             .Setup(x => x.GetClosestNodes(It.IsAny<byte[]>()))

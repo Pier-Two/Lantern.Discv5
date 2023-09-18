@@ -1,11 +1,11 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Identity;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
 public class NodeTableEntry
 {
-    public NodeTableEntry(IEnrRecord record, IIdentitySchemeVerifier verifier)
+    public NodeTableEntry(IEnr record, IIdentityVerifier verifier)
     {
         Record = record;
         Id = verifier.GetNodeIdFromRecord(record);
@@ -14,7 +14,7 @@ public class NodeTableEntry
 
     public byte[] Id { get; }
     
-    public IEnrRecord Record { get; }
+    public IEnr Record { get; }
 
     public NodeStatus Status { get; set; }
 

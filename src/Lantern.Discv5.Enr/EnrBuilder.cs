@@ -1,23 +1,21 @@
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Identity;
 
 namespace Lantern.Discv5.Enr;
 
 public class EnrBuilder
 {
-    private readonly Dictionary<string, IContentEntry> _entries = new();
-    private IIdentitySchemeVerifier _verifier;
-    private IIdentitySchemeSigner _signer;
+    private readonly Dictionary<string, IEntry> _entries = new();
+    private IIdentityVerifier _verifier;
+    private IIdentitySigner _signer;
 
-    public EnrBuilder WithIdentityScheme(IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
+    public EnrBuilder WithIdentityScheme(IIdentityVerifier verifier, IIdentitySigner signer)
     {
         _verifier = verifier;
         _signer = signer;
         return this;
     }
 
-    public EnrBuilder WithEntry(string key, IContentEntry? entry)
+    public EnrBuilder WithEntry(string key, IEntry? entry)
     {
         if(entry != null)
             _entries[key] = entry;
@@ -25,14 +23,14 @@ public class EnrBuilder
         return this;
     }
 
-    public EnrRecord Build()
+    public Enr Build()
     {
         if (_signer == null)
         {
             throw new InvalidOperationException("Signer must be set before building the EnrRecord.");
         }
 
-        var enrRecord = new EnrRecord(_entries,_verifier, _signer);
+        var enrRecord = new Enr(_entries,_verifier, _signer);
         
         enrRecord.UpdateSignature();
         

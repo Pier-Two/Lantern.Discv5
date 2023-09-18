@@ -1,8 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -24,7 +23,7 @@ public class HandshakePacketHandler : PacketHandlerBase
     private readonly IUdpConnection _connection;
     private readonly IPacketBuilder _packetBuilder;
     private readonly IPacketProcessor _packetProcessor;
-    private readonly IEnrRecordFactory _enrRecordFactory;
+    private readonly IEnrFactory _enrFactory;
     private readonly ILogger<HandshakePacketHandler> _logger;
 
     public HandshakePacketHandler(
@@ -35,7 +34,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         IUdpConnection udpConnection, 
         IPacketBuilder packetBuilder, 
         IPacketProcessor packetProcessor, 
-        IEnrRecordFactory enrRecordFactory, 
+        IEnrFactory enrFactory, 
         ILoggerFactory loggerFactory)
     {
         _identityManager = identityManager;
@@ -45,7 +44,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         _connection = udpConnection;
         _packetBuilder = packetBuilder;
         _packetProcessor = packetProcessor;
-        _enrRecordFactory = enrRecordFactory;
+        _enrFactory = enrFactory;
         _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
     }
 
@@ -104,11 +103,11 @@ public class HandshakePacketHandler : PacketHandlerBase
 
     private byte[]? ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId)
     {
-        IEnrRecord? senderRecord = null; 
+        IEnr? senderRecord = null; 
         
         if (handshakePacketBase.Record?.Length > 0)
         {
-            senderRecord = _enrRecordFactory.CreateFromBytes(handshakePacketBase.Record, _identityManager.Verifier);
+            senderRecord = _enrFactory.CreateFromBytes(handshakePacketBase.Record, _identityManager.Verifier);
         }
         else if (senderNodeId != null)
         {
@@ -117,7 +116,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             if (nodeEntry != null)
             {
                 senderRecord = nodeEntry.Record;
-                return senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
+                return senderRecord.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
             }
         }
 
@@ -128,7 +127,7 @@ public class HandshakePacketHandler : PacketHandlerBase
 
         _routingTable.UpdateFromEnr(senderRecord);
         
-        return senderRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
+        return senderRecord.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
     }
     
     private async Task <byte[][]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 

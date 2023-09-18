@@ -1,7 +1,6 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
@@ -49,14 +48,14 @@ public class IdentityManagerTests
     {
         var node = _identityManager.Record;
         
-        Assert.IsFalse(node.HasKey(EnrContentKey.Ip));
-        Assert.IsFalse(node.HasKey(EnrContentKey.Udp));
+        Assert.IsFalse(node.HasKey(EnrEntryKey.Ip));
+        Assert.IsFalse(node.HasKey(EnrEntryKey.Udp));
         var endpoint = new IPEndPoint(ConnectionUtility.GetLocalIpAddress(), 1234);
 
         _identityManager.UpdateIpAddressAndPort(endpoint);
         
-        Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp>(EnrContentKey.Ip).Value);
-        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp>(EnrContentKey.Udp).Value);
+        Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp>(EnrEntryKey.Ip).Value);
+        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp>(EnrEntryKey.Udp).Value);
     }
     
     [Test]
@@ -64,13 +63,13 @@ public class IdentityManagerTests
     {
         var node = _identityManager.Record;
         
-        Assert.IsFalse(node.HasKey(EnrContentKey.Ip6));
-        Assert.IsFalse(node.HasKey(EnrContentKey.Udp6));
+        Assert.IsFalse(node.HasKey(EnrEntryKey.Ip6));
+        Assert.IsFalse(node.HasKey(EnrEntryKey.Udp6));
         var endpoint = new IPEndPoint(IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), 1234);
 
         _identityManager.UpdateIpAddressAndPort(endpoint);
         
-        Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp6>(EnrContentKey.Ip6).Value);
-        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp6>(EnrContentKey.Udp6).Value);
+        Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp6>(EnrEntryKey.Ip6).Value);
+        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp6>(EnrEntryKey.Udp6).Value);
     }
 }

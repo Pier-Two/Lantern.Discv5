@@ -14,7 +14,7 @@ public class TableManager : ITableManager
     private readonly ILookupManager _lookupManager;
     private readonly IRoutingTable _routingTable;
     private readonly TableOptions _tableOptions;
-    private readonly IEnrRecordFactory _enrRecordFactory;
+    private readonly IEnrFactory _enrFactory;
     private readonly ILogger<TableManager> _logger;
     private readonly ICancellationTokenSourceWrapper _shutdownCts;
     private readonly IGracefulTaskRunner _taskRunner;
@@ -27,7 +27,7 @@ public class TableManager : ITableManager
         IIdentityManager identityManager, 
         ILookupManager lookupManager, 
         IRoutingTable routingTable, 
-        IEnrRecordFactory enrRecordFactory, 
+        IEnrFactory enrFactory, 
         ILoggerFactory loggerFactory, 
         ICancellationTokenSourceWrapper cts, 
         IGracefulTaskRunner taskRunner, 
@@ -38,7 +38,7 @@ public class TableManager : ITableManager
         _lookupManager = lookupManager;
         _routingTable = routingTable;
         _tableOptions = tableOptions;
-        _enrRecordFactory = enrRecordFactory;
+        _enrFactory = enrFactory;
         _logger = loggerFactory.CreateLogger<TableManager>();
         _taskRunner = taskRunner;
         _shutdownCts = cts;
@@ -73,7 +73,7 @@ public class TableManager : ITableManager
             _routingTable.PopulateFromBootstrapEnrs();
 
             var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs
-                .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+                .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
                 .ToArray();
 
             foreach (var bootstrapEnr in bootstrapEnrs)

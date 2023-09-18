@@ -1,22 +1,21 @@
 using Epoche;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 using NBitcoin.Secp256k1;
 
-namespace Lantern.Discv5.Enr.IdentityScheme.V4;
+namespace Lantern.Discv5.Enr.Identity.V4;
 
-public class IdentitySchemeV4Signer : IIdentitySchemeSigner
+public class IdentitySignerV4 : IIdentitySigner
 {
     private readonly ECPrivKey _privateKey;
 
-    public IdentitySchemeV4Signer(byte[] privateKey)
+    public IdentitySignerV4(byte[] privateKey)
     {
         _privateKey = Context.Instance.CreateECPrivKey(privateKey);
     }
 
     public byte[] PublicKey => _privateKey.CreatePubKey().ToBytes();
 
-    public byte[] SignRecord(IEnrRecord record)
+    public byte[] SignRecord(IEnr record)
     {
         _privateKey.TrySignECDSA(Keccak256.ComputeHash(record.EncodeContent()), out var signature);
 

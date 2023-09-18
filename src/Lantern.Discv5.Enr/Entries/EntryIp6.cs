@@ -2,9 +2,9 @@ using System.Net;
 using System.Text;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.Enr.EnrContent.Entries;
+namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryIp6 : IContentEntry
+public class EntryIp6 : IEntry
 {
     public EntryIp6(IPAddress value)
     {
@@ -13,7 +13,7 @@ public class EntryIp6 : IContentEntry
 
     public IPAddress Value { get; }
 
-    public EnrContentKey Key => EnrContentKey.Ip6;
+    public EnrEntryKey Key => EnrEntryKey.Ip6;
 
     public IEnumerable<byte> EncodeEntry()
     {

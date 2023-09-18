@@ -1,16 +1,16 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Identity;
 
 namespace Lantern.Discv5.WireProtocol.Identity;
 
 public interface IIdentityManager
 {
-    IIdentitySchemeSigner Signer { get; }
+    IIdentitySigner Signer { get; }
     
-    IIdentitySchemeVerifier Verifier { get; }
+    IIdentityVerifier Verifier { get; }
     
-    IEnrRecord Record { get; }
+    IEnr Record { get; }
     
     bool IsIpAddressAndPortSet();
 

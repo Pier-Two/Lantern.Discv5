@@ -15,7 +15,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class MessageTests
 {    
-    private static IEnrRecordFactory _enrRecordFactory = null!;
+    private static IEnrFactory _enrFactory = null!;
     private static IIdentityManager _identityManager = null!;
     private static IMessageDecoder _messageDecoder = null!;
 
@@ -25,10 +25,11 @@ public class MessageTests
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
+        var enrEntryRegistry = new EnrEntryRegistry();
         
-        _enrRecordFactory = new EnrRecordFactory();
+        _enrFactory = new EnrFactory(enrEntryRegistry);
         _identityManager = new IdentityManager(sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
-        _messageDecoder = new MessageDecoder(_identityManager, _enrRecordFactory);
+        _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
     
     [Test]
@@ -118,10 +119,12 @@ public class MessageTests
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
+        var enrEntryRegistry1 = new EnrEntryRegistry();
+        var enrEntryRegistry2 = new EnrEntryRegistry();
         var enrs = new[]
         {
-            new EnrRecordFactory().CreateFromString(firstEnrString, _identityManager.Verifier), 
-            new EnrRecordFactory().CreateFromString(secondEnrString, _identityManager.Verifier), 
+            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier), 
+            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier), 
         };
         var nodesMessage = new NodesMessage(2, enrs);
         var encodedMessage = nodesMessage.EncodeMessage();
@@ -155,10 +158,12 @@ public class MessageTests
             "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
         var secondEnrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
+        var enrEntryRegistry1 = new EnrEntryRegistry();
+        var enrEntryRegistry2 = new EnrEntryRegistry();
         var enrs = new[]
         {
-            new EnrRecordFactory().CreateFromString(firstEnrString, _identityManager.Verifier), 
-            new EnrRecordFactory().CreateFromString(secondEnrString, _identityManager.Verifier)
+            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier), 
+            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier), 
         };
         var nodesMessage = new NodesMessage(2, enrs);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(nodesMessage.EncodeMessage());
@@ -224,7 +229,8 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = new EnrRecordFactory().CreateFromString(enrString, _identityManager.Verifier);
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, _identityManager.Verifier);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regTopicMessage = new RegTopicMessage(topic, enr, ticket);
@@ -252,7 +258,8 @@ public class MessageTests
     {
         var enrString =
             "enr:-Ly4QOS00hvPDddEcCpwA1cMykWNdJUK50AjbRgbLZ9FLPyBa78i0NwsQZLSV67elpJU71L1Pt9yqVmE1C6XeSI-LV8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDuKNezAAAAckYFAAAAAAAAgmlkgnY0gmlwhEDhTgGJc2VjcDI1NmsxoQIgMUMFvJGlr8dI1TEQy-K78u2TJE2rWvah9nGqLQCEGohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA";
-        var enr = new EnrRecordFactory().CreateFromString(enrString, _identityManager.Verifier);
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, _identityManager.Verifier);
         var topic = new byte[] { 12, 45, 76, 10, 32, 92, 74, 56, 89, 34 };
         var ticket = new byte[] { 34, 12, 56, 41, 94, 24, 11, 67, 89, 30 };
         var regTopicMessage = new RegTopicMessage(topic, enr, ticket);

@@ -1,4 +1,4 @@
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
 using NUnit.Framework;
@@ -25,8 +25,8 @@ public class SessionOptionsTests
     public void Test_SessionOptions_Builder()
     {
         var privateKey = RandomUtility.GenerateRandomData(32);
-        var signer = new IdentitySchemeV4Signer(privateKey);
-        var verifier = new IdentitySchemeV4Verifier();
+        var signer = new IdentitySignerV4(privateKey);
+        var verifier = new IdentityVerifierV4();
         var sessionKeys = new SessionKeys(privateKey);
         
         _sessionOptions = new SessionOptions.Builder()

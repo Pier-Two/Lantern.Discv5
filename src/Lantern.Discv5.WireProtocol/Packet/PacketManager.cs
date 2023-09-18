@@ -1,8 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -46,11 +45,11 @@ public class PacketManager : IPacketManager
         _logger = loggerFactory.CreateLogger<PacketManager>();
     }
 
-    public async Task SendPacket(IEnrRecord destRecord, MessageType messageType, params byte[][] args)
+    public async Task SendPacket(IEnr dest, MessageType messageType, params byte[][] args)
     {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(destRecord);
-        var destIpKey = destRecord.GetEntry<EntryIp>(EnrContentKey.Ip);
-        var destUdpKey = destRecord.GetEntry<EntryUdp>(EnrContentKey.Udp);
+        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(dest);
+        var destIpKey = dest.GetEntry<EntryIp>(EnrEntryKey.Ip);
+        var destUdpKey = dest.GetEntry<EntryUdp>(EnrEntryKey.Udp);
 
         if (destIpKey == null || destUdpKey == null)
         {

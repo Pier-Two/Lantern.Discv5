@@ -1,22 +1,20 @@
-using System.Collections.ObjectModel;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
-namespace Discv5ConsoleApp.Lantern.Discv5.WireProtocol.Table;
+namespace Lantern.Discv5.WireProtocol.Table;
 
 public class RoutingTable : IRoutingTable
 {
     private readonly IIdentityManager _identityManager;
-    private readonly IEnrRecordFactory _enrRecordFactory;
+    private readonly IEnrFactory _enrFactory;
     private readonly ILogger<RoutingTable> _logger;
     private readonly List<KBucket> _buckets;
 
-    public RoutingTable(IIdentityManager identityManager, IEnrRecordFactory enrRecordFactory, ILoggerFactory loggerFactory, TableOptions options)
+    public RoutingTable(IIdentityManager identityManager, IEnrFactory enrFactory, ILoggerFactory loggerFactory, TableOptions options)
     {
         _identityManager = identityManager;
-        _enrRecordFactory = enrRecordFactory;
+        _enrFactory = enrFactory;
         _logger = loggerFactory.CreateLogger<RoutingTable>();
         _buckets = Enumerable
             .Range(0, TableConstants.NumberOfBuckets)
@@ -72,10 +70,10 @@ public class RoutingTable : IRoutingTable
         }
     }
 
-    public void UpdateFromEnr(IEnrRecord enrRecord)
+    public void UpdateFromEnr(IEnr enr)
     {
-        var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enrRecord);
-        var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enrRecord, _identityManager.Verifier);
+        var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
+        var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enr, _identityManager.Verifier);
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
 
         _buckets[bucketIndex].Update(nodeEntry);
@@ -163,7 +161,7 @@ public class RoutingTable : IRoutingTable
             return nodeEntry;
 
         var bootstrapEnrs = TableOptions.BootstrapEnrs
-            .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+            .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
             .ToArray();
 
         foreach (var bootstrapEnr in bootstrapEnrs)
@@ -187,9 +185,9 @@ public class RoutingTable : IRoutingTable
         return nodeEntry;
     }
 
-    public List<IEnrRecord> GetEnrRecordsAtDistances(IEnumerable<int> distances)
+    public List<IEnr> GetEnrRecordsAtDistances(IEnumerable<int> distances)
     {
-        var enrRecords = new List<IEnrRecord>();
+        var enrRecords = new List<IEnr>();
 
         foreach (var distance in distances)
         {
@@ -214,7 +212,7 @@ public class RoutingTable : IRoutingTable
     public void PopulateFromBootstrapEnrs()
     {
         var enrs = TableOptions.BootstrapEnrs
-            .Select(enr => _enrRecordFactory.CreateFromString(enr, _identityManager.Verifier))
+            .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
             .ToArray();
 
         foreach (var enr in enrs)
