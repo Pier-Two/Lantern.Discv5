@@ -1,7 +1,6 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
@@ -18,7 +17,8 @@ public class Discv5Builder
     private SessionOptions _sessionOptions;
     private TableOptions _tableOptions;
     private string[] _bootstrapEnrs;
-    private EnrRecord _enrRecord;
+    private IEnrEntryRegistry _entryRegistry;
+    private Enr.Enr _enr;
     private ITalkReqAndRespHandler _talkResponder;
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
     
@@ -48,7 +48,13 @@ public class Discv5Builder
 
     public Discv5Builder WithEnrBuilder(EnrBuilder enrBuilder)
     {
-        _enrRecord = enrBuilder.Build();
+        _enr = enrBuilder.Build();
+        return this;
+    }
+    
+    public Discv5Builder WithEnrEntryRegistry(EnrEntryRegistry enrEntryRegistry)
+    {
+        _entryRegistry = enrEntryRegistry;
         return this;
     }
     
@@ -70,7 +76,8 @@ public class Discv5Builder
             _loggerFactory, 
             _connectionOptions, 
             _sessionOptions, 
-            _enrRecord, 
+            _entryRegistry,
+            _enr, 
             _tableOptions, 
             _talkResponder
         );
@@ -94,36 +101,37 @@ public class Discv5Builder
             .WithSessionOptions(sessionOptions)
             .WithTableOptions(tableOptions)
             .WithBootstrapEnrs(bootstrapEnrs)
+            .WithEnrEntryRegistry(new EnrEntryRegistry())
             .WithEnrBuilder(new EnrBuilder()
                 .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4"))
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey)))
+                .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+                .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey)))
             .WithLoggerFactory(loggerFactory)
             .WithTalkResponder(talkResponder)
             .Build();
         return discv5;
     }
     
-    public static EnrRecord CreateNewRecord(ConnectionOptions options, IIdentitySchemeVerifier verifier, IIdentitySchemeSigner signer)
+    public static Enr.Enr CreateNewRecord(ConnectionOptions options, IIdentityVerifier verifier, IIdentitySigner signer)
     {
-        EnrRecord record;
+        Enr.Enr record;
         
         if (options.IpAddress != null)
         {
             record = new EnrBuilder()
                 .WithIdentityScheme(verifier, signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-                .WithEntry(EnrContentKey.Ip, new EntryIp(options.IpAddress)) 
-                .WithEntry(EnrContentKey.Udp, new EntryUdp(options.Port))
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
+                .WithEntry(EnrEntryKey.Id, new EntryId("v4")) // Replace with a constant
+                .WithEntry(EnrEntryKey.Ip, new EntryIp(options.IpAddress)) 
+                .WithEntry(EnrEntryKey.Udp, new EntryUdp(options.Port))
+                .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();
         }
         else
         {
             record = new EnrBuilder()
                 .WithIdentityScheme(verifier, signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4")) // Replace with a constant
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
+                .WithEntry(EnrEntryKey.Id, new EntryId("v4")) // Replace with a constant
+                .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();
         }
         

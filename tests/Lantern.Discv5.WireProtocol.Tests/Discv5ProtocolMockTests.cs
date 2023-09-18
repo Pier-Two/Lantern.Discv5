@@ -1,5 +1,5 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
@@ -72,13 +72,14 @@ public class Discv5ProtocolMockTests
     [Test]
     public void ShouldReturnSelfEnrRecord()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         mockIdentityManager
             .Setup(x => x.Record)
             .Returns(enrRecord);
         
         SetupServices();
-        var result = _discv5Protocol.SelfEnrRecord;
+        var result = _discv5Protocol.SelfEnr;
         Assert.AreEqual(result, enrRecord);
     }
     
@@ -121,8 +122,9 @@ public class Discv5ProtocolMockTests
     [Test]
     public void ShouldReturnNodeFromId()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
-        var nodeEntry = new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
+        var nodeEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(nodeEntry.Id))
             .Returns(nodeEntry);
@@ -135,8 +137,9 @@ public class Discv5ProtocolMockTests
     [Test]
     public void ShouldReturnAllNodes()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
-        var nodeEntry = new NodeTableEntry(enrRecord, new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
+        var nodeEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
         
         mockRoutingTable
             .Setup(x => x.GetAllNodeEntries())
@@ -164,7 +167,8 @@ public class Discv5ProtocolMockTests
     public async Task SendPingAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
     {
         // Arrange
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         SetupServices();
 
         // Act
@@ -177,11 +181,12 @@ public class Discv5ProtocolMockTests
     public async Task SendPingAsync_ShouldReturnFalse_WhenExceptionThrown()
     {
         // Arrange
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
     
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .ThrowsAsync(exceptionToThrow);
         
         SetupServices();
@@ -195,10 +200,11 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendFindNodeAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .Returns(Task.CompletedTask);
         
         SetupServices();
@@ -211,11 +217,12 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendFindNodeAsync_ShouldReturnFalse_WhenExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
     
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .ThrowsAsync(exceptionToThrow);
 
         SetupServices();
@@ -228,10 +235,11 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendTalkReqAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .Returns(Task.CompletedTask);
         
         SetupServices();
@@ -243,11 +251,12 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendTalkReqAsync_ShouldReturnFalse_WhenExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
         
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .ThrowsAsync(exceptionToThrow);
 
         SetupServices();
@@ -260,10 +269,11 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendTalkRespAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .Returns(Task.CompletedTask);
         
         SetupServices();
@@ -275,11 +285,12 @@ public class Discv5ProtocolMockTests
     [Test]
     public async Task SendTalkRespAsync_ShouldReturnFalse_WhenExceptionIsThrown()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
         
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<EnrRecord>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
             .ThrowsAsync(exceptionToThrow);
 
         SetupServices();

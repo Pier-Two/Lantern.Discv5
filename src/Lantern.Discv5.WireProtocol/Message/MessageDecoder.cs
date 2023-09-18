@@ -1,6 +1,5 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
@@ -11,12 +10,12 @@ namespace Lantern.Discv5.WireProtocol.Message;
 public class MessageDecoder : IMessageDecoder
 {
     private readonly IIdentityManager _identityManager;
-    private readonly IEnrRecordFactory _enrRecordFactory;
+    private readonly IEnrFactory _enrFactory;
     
-    public MessageDecoder(IIdentityManager identityManager, IEnrRecordFactory enrRecordFactory)
+    public MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFactory)
     {
         _identityManager = identityManager;
-        _enrRecordFactory = enrRecordFactory;
+        _enrFactory = enrFactory;
     }
     
     public Message DecodeMessage(byte[] message)
@@ -75,7 +74,7 @@ public class MessageDecoder : IMessageDecoder
         var decodedMessage = RlpDecoder.Decode(rawMessage);
         var requestId = decodedMessage[0];
         var total = RlpExtensions.ByteArrayToInt32(decodedMessage[1]);
-        var enrs = _enrRecordFactory.CreateFromMultipleEnrList(ExtractEnrRecord(decodedMessage.Skip(2).ToList(), total),
+        var enrs = _enrFactory.CreateFromMultipleEnrList(ExtractEnrRecord(decodedMessage.Skip(2).ToList(), total),
             _identityManager.Verifier);
         return new NodesMessage(requestId, total, enrs);
     }
@@ -100,7 +99,7 @@ public class MessageDecoder : IMessageDecoder
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         var decodedTopic = decodedMessage[1];
         var decodedEnr = decodedMessage.GetRange(2, decodedMessage.Count - 2).SkipLast(1).ToList();
-        var enr = _enrRecordFactory.CreateFromDecoded(decodedEnr.ToList(), _identityManager.Verifier);
+        var enr = _enrFactory.CreateFromDecoded(decodedEnr.ToList(), _identityManager.Verifier);
         var decodedTicket = decodedMessage.Last();
         return new RegTopicMessage(decodedTopic, enr, decodedTicket)
         {

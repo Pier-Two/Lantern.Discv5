@@ -1,4 +1,3 @@
-using Discv5ConsoleApp.Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -19,7 +18,8 @@ public static class ServiceConfiguration
         ILoggerFactory loggerFactory, 
         ConnectionOptions connectionOptions, 
         SessionOptions sessionOptions, 
-        IEnrRecord enrRecord,
+        IEnrEntryRegistry enrEntryRegistry,
+        IEnr enr,
         TableOptions tableOptions,
         ITalkReqAndRespHandler? talkResponder = null)
     {
@@ -46,9 +46,10 @@ public static class ServiceConfiguration
         services.AddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
-        services.AddSingleton(enrRecord);
+        services.AddSingleton(enrEntryRegistry);
+        services.AddSingleton(enr);
+        services.AddSingleton<IEnrFactory>(provider => new EnrFactory(provider.GetRequiredService<IEnrEntryRegistry>()));
         services.AddSingleton<IAesCrypto, AesCrypto>();
-        services.AddSingleton<IEnrRecordFactory, EnrRecordFactory>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddSingleton<ISessionManager, SessionManager>();
         services.AddSingleton<ITableManager, TableManager>();
@@ -56,7 +57,6 @@ public static class ServiceConfiguration
         services.AddSingleton<IMessageDecoder, MessageDecoder>();
         services.AddSingleton<IMessageRequester, MessageRequester>();
         services.AddSingleton<IMessageResponder, MessageResponder>();
-
         services.AddTransient<OrdinaryPacketHandler>();
         services.AddTransient<WhoAreYouPacketHandler>();
         services.AddTransient<HandshakePacketHandler>();

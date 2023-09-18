@@ -131,7 +131,7 @@ public class MessageResponder : IMessageResponder
         
         if(responses.Length == 0)
         {
-            var response = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, Array.Empty<EnrRecord>())
+            var response = new NodesMessage(decodedMessage.RequestId, closestNodes.Length, Array.Empty<Enr.Enr>())
                 .EncodeMessage();
             return new List<byte[]> { response }.ToArray();
         }

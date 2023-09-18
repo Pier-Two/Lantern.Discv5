@@ -119,6 +119,7 @@ public static class RlpDecoder
     private static List<byte[]> Flatten(this List<object> list)
     {
         var result = new List<byte[]>();
+        
         foreach (var item in list)
             switch (item)
             {

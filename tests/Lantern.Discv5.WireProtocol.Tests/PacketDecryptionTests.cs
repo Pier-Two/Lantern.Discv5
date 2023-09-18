@@ -1,5 +1,5 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -21,7 +21,7 @@ public class PacketDecryptionTests
 {
     private static SessionCrypto SessionCrypto = new();
     private static AesCrypto AesCrypto = new();
-    private static IEnrRecordFactory _enrRecordFactory = null!;
+    private static IEnrFactory _enrFactory = null!;
     private static IIdentityManager _identityManager = null!;
     private static IMessageDecoder _messageDecoder = null!;
     private static ILoggerFactory LoggerFactory = new LoggerFactory();
@@ -32,10 +32,11 @@ public class PacketDecryptionTests
         var connectionOptions = ConnectionOptions.Default;
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
+        var enrEntryRegistry = new EnrEntryRegistry();
         
-        _enrRecordFactory = new EnrRecordFactory();
+        _enrFactory = new EnrFactory(enrEntryRegistry);
         _identityManager = new IdentityManager(sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
-        _messageDecoder = new MessageDecoder(_identityManager, _enrRecordFactory);
+        _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
     
     [Test]
@@ -97,7 +98,7 @@ public class PacketDecryptionTests
                 "00000000000000000000000000000000088b3d434277464933a1ccc59f5967ad1d6035f15e528627dde75cd68292f9e6c27d6b66c8100a873fcbaed4e16b8d");
         var decryptedData = AesCrypto.AesCtrDecrypt(nodeBId[..16], whoAreYouPacket[..16],whoAreYouPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
-        var challengeData = ByteArrayUtils.Concatenate(whoAreYouPacket[..16], staticHeader.GetHeader());
+        var challengeData = ByteArrayUtils.Concatenate(whoAreYouPacket.AsMemory()[..16], staticHeader.GetHeader());
         var whoAreYou = WhoAreYouPacketBase.DecodeAuthData(staticHeader.AuthData);
         var expectedChallengeData =
             Convert.FromHexString(
@@ -191,8 +192,9 @@ public class PacketDecryptionTests
         var decryptedData = AesCrypto.AesCtrDecrypt(nodeBId[..16], packet[..16],packet[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedData);
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(staticHeader);
-        var identityVerifier = new IdentitySchemeV4Verifier();
-        var enr = new EnrRecordFactory().CreateFromBytes(handshakePacket.Record!, new IdentitySchemeV4Verifier());
+        var identityVerifier = new IdentityVerifierV4();
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enr = new EnrFactory(enrEntryRegistry).CreateFromBytes(handshakePacket.Record!, new IdentityVerifierV4());
         var enrRecordSignatureVerify = identityVerifier.VerifyRecord(enr);
         var idSignature = handshakePacket.IdSignature;
         var maskingIv = packet[..16];

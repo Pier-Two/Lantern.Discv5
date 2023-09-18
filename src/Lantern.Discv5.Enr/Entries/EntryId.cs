@@ -1,9 +1,9 @@
 using System.Text;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.Enr.EnrContent.Entries;
+namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryId : IContentEntry
+public class EntryId : IEntry
 {
     public EntryId(string value)
     {
@@ -12,7 +12,7 @@ public class EntryId : IContentEntry
 
     public string Value { get; }
 
-    public EnrContentKey Key => EnrContentKey.Id;
+    public EnrEntryKey Key => EnrEntryKey.Id;
 
     public IEnumerable<byte> EncodeEntry()
     {

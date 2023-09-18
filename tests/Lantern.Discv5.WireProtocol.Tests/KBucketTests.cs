@@ -1,8 +1,7 @@
 using System.Net;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
@@ -193,21 +192,21 @@ public class KBucketTests
         return nodeEntries;
     }
     
-    private static EnrRecord[] GenerateRandomEnrs(int count)
+    private static Enr.Enr[] GenerateRandomEnrs(int count)
     {
-        var enrs = new EnrRecord[count];
+        var enrs = new Enr.Enr[count];
         
         for(var i = 0; i < count; i++)
         {
-            var signer = new IdentitySchemeV4Signer(RandomUtility.GenerateRandomData(32));
+            var signer = new IdentitySignerV4(RandomUtility.GenerateRandomData(32));
             var ipAddress = new IPAddress(RandomUtility.GenerateRandomData(4));
             
             enrs[i] = new EnrBuilder()
                 .WithIdentityScheme(_identityManager.Verifier, _identityManager.Signer)
-                .WithEntry(EnrContentKey.Id, new EntryId("v4"))
-                .WithEntry(EnrContentKey.Ip, new EntryIp(ipAddress))
-                .WithEntry(EnrContentKey.Udp, new EntryUdp(Random.Shared.Next(0, 9000)))
-                .WithEntry(EnrContentKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
+                .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+                .WithEntry(EnrEntryKey.Ip, new EntryIp(ipAddress))
+                .WithEntry(EnrEntryKey.Udp, new EntryUdp(Random.Shared.Next(0, 9000)))
+                .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
                 .Build();
         }
 

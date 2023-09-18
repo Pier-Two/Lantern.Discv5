@@ -102,10 +102,10 @@ public class OrdinaryPacketHandler : PacketHandlerBase
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
 
-    private async Task SendWhoAreYouPacketAsync(StaticHeader staticHeader, IEnrRecord destNodeRecord, IPEndPoint destEndPoint, IUdpConnection connection)
+    private async Task SendWhoAreYouPacketAsync(StaticHeader staticHeader, IEnr destNode, IPEndPoint destEndPoint, IUdpConnection connection)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNodeRecord, maskingIv);
+        var constructedWhoAreYouPacket = _packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNode, maskingIv);
         var session = _sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
 
         session.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());

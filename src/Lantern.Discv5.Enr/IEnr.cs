@@ -1,8 +1,6 @@
-using Lantern.Discv5.Enr.EnrContent;
-
 namespace Lantern.Discv5.Enr;
 
-public interface IEnrRecord
+public interface IEnr
 {
     byte[]? Signature { get; }
     
@@ -12,9 +10,9 @@ public interface IEnrRecord
 
     bool HasKey(string key);
 
-    void UpdateEntry<T>(T value) where T : class, IContentEntry;
+    void UpdateEntry<T>(T value) where T : class, IEntry;
     
-    T GetEntry<T>(string key, T defaultValue = default!) where T : IContentEntry;
+    T GetEntry<T>(string key, T defaultValue = default!) where T : IEntry;
     
     byte[] EncodeRecord();
     

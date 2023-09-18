@@ -1,6 +1,6 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -22,7 +22,7 @@ public class PacketBuilderTests
     private Mock<ILoggerFactory> _loggerFactoryMock;
     private IPacketBuilder _packetBuilder;
     private IPacketProcessor _packetProcessor;
-    private IIdentitySchemeVerifier _identitySchemeVerifier;
+    private IIdentityVerifier _identityVerifier;
 
     [SetUp]
     public void SetUp()
@@ -35,14 +35,15 @@ public class PacketBuilderTests
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
         
-        _identitySchemeVerifier = new IdentitySchemeV4Verifier();
+        _identityVerifier = new IdentityVerifierV4();
     }
     
     [Test]
     public void BuildRandomOrdinaryPacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
-        var nodeId = _identitySchemeVerifier.GetNodeIdFromRecord(enrRecord);
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
+        var nodeId = _identityVerifier.GetNodeIdFromRecord(enrRecord);
         
         _identityManagerMock
             .SetupGet(x => x.Record.NodeId)
@@ -112,7 +113,8 @@ public class PacketBuilderTests
     [Test]
     public void BuildWhoAreYouPacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var destNodeId = Convert.FromHexString("F92B82F11AF5ED0959135CDE8E64B626CAC4F16D05E43087224DEED25D1DBD72");
         var packetNonce = RandomUtility.GenerateRandomData(12);
         var maskingIv = Convert.FromHexString("EE1A7C1BB363686AACDAF6E84C66EB7A");
@@ -149,7 +151,8 @@ public class PacketBuilderTests
     [Test]
     public void BuildHandshakePacket_Should_Return_Valid_Packet()
     {
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var idSignature =
             Convert.FromHexString(
                 "933468458F4F3DE637D9B84917DEDD8103C4A297A4980B703A727D017B92B2713A95FD12F0AD9264845FC6F1FF29F6E0706075019F43E8C624F4E58F78A6ED8C");

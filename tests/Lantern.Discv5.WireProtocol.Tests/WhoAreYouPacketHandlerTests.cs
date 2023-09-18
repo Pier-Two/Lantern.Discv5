@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
@@ -125,7 +125,8 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenSessionCannotBeCreated()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -134,7 +135,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new byte[32]);
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns((ISessionMain?)null);
@@ -169,7 +170,8 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenNoReplyMessageIsCreated()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -187,7 +189,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
@@ -223,7 +225,8 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenEncryptedMessageIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -241,7 +244,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
             .Returns(new byte[32]);
@@ -249,7 +252,7 @@ public class WhoAreYouPacketHandlerTests
             .SetupGet(x => x.Record.NodeId)
             .Returns(enrRecord.NodeId);
         mockSessionMain
-            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
+            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[]?)null);
         mockSessionManager
@@ -280,7 +283,7 @@ public class WhoAreYouPacketHandlerTests
         mockSessionMain
             .Verify(x => x.GenerateIdSignature(It.IsAny<byte[]>()), Times.Once);
         mockSessionMain
-            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockUdpConnection
             .Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Never);
     }
@@ -289,7 +292,8 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenIdSignatureIsNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -304,12 +308,12 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
             .Returns((byte[]?)null);
         mockSessionMain
-            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
+            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[]?)null);
         mockSessionManager
@@ -340,7 +344,7 @@ public class WhoAreYouPacketHandlerTests
         mockSessionMain
             .Verify(x => x.GenerateIdSignature(It.IsAny<byte[]>()), Times.Once);
         mockSessionMain
-            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Never);
+            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Never);
 
     }
     
@@ -348,7 +352,8 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendPacket_WhenEncryptedMessageIsNotNull()
     {
         // Test data
-        var enrRecord = new EnrRecordFactory().CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentitySchemeV4Verifier());
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         
         // Arrange
@@ -369,12 +374,12 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
-            .Returns(new NodeTableEntry(enrRecord,new IdentitySchemeV4Verifier()));
+            .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
             .Returns(new byte[32]);
         mockSessionMain
-            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
+            .Setup(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new byte[32]);
         mockSessionManager
@@ -405,7 +410,7 @@ public class WhoAreYouPacketHandlerTests
         mockSessionMain
             .Verify(x => x.GenerateIdSignature(It.IsAny<byte[]>()), Times.Once);
         mockSessionMain
-            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<EnrRecord>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.EncryptMessageWithNewKeys(It.IsAny<Enr.Enr>(), It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockUdpConnection
             .Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
     }

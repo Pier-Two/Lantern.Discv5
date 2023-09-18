@@ -1,18 +1,18 @@
 using System.Text;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.Enr.EnrContent.Entries;
+namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryEth2 : IContentEntry
+public class EntrySecp256K1 : IEntry
 {
-    public EntryEth2(byte[] value)
+    public EntrySecp256K1(byte[] value)
     {
         Value = value;
     }
 
     public byte[] Value { get; }
 
-    public EnrContentKey Key => EnrContentKey.Eth2;
+    public EnrEntryKey Key => EnrEntryKey.Secp256K1;
 
     public IEnumerable<byte> EncodeEntry()
     {

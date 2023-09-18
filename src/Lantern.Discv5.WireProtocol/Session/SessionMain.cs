@@ -1,7 +1,6 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.V4;
+using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
@@ -65,10 +64,10 @@ public class SessionMain : ISessionMain
         return _sessionCrypto.VerifyIdSignature(handshakePacket.IdSignature, _challengeData,publicKey, handshakePacket.EphPubkey, selfNodeId, _sessionKeys.CryptoContext);
     }
 
-    public byte[]? EncryptMessageWithNewKeys(IEnrRecord destRecord, StaticHeader header, byte[] selfNodeId, byte[] message, byte[] maskingIv)
+    public byte[]? EncryptMessageWithNewKeys(IEnr dest, StaticHeader header, byte[] selfNodeId, byte[] message, byte[] maskingIv)
     {
-        var publicKey = destRecord.GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
-        var destNodeId = new IdentitySchemeV4Verifier().GetNodeIdFromRecord(destRecord);
+        var publicKey = dest.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
+        var destNodeId = new IdentityVerifierV4().GetNodeIdFromRecord(dest);
         var sharedSecret = _sessionCrypto.GenerateSharedSecret(_sessionKeys.EphemeralPrivateKey, publicKey, _sessionKeys.CryptoContext);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         

@@ -44,7 +44,7 @@ public class Discv5Protocol
         _logger = logger;
     }
     
-    public IEnrRecord SelfEnrRecord => _identityManager.Record;
+    public IEnr SelfEnr => _identityManager.Record;
     
     public int NodesCount => _routingTable.GetTotalEntriesCount();
     
@@ -111,58 +111,58 @@ public class Discv5Protocol
         return null;
     }
     
-    public async Task<bool> SendPingAsync(IEnrRecord destinationRecord)
+    public async Task<bool> SendPingAsync(IEnr destination)
     {
         try
         {
-            await _packetManager.SendPacket(destinationRecord, MessageType.Ping);
+            await _packetManager.SendPacket(destination, MessageType.Ping);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destinationRecord);
+            _logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destination);
             return false;
         }
     }
 
-    public async Task<bool> SendFindNodeAsync(EnrRecord destinationRecord, byte[] nodeId)
+    public async Task<bool> SendFindNodeAsync(Enr.Enr destination, byte[] nodeId)
     {
         try
         {
-            await _packetManager.SendPacket(destinationRecord, MessageType.FindNode, nodeId);
+            await _packetManager.SendPacket(destination, MessageType.FindNode, nodeId);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destinationRecord);
+            _logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destination);
             return false;
         }
     }
     
-    public async Task<bool> SendTalkReqAsync(EnrRecord destinationRecord, byte[] protocol, byte[] request)
+    public async Task<bool> SendTalkReqAsync(Enr.Enr destination, byte[] protocol, byte[] request)
     {
         try
         {
-            await _packetManager.SendPacket(destinationRecord, MessageType.TalkReq, protocol, request);
+            await _packetManager.SendPacket(destination, MessageType.TalkReq, protocol, request);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destinationRecord);
+            _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
             return false;
         }
     }
     
-    public async Task<bool> SendTalkRespAsync(EnrRecord destinationRecord, byte[] response)
+    public async Task<bool> SendTalkRespAsync(Enr.Enr destination, byte[] response)
     {
         try
         {
-            await _packetManager.SendPacket(destinationRecord, MessageType.TalkResp, response);
+            await _packetManager.SendPacket(destination, MessageType.TalkResp, response);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destinationRecord);
+            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destination);
             return false;
         }
     }

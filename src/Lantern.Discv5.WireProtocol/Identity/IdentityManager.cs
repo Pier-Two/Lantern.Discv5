@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.WireProtocol.Session;
 using Microsoft.Extensions.Logging;
 
@@ -13,24 +12,24 @@ public class IdentityManager: IIdentityManager
 {
     private readonly ILogger<IdentityManager> _logger;
     
-    public IdentityManager(SessionOptions sessionOptions, IEnrRecord enrRecord, ILoggerFactory loggerFactory)
+    public IdentityManager(SessionOptions sessionOptions, IEnr enr, ILoggerFactory loggerFactory)
     {
         Signer = sessionOptions.Signer;
         Verifier = sessionOptions.Verifier;
-        Record = enrRecord;
+        Record = enr;
         _logger = loggerFactory.CreateLogger<IdentityManager>();
         _logger.LogInformation("Self ENR record created => {Record}", Record);
     }
     
-    public IIdentitySchemeVerifier Verifier { get; }
+    public IIdentityVerifier Verifier { get; }
     
-    public IIdentitySchemeSigner Signer { get; }
+    public IIdentitySigner Signer { get; }
 
-    public IEnrRecord Record { get; }
+    public IEnr Record { get; }
     
     public bool IsIpAddressAndPortSet()
     {
-        return Record.HasKey(EnrContentKey.Ip) && Record.HasKey(EnrContentKey.Udp) || (Record.HasKey(EnrContentKey.Ip6) && Record.HasKey(EnrContentKey.Udp6));
+        return Record.HasKey(EnrEntryKey.Ip) && Record.HasKey(EnrEntryKey.Udp) || (Record.HasKey(EnrEntryKey.Ip6) && Record.HasKey(EnrEntryKey.Udp6));
     }
 
     public void UpdateIpAddressAndPort(IPEndPoint endpoint)

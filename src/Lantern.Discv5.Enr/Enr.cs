@@ -1,22 +1,21 @@
-﻿using Lantern.Discv5.Enr.EnrContent;
-using Lantern.Discv5.Enr.EnrContent.Entries;
-using Lantern.Discv5.Enr.IdentityScheme.Interfaces;
+﻿using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
 using Multiformats.Hash;
 
 namespace Lantern.Discv5.Enr;
 
-public class EnrRecord : IEnrRecord
+public class Enr : IEnr
 {
-    private readonly IDictionary<string, IContentEntry> _entries;
-    private readonly IIdentitySchemeSigner? _signer;
-    private readonly IIdentitySchemeVerifier? _verifier;
+    private readonly IDictionary<string, IEntry> _entries;
+    private readonly IIdentitySigner? _signer;
+    private readonly IIdentityVerifier? _verifier;
 
-    public EnrRecord(
-        IDictionary<string, IContentEntry> initialEntries, 
-        IIdentitySchemeVerifier verifier, 
-        IIdentitySchemeSigner? signer = null, 
+    public Enr(
+        IDictionary<string, IEntry> initialEntries, 
+        IIdentityVerifier verifier, 
+        IIdentitySigner? signer = null, 
         byte[]? signature = null, 
         ulong sequenceNumber = 1)
     {
@@ -46,14 +45,14 @@ public class EnrRecord : IEnrRecord
     
     public byte[] NodeId => _verifier!.GetNodeIdFromRecord(this);
     
-    public T GetEntry<T>(string key, T defaultValue = default!) where T : IContentEntry
+    public T GetEntry<T>(string key, T defaultValue = default!) where T : IEntry
     {
         var entry = _entries.Values.FirstOrDefault(e => e.Key == key);
 
         return entry is T result ? result : defaultValue;
     }
     
-    public void UpdateEntry<T>(T value) where T : class, IContentEntry
+    public void UpdateEntry<T>(T value) where T : class, IEntry
     {
         foreach (var existingKey in _entries.Where(entry => entry.Value.Key.Equals(value.Key)).ToList())
         {
@@ -97,12 +96,12 @@ public class EnrRecord : IEnrRecord
     
     public override string ToString()
     {
-        return $"enr:{Base64Url.ToBase64UrlString(EncodeRecord())}";
+        return $"enr:{Base64Url.ToString(EncodeRecord())}";
     }
 
     public string ToPeerId()
     {
-        var publicKey = GetEntry<EntrySecp256K1>(EnrContentKey.Secp256K1).Value;
+        var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKeyProto = ByteArrayUtils.Concatenate(EnrConstants.ProtoBufferPrefix, publicKey);
         var multihash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
     

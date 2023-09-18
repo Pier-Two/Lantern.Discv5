@@ -12,7 +12,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class TableManagerTests
 {
     private Mock<IPacketManager> mockPacketManager = null!;
-    private Mock<IEnrRecordFactory> mockEnrRecordFactory = null!;
+    private Mock<IEnrFactory> mockEnrRecordFactory = null!;
     private Mock<IIdentityManager> mockIdentityManager = null!;
     private Mock<ILookupManager> mockLookupManager = null!;
     private Mock<IRoutingTable> mockRoutingTable = null!;
@@ -27,7 +27,7 @@ public class TableManagerTests
     {
         mockPacketManager = new Mock<IPacketManager>();
         mockIdentityManager = new Mock<IIdentityManager>();
-        mockEnrRecordFactory = new Mock<IEnrRecordFactory>();
+        mockEnrRecordFactory = new Mock<IEnrFactory>();
         mockLookupManager = new Mock<ILookupManager>();
         mockCancellationTokenSource = new Mock<ICancellationTokenSourceWrapper>();
         mockGracefulTaskRunner = new Mock<IGracefulTaskRunner>();
