@@ -1,11 +1,10 @@
 using System.Net;
 using System.Net.Sockets;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
-using Open.Nat;
 
-namespace Lantern.Discv5.WireProtocol.Connection;
+namespace Lantern.Discv5.WireProtocol.Utility;
 
-public static class ConnectionUtility
+public static class IpUtility
 {
     public static IPAddress GetLocalIpAddress()
     {

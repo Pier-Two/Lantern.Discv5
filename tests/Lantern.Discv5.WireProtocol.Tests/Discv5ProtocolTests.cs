@@ -26,6 +26,8 @@ public class Discv5ProtocolTests
 
         var firstClosestNodes = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
         
+        Console.WriteLine("PEER ID " + _discv5Protocol.SelfEnr.ToPeerId());
+        
         if (firstClosestNodes != null)
         {
             foreach (var node in firstClosestNodes)

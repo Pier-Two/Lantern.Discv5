@@ -5,6 +5,7 @@ using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Session;
+using Lantern.Discv5.WireProtocol.Utility;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -32,7 +33,7 @@ public class IdentityManagerTests
     [Test]
     public void Test_IdentityManager_ShouldResultInTrueWhenIpV4AndPortIsSet()
     {
-        _identityManager.UpdateIpAddressAndPort(new IPEndPoint(ConnectionUtility.GetLocalIpAddress(), 1234));
+        _identityManager.UpdateIpAddressAndPort(new IPEndPoint(IpUtility.GetLocalIpAddress(), 1234));
         Assert.IsTrue(_identityManager.IsIpAddressAndPortSet());
     }
     
@@ -50,7 +51,7 @@ public class IdentityManagerTests
         
         Assert.IsFalse(node.HasKey(EnrEntryKey.Ip));
         Assert.IsFalse(node.HasKey(EnrEntryKey.Udp));
-        var endpoint = new IPEndPoint(ConnectionUtility.GetLocalIpAddress(), 1234);
+        var endpoint = new IPEndPoint(IpUtility.GetLocalIpAddress(), 1234);
 
         _identityManager.UpdateIpAddressAndPort(endpoint);
         

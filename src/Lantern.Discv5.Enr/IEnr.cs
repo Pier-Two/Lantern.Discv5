@@ -8,6 +8,8 @@ public interface IEnr
     
     byte[] NodeId { get; }
 
+    string ToPeerId();
+
     bool HasKey(string key);
 
     void UpdateEntry<T>(T value) where T : class, IEntry;
