@@ -6,6 +6,7 @@ using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Services;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;

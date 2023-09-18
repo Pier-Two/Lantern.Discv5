@@ -19,7 +19,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class PacketDecryptionTests
 {
-    private static SessionCrypto SessionCrypto = new();
+    private static SessionCrypto _sessionCrypto = new();
     private static AesCrypto AesCrypto = new();
     private static IEnrFactory _enrFactory = null!;
     private static IIdentityManager _identityManager = null!;
@@ -120,15 +120,15 @@ public class PacketDecryptionTests
         var nodeAPrivKey = Convert.FromHexString("eef77acb6c6a6eebc5b363a475ac583ec7eccdb42b6481424c60f59aa326547f");
         var nodeAEphemeralPrivKey = Convert.FromHexString("0288ef00023598499cb6c940146d050d2b1fb914198c327f76aad590bead68b6");
         var nodeASessionkeys = new SessionKeys(nodeAPrivKey, nodeAEphemeralPrivKey);
-        var nodeACrypto = new SessionMain(nodeASessionkeys, AesCrypto,SessionCrypto, LoggerFactory,SessionType.Recipient);
+        var nodeACrypto = new SessionMain(nodeASessionkeys, AesCrypto,_sessionCrypto, LoggerFactory,SessionType.Recipient);
         var nodeBPubkey =
-            new SessionMain(new SessionKeys(Convert.FromHexString("66fb62bfbd66b9177a138c1e5cddbe4f7c30c343e94e68df8769459cb1cde628")), AesCrypto,SessionCrypto, LoggerFactory,SessionType.Recipient).PublicKey;
+            new SessionMain(new SessionKeys(Convert.FromHexString("66fb62bfbd66b9177a138c1e5cddbe4f7c30c343e94e68df8769459cb1cde628")), AesCrypto,_sessionCrypto, LoggerFactory,SessionType.Recipient).PublicKey;
         var nonce = Convert.FromHexString("ffffffffffffffffffffffff");
         var maskedIv = Convert.FromHexString("00000000000000000000000000000000");
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000001");
-        var idSignature = SessionCrypto.GenerateIdSignature(nodeASessionkeys, challengeData, nodeACrypto.EphemeralPublicKey, nodeBId);
-        var sharedSecret = SessionCrypto.GenerateSharedSecret(nodeAEphemeralPrivKey, nodeBPubkey, Context.Instance);
-        var sessionKeys = SessionCrypto.GenerateSessionKeys(sharedSecret, nodeAId, nodeBId, challengeData);
+        var idSignature = _sessionCrypto.GenerateIdSignature(nodeASessionkeys, challengeData, nodeACrypto.EphemeralPublicKey, nodeBId);
+        var sharedSecret = _sessionCrypto.GenerateSharedSecret(nodeAEphemeralPrivKey, nodeBPubkey, Context.Instance);
+        var sessionKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, nodeAId, nodeBId, challengeData);
         var handshakePacket = new HandshakePacketBase(idSignature, nodeACrypto.EphemeralPublicKey, nodeAId);
         var staticHeader = new StaticHeader(ProtocolConstants.ProtocolId, ProtocolConstants.Version, handshakePacket.AuthData, (byte)PacketType.Handshake, nonce);
         var maskedHeader = new MaskedHeader(nodeBId, maskedIv);
@@ -162,9 +162,9 @@ public class PacketDecryptionTests
         var challengeData =
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000001");
-        var result = SessionCrypto.VerifyIdSignature(idSignature, challengeData, nodeAPubkey, ephPublicKey, nodeBId, Context.Instance);
-        var sharedSecret = SessionCrypto.GenerateSharedSecret(nodeBSessionKeys.PrivateKey, ephPublicKey, new Context());
-        var sessionKeys = SessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData); 
+        var result = _sessionCrypto.VerifyIdSignature(idSignature, challengeData, nodeAPubkey, ephPublicKey, nodeBId, Context.Instance);
+        var sharedSecret = _sessionCrypto.GenerateSharedSecret(nodeBSessionKeys.PrivateKey, ephPublicKey, new Context());
+        var sessionKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData); 
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCrypto.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce,
@@ -202,9 +202,9 @@ public class PacketDecryptionTests
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         
-        var idSignatureVerify = SessionCrypto.VerifyIdSignature(idSignature, challengeData,nodeAPubkey, ephPublicKey, nodeBId, Context.Instance);
-        var sharedSecret = SessionCrypto.GenerateSharedSecret(nodeBSessionKeys.PrivateKey, ephPublicKey, new Context());
-        var sessionKeys = SessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
+        var idSignatureVerify = _sessionCrypto.VerifyIdSignature(idSignature, challengeData,nodeAPubkey, ephPublicKey, nodeBId, Context.Instance);
+        var sharedSecret = _sessionCrypto.GenerateSharedSecret(nodeBSessionKeys.PrivateKey, ephPublicKey, new Context());
+        var sessionKeys = _sessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId!, nodeBId, challengeData);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, staticHeader.GetHeader());
         var encryptedMessage = packet[^staticHeader.EncryptedMessageLength..]; // This indexer statement extracts the encrypted message from the packet
         var decryptedMessage = AesCrypto.AesGcmDecrypt(sessionKeys.InitiatorKey, staticHeader.Nonce, encryptedMessage, messageAd);
