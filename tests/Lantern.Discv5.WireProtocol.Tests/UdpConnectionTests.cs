@@ -31,7 +31,9 @@ public class UdpConnectionTests
     [Test]
     public void CompleteMessageChannel_CompletesWithoutError()
     {
-        var connectionOptions = new ConnectionOptions.Builder().WithPort(8081).WithReqRespTimeoutMs(1000).Build();
+        var connectionOptions = new ConnectionOptions()
+            .SetPort(8081)
+            .SetRequestTimeoutMs(1000);
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);
         connection.Close();
     }
@@ -39,7 +41,9 @@ public class UdpConnectionTests
     [Test]
     public void Close_LogsMessageAndClosesClient()
     {
-        var connectionOptions = new ConnectionOptions.Builder().WithPort(8082).WithReqRespTimeoutMs(1000).Build();
+        var connectionOptions = new ConnectionOptions()
+            .SetPort(8082)
+            .SetRequestTimeoutMs(1000);
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);
         connection.Close();
     }
@@ -47,7 +51,9 @@ public class UdpConnectionTests
     [Test]
     public void Dispose_LogsMessageAndDisposesClient()
     {
-        var connectionOptions = new ConnectionOptions.Builder().WithPort(8083).WithReqRespTimeoutMs(1000).Build();
+        var connectionOptions = new ConnectionOptions()
+            .SetPort(8083)
+            .SetRequestTimeoutMs(1000);
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);
         connection.Close();
     }

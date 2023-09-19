@@ -7,16 +7,16 @@ using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 using IPEndPoint = System.Net.IPEndPoint;
-using OperationCanceledException = System.OperationCanceledException;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public class UdpConnection : IUdpConnection
+public sealed class UdpConnection : IUdpConnection, IDisposable
 {
     private readonly UdpClient _udpClient;
     private readonly ILogger<UdpConnection> _logger;
     private readonly Channel<UdpReceiveResult> _messageChannel; 
     private readonly IGracefulTaskRunner _taskRunner;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
   
     public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory, IGracefulTaskRunner taskRunner)
     {
@@ -29,16 +29,30 @@ public class UdpConnection : IUdpConnection
     public async Task SendAsync(byte[] data, IPEndPoint destination)
     {
         ValidatePacketSize(data);
-        _logger.LogDebug("Sending packet to {Destination}", destination);
-        
-        await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
+
+        try
+        {
+            await _semaphore.WaitAsync();
+            await _udpClient.SendAsync(data, data.Length, destination).ConfigureAwait(false);
+        }
+        catch (SocketException se)
+        {
+            _logger.LogError(se, "Error sending data");
+            throw;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
     
     public async Task ListenAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting ListenAsync");
         
-        await _taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
+        try 
+        {
+            await _taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -46,6 +60,11 @@ public class UdpConnection : IUdpConnection
                     _messageChannel.Writer.TryWrite(returnedResult);
                 }
             }, "Listen", token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred in ListenAsync");
+        }
     }
 
     public async IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync([EnumeratorCancellation] CancellationToken token = default)
@@ -55,15 +74,30 @@ public class UdpConnection : IUdpConnection
             yield return message;
         }
     }
-
+    
     public void Close()
     {
         _logger.LogInformation("Closing UdpConnection");
+        Dispose();
+    }
+    
+    public void Dispose()
+    {
+        _logger.LogInformation("Disposing UdpConnection");
+        Dispose(true);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (!disposing) 
+            return;
+        
+        _semaphore.Dispose();
         _udpClient.Close();
         _udpClient.Dispose();
         _messageChannel.Writer.TryComplete();
     }
-
+    
     public static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
         switch (data.Count)
@@ -79,7 +113,7 @@ public class UdpConnection : IUdpConnection
     {
         var receiveResult = await _udpClient.ReceiveAsync(token).ConfigureAwait(false);
         ValidatePacketSize(receiveResult.Buffer);
-        
+  
         _logger.LogDebug("Received packet from {Source}", receiveResult.RemoteEndPoint);
         return receiveResult;
     }

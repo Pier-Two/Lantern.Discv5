@@ -18,7 +18,6 @@ public class TableManager : ITableManager
     private readonly ILogger<TableManager> _logger;
     private readonly ICancellationTokenSourceWrapper _shutdownCts;
     private readonly IGracefulTaskRunner _taskRunner;
-    private Task? _initializeTask;
     private Task? _refreshTask;
     private Task? _pingTask;
     
@@ -44,10 +43,11 @@ public class TableManager : ITableManager
         _shutdownCts = cts;
     }
 
-    public void StartTableManagerAsync()
+    public async Task StartTableManagerAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
-        _initializeTask = InitialiseFromBootstrapAsync();
+        
+        await InitialiseFromBootstrapAsync();
         _refreshTask = _taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", _shutdownCts.GetToken());
         _pingTask = _taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", _shutdownCts.GetToken());
     }
@@ -57,7 +57,7 @@ public class TableManager : ITableManager
         _logger.LogInformation("Stopping TableManagerAsync");
         _shutdownCts.Cancel();
 
-        await Task.WhenAll(_initializeTask, _refreshTask, _pingTask).ConfigureAwait(false);
+        await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
 	
         if (_shutdownCts.IsCancellationRequested())
         {
@@ -67,11 +67,10 @@ public class TableManager : ITableManager
     
     public async Task InitialiseFromBootstrapAsync()
     {
-        if (_routingTable.GetTotalEntriesCount() == 0)
+        if (_routingTable.GetNodesCount() == 0)
         {
             _logger.LogInformation("Initialising from bootstrap ENRs");
-            _routingTable.PopulateFromBootstrapEnrs();
-
+            
             var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs
                 .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
                 .ToArray();
@@ -107,7 +106,7 @@ public class TableManager : ITableManager
     
         while (!token.IsCancellationRequested)
         {
-            if (_routingTable.GetTotalEntriesCount() <= 0) 
+            if (_routingTable.GetNodesCount() <= 0) 
                 continue;
         
             await Task.Delay(_tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);

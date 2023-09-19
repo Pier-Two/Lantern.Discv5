@@ -43,14 +43,13 @@ public class TableManagerTests
     [Test]
     public async Task Test_TableManager_EnsureShutdownTokenIsRequested_WhenTableManagerIsStopped()
     {
-        tableOptions = new TableOptions.Builder()
-            .WithLookupTimeoutMilliseconds(100)
-            .WithPingIntervalMilliseconds(100)
-            .WithRefreshIntervalMilliseconds(100)
-            .Build();
+        tableOptions = new TableOptions()
+            .SetLookupTimeoutMilliseconds(100)
+            .SetPingIntervalMilliseconds(100)
+            .SetRefreshIntervalMilliseconds(100);
 
         mockRoutingTable
-            .Setup(x => x.GetTotalEntriesCount())
+            .Setup(x => x.GetNodesCount())
             .Returns(10);
 
         var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
@@ -64,14 +63,13 @@ public class TableManagerTests
     [Test]
     public async Task Test_TableManager_PingNodeAsync()
     {
-        tableOptions = new TableOptions.Builder()
-            .WithLookupTimeoutMilliseconds(100)
-            .WithPingIntervalMilliseconds(100)
-            .WithRefreshIntervalMilliseconds(100)
-            .Build();
+        tableOptions = new TableOptions()
+            .SetLookupTimeoutMilliseconds(100)
+            .SetPingIntervalMilliseconds(100)
+            .SetRefreshIntervalMilliseconds(100);
         
         mockRoutingTable
-            .Setup(x => x.GetTotalEntriesCount())
+            .Setup(x => x.GetNodesCount())
             .Returns(10);
         
         var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);

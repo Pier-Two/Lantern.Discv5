@@ -87,7 +87,7 @@ public class Discv5ProtocolMockTests
     public void ShouldReturnNodesCount()
     {
         mockRoutingTable
-            .Setup(x => x.GetTotalEntriesCount())
+            .Setup(x => x.GetNodesCount())
             .Returns(10);
         
         SetupServices();
@@ -99,7 +99,7 @@ public class Discv5ProtocolMockTests
     public void ShouldReturnPeerCount()
     {
         mockRoutingTable
-            .Setup(x => x.GetTotalActiveNodesCount())
+            .Setup(x => x.GetActiveNodesCount())
             .Returns(10);
         
         SetupServices();
@@ -142,7 +142,7 @@ public class Discv5ProtocolMockTests
         var nodeEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
         
         mockRoutingTable
-            .Setup(x => x.GetAllNodeEntries())
+            .Setup(x => x.GetAllNodes())
             .Returns(new [] { nodeEntry });
         
         SetupServices();
@@ -155,7 +155,7 @@ public class Discv5ProtocolMockTests
     public async Task PerformLookupAsync_ShouldReturnNull_WhenNoActiveNodes()
     {
         mockRoutingTable
-            .Setup(x => x.GetTotalEntriesCount())
+            .Setup(x => x.GetNodesCount())
             .Returns(0);
         
         SetupServices();
@@ -313,6 +313,6 @@ public class Discv5ProtocolMockTests
             mockLookupManager.Object,
             mockLoggerFactory.Object.CreateLogger<Discv5Protocol>()
         );
-        _discv5Protocol.StartProtocol();
+        _discv5Protocol.StartProtocolAsync();
     }
 }

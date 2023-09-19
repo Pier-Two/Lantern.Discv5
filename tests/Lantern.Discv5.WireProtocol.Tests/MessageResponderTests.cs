@@ -10,7 +10,6 @@ using Lantern.Discv5.WireProtocol.Services;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -25,10 +24,7 @@ public class MessageResponderTests
     [OneTimeSetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions.Builder()
-            .WithPort(2030)
-            .Build();
-        
+        var connectionOptions = new ConnectionOptions().SetPort(2030);
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
