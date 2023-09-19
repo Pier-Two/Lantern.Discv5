@@ -29,12 +29,11 @@ public class SessionOptionsTests
         var verifier = new IdentityVerifierV4();
         var sessionKeys = new SessionKeys(privateKey);
         
-        _sessionOptions = new SessionOptions.Builder()
-            .WithSigner(signer)
-            .WithVerifier(verifier)
-            .WithSessionKeys(sessionKeys)
-            .WithCacheSize(2000)
-            .Build();
+        _sessionOptions = new SessionOptions()
+            .SetSigner(signer)
+            .SetVerifier(verifier)
+            .SetSessionKeys(sessionKeys)
+            .SetCacheSize(2000);
         
         Assert.NotNull(_sessionOptions);
         Assert.NotNull(_sessionOptions.Signer);

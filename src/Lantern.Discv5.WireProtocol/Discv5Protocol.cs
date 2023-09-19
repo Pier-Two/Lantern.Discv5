@@ -46,21 +46,22 @@ public class Discv5Protocol
     
     public IEnr SelfEnr => _identityManager.Record;
     
-    public int NodesCount => _routingTable.GetTotalEntriesCount();
+    public int NodesCount => _routingTable.GetNodesCount();
     
-    public int PeerCount => _routingTable.GetTotalActiveNodesCount();
+    public int PeerCount => _routingTable.GetActiveNodesCount();
     
     public int ActiveSessionCount => _sessionManager.TotalSessionCount;
     
     public NodeTableEntry? GetNodeFromId(byte[] nodeId) => _routingTable.GetNodeEntry(nodeId);
 
-    public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodeEntries();
+    public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodes();
 
-    public void StartProtocol()
+    public async Task StartProtocolAsync()
     {
         _connectionManager.StartConnectionManagerAsync();
-        _tableManager.StartTableManagerAsync();
         _requestManager.StartRequestManager();
+        
+        await _tableManager.StartTableManagerAsync();
     }
     
     public async Task StopProtocolAsync()
@@ -98,7 +99,7 @@ public class Discv5Protocol
 
     public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
     {
-        if (_routingTable.GetTotalActiveNodesCount() > 0)
+        if (_routingTable.GetActiveNodesCount() > 0)
         {
             var closestNodes = await _lookupManager.LookupAsync(targetNodeId);
             

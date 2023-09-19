@@ -36,16 +36,15 @@ public class TableOptionsTests
         var maxAllowedFailures = 5;
         var concurrencyParameter = 5;
         var lookupParallelism = 5;
-        
-        _tableOptions = new TableOptions.Builder()
-            .WithPingIntervalMilliseconds(pingIntervalMilliseconds)
-            .WithRefreshIntervalMilliseconds(refreshIntervalMilliseconds)
-            .WithLookupTimeoutMilliseconds(lookupTimeoutMilliseconds)
-            .WithMaxAllowedFailures(maxAllowedFailures)
-            .WithConcurrencyParameter(concurrencyParameter)
-            .WithLookupParallelism(lookupParallelism)
-            .WithBootstrapEnrs(bootstrapEnrs)
-            .Build();
+
+        _tableOptions = new TableOptions()
+            .SetPingIntervalMilliseconds(pingIntervalMilliseconds)
+            .SetRefreshIntervalMilliseconds(refreshIntervalMilliseconds)
+            .SetLookupTimeoutMilliseconds(lookupTimeoutMilliseconds)
+            .SetMaxAllowedFailures(maxAllowedFailures)
+            .SetConcurrencyParameter(concurrencyParameter)
+            .SetLookupParallelism(lookupParallelism)
+            .SetBootstrapEnrs(bootstrapEnrs);
         
         Assert.NotNull(_tableOptions);
         Assert.AreEqual(pingIntervalMilliseconds, _tableOptions.PingIntervalMilliseconds);

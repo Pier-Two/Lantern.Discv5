@@ -36,23 +36,61 @@ public sealed class ConnectionManager : IConnectionManager
         _logger.LogInformation("Stopping ConnectionManagerAsync");
         _cts.Cancel();
 
-        await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false);
+        try
+        {
+            if (_listenTask != null && _handleTask != null)
+            {
+                await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false); 
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while waiting for tasks in StopConnectionManagerAsync: {Message}", ex.Message);
+            throw;
+        }
     
         if (_cts.IsCancellationRequested())
         {
             _logger.LogInformation("ConnectionManagerAsync was canceled gracefully");
         }
-	
-        _connection.Close();        
+    
+        try
+        {
+            _connection.Close(); 
+        }  
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while closing the connection: {Message}", ex.Message);
+            throw;
+        }           
     }
     
     public async Task HandleIncomingPacketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting HandleIncomingPacketsAsync");
 
-        await foreach (var packet in _connection.ReadMessagesAsync(token).ConfigureAwait(false))
+        try
         {
-            await _packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
+            await foreach (var packet in _connection.ReadMessagesAsync(token).ConfigureAwait(false))
+            {
+                try 
+                {
+                    await _packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {         
+                    _logger.LogError(ex, "Failed to handle incoming packet: {Packet}. Error: {Message}", packet, ex.Message);    
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("HandleIncomingPacketsAsync has been cancelled");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in HandleIncomingPacketsAsync: {Message}", ex.Message);
+            throw; 
         }
     }
 }

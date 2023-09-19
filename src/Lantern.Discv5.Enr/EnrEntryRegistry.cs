@@ -9,9 +9,9 @@ public sealed class EnrEntryRegistry : IEnrEntryRegistry
 {
     private readonly Dictionary<EnrEntryKey, Func<byte[], IEntry>> _registeredEntries = new();
     
-    public EnrEntryRegistry() : this(CreateDefaultEntries())
-    {
-    }
+    public EnrEntryRegistry() : this(CreateDefaultEntries()) { }
+    
+    public static EnrEntryRegistry Default { get; } = new();
     
     public EnrEntryRegistry(IEnumerable<(EnrEntryKey, Func<byte[], IEntry>)> entries)
     {

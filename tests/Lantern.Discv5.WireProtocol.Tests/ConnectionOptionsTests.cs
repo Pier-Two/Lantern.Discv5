@@ -30,15 +30,14 @@ public class ConnectionOptionsTests
         var requestTimeoutMs = 2000;
         var checkPendingRequestsDelayMs = 500;
         var removeCompletedRequestsDelayMs = 1000;
-        
-        _connectionOptions = new ConnectionOptions.Builder()
-            .WithIpAddress(ipAddress)
-            .WithPort(port)
-            .WithReqRespTimeoutMs(receiveTimeoutMs)
-            .WithPendingRequestTimeoutMs(requestTimeoutMs)
-            .WithCheckPendingRequestsDelayMs(checkPendingRequestsDelayMs)
-            .WithRemoveFulfilledRequestsDelayMs(removeCompletedRequestsDelayMs)
-            .Build();
+
+        _connectionOptions = new ConnectionOptions()
+            .SetIpAddress(ipAddress)
+            .SetPort(port)
+            .SetReceiveTimeoutMs(receiveTimeoutMs)
+            .SetRequestTimeoutMs(requestTimeoutMs)
+            .SetCheckPendingRequestsDelayMs(checkPendingRequestsDelayMs)
+            .SetRemoveCompletedRequestsDelayMs(removeCompletedRequestsDelayMs);
         
         Assert.NotNull(_connectionOptions);
         Assert.AreEqual(ipAddress, _connectionOptions.IpAddress);

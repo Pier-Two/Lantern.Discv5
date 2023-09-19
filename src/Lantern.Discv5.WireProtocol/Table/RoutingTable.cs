@@ -34,7 +34,7 @@ public class RoutingTable : IRoutingTable
 
     public TableOptions TableOptions { get; }
 
-    public int GetTotalEntriesCount()
+    public int GetNodesCount()
     {
         lock (_buckets)
         {
@@ -42,7 +42,7 @@ public class RoutingTable : IRoutingTable
         }
     }
 
-    public int GetTotalActiveNodesCount()
+    public int GetActiveNodesCount()
     {
         lock (_buckets)
         {
@@ -50,7 +50,7 @@ public class RoutingTable : IRoutingTable
         }
     }
 
-    public NodeTableEntry[] GetAllNodeEntries()
+    public NodeTableEntry[] GetAllNodes()
     {
         lock (_buckets)
         {
@@ -163,7 +163,7 @@ public class RoutingTable : IRoutingTable
         var bootstrapEnrs = TableOptions.BootstrapEnrs
             .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
             .ToArray();
-
+        
         foreach (var bootstrapEnr in bootstrapEnrs)
         {
             var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
@@ -207,22 +207,6 @@ public class RoutingTable : IRoutingTable
         }
 
         return enrRecords;
-    }
-
-    public void PopulateFromBootstrapEnrs()
-    {
-        var enrs = TableOptions.BootstrapEnrs
-            .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
-            .ToArray();
-
-        foreach (var enr in enrs)
-        {
-            var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
-            var nodeEntry = GetNodeEntry(nodeId);
-
-            if (nodeEntry == null)
-                UpdateFromEnr(enr);
-        }
     }
 
     private NodeTableEntry? GetEntryFromTable(byte[] nodeId)

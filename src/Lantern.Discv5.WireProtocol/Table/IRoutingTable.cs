@@ -14,11 +14,11 @@ public interface IRoutingTable
     
     TableOptions TableOptions { get; }
     
-    int GetTotalEntriesCount();
+    int GetNodesCount();
     
-    int GetTotalActiveNodesCount();
+    int GetActiveNodesCount();
 
-    NodeTableEntry[] GetAllNodeEntries();
+    NodeTableEntry[] GetAllNodes();
 
     NodeTableEntry? GetLeastRecentlySeenNode();
     
@@ -33,8 +33,6 @@ public interface IRoutingTable
     void MarkNodeAsDead(byte[] nodeId);
 
     void IncreaseFailureCounter(byte[] nodeId);
-    
-    void PopulateFromBootstrapEnrs();
 
     NodeTableEntry? GetNodeEntry(byte[] nodeId);
 

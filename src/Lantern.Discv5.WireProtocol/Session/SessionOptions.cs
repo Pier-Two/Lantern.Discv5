@@ -6,69 +6,48 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionOptions
 {
-    public IIdentitySigner Signer { get; }
-    public IIdentityVerifier Verifier { get; }
-    public ISessionKeys SessionKeys { get; }
-    public int CacheSize { get; }
+    public IIdentitySigner Signer { get; private set; }
+    public IIdentityVerifier Verifier { get; private set; }
+    public ISessionKeys SessionKeys { get; private set; }
+    public int CacheSize { get; private set; } = 1000;
 
-    private SessionOptions(Builder builder)
+    public static SessionOptions Default 
     {
-        Signer = builder.Signer;
-        Verifier = builder.Verifier;
-        SessionKeys = builder.SessionKeys;
-        CacheSize = builder.CacheSize;
+        get
+        {
+            var privateKey = RandomUtility.GenerateRandomData(32);
+            var signer = new IdentitySignerV4(privateKey);
+            var verifier = new IdentityVerifierV4();
+            var sessionKeys = new SessionKeys(privateKey);
+                
+            return new SessionOptions()
+                .SetSigner(signer)
+                .SetVerifier(verifier)
+                .SetSessionKeys(sessionKeys);
+        }
     }
-
-    public static SessionOptions Default => CreateDefault();
-    
-    private static SessionOptions CreateDefault()
-    {
-        var privateKey = RandomUtility.GenerateRandomData(32);
-        var signer = new IdentitySignerV4(privateKey);
-        var verifier = new IdentityVerifierV4();
-        var sessionKeys = new SessionKeys(privateKey);
         
-        return new Builder()
-            .WithSigner(signer)
-            .WithVerifier(verifier)
-            .WithSessionKeys(sessionKeys)
-            .Build();
-    }
-    
-    public class Builder
+    public SessionOptions SetSigner(IIdentitySigner signer)
     {
-        public IIdentitySigner Signer { get; private set; }
-        public IIdentityVerifier Verifier { get; private set; }
-        public ISessionKeys SessionKeys { get; private set; }
-        public int CacheSize { get; private set; } = 1000;
+        Signer = signer;
+        return this;
+    }
 
-        public Builder WithSigner(IIdentitySigner signer)
-        {
-            Signer = signer;
-            return this;
-        }
+    public SessionOptions SetVerifier(IIdentityVerifier verifier)
+    {
+        Verifier = verifier;
+        return this;
+    }
 
-        public Builder WithVerifier(IIdentityVerifier verifier)
-        {
-            Verifier = verifier;
-            return this;
-        }
+    public SessionOptions SetSessionKeys(ISessionKeys sessionKeys)
+    {
+        SessionKeys = sessionKeys;
+        return this;
+    }
 
-        public Builder WithSessionKeys(ISessionKeys sessionKeys)
-        {
-            SessionKeys = sessionKeys;
-            return this;
-        }
-
-        public Builder WithCacheSize(int cacheSize)
-        {
-            CacheSize = cacheSize;
-            return this;
-        }
-
-        public SessionOptions Build()
-        {
-            return new SessionOptions(this);
-        }
+    public SessionOptions SetCacheSize(int cacheSize)
+    {
+        CacheSize = cacheSize;
+        return this;
     }
 }

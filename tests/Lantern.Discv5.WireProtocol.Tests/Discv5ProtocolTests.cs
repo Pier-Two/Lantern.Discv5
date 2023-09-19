@@ -16,13 +16,16 @@ public class Discv5ProtocolTests
             "enr:-KG4QOtcP9X1FbIMOe17QNMKqDxCpm14jcX5tiOE4_TyMrFqbmhPZHK_ZPG2Gxb1GE2xdtodOfx9-cgvNtxnRyHEmC0ghGV0aDKQ9aX9QgAAAAD__________4JpZIJ2NIJpcIQDE8KdiXNlY3AyNTZrMaEDhpehBDbZjM_L9ek699Y7vhUJ-eAdMyQW_Fil522Y0fODdGNwgiMog3VkcIIjKA"
         };
         
-        _discv5Protocol = Discv5Builder.CreateDefault(bootstrapEnrs);
+        //_discv5Protocol = Discv5Builder.CreateDefault(bootstrapEnrs);
+        _discv5Protocol = new Discv5Builder()
+            .WithBootstrapEnrs(bootstrapEnrs)
+            .Build();
     }
     
     [Test]
     public async Task Test_Discv5Protocol_PerformLookupAsync()
     {
-        _discv5Protocol.StartProtocol();
+        await _discv5Protocol.StartProtocolAsync();
 
         var firstClosestNodes = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
         
