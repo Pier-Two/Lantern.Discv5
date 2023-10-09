@@ -10,7 +10,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 public class RequestManager : IRequestManager
 {
     private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests;
-    private readonly ConcurrentDictionary<byte[], byte[]> _cachedHandshakeInteractions;
+    private readonly ConcurrentDictionary<byte[], CachedHandshakeInteraction> _cachedHandshakeInteractions;
     private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests;
     private readonly IRoutingTable _routingTable;
     private readonly ILogger<RequestManager> _logger;
@@ -29,7 +29,7 @@ public class RequestManager : IRequestManager
         ConnectionOptions connectionOptions)
     {
         _pendingRequests = new ConcurrentDictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
-        _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
+        _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], CachedHandshakeInteraction>(ByteArrayEqualityComparer.Instance);
         _cachedRequests = new ConcurrentDictionary<byte[], CachedRequest>(ByteArrayEqualityComparer.Instance);
         _routingTable = routingTable;
         _logger = loggerFactory.CreateLogger<RequestManager>();
@@ -39,6 +39,12 @@ public class RequestManager : IRequestManager
         _taskRunner = taskRunner;
         _checkAllRequestsTask = Task.CompletedTask;
     }
+    
+    public int PendingRequestsCount => _pendingRequests.Count;
+    
+    public int CachedRequestsCount => _cachedRequests.Count;
+    
+    public int CachedHandshakeInteractionsCount => _cachedHandshakeInteractions.Count;
     
     public void StartRequestManager()
     {
@@ -90,12 +96,32 @@ public class RequestManager : IRequestManager
     
     public void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
     { 
-        _cachedHandshakeInteractions.TryAdd(packetNonce, destNodeId);
+        
+        if (_cachedHandshakeInteractions.Count >= 500)
+        {
+            // If we have more than 500 cached handshake interactions, remove 250 oldest ones
+            var oldestInteractions = _cachedHandshakeInteractions.OrderBy(x => x.Value.ElapsedTime.Elapsed).Take(400).ToList();
+            
+            foreach (var interaction in oldestInteractions)
+            {
+                _cachedHandshakeInteractions.TryRemove(interaction.Key, out _);
+            }
+        }
+
+        _cachedHandshakeInteractions.TryAdd(packetNonce, new CachedHandshakeInteraction(destNodeId));
     }
     
     public byte[]? GetCachedHandshakeInteraction(byte[] packetNonce)
     {
-        return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
+        _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId);
+        
+        if(destNodeId == null)
+        {
+            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            return null;
+        }
+
+        return destNodeId.NodeId;
     }
 
     public bool ContainsCachedRequest(byte[] requestId)
@@ -224,6 +250,7 @@ public class RequestManager : IRequestManager
             return;
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
+        
         var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
             
         if (nodeEntry == null)
