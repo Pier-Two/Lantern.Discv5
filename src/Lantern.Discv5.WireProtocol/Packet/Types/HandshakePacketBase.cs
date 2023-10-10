@@ -3,23 +3,16 @@ using Lantern.Discv5.WireProtocol.Packet.Headers;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Types;
 
-public class HandshakePacketBase : PacketBase
+public class HandshakePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null)
+    : PacketBase(PreparePacketBase(idSignature, ephPubkey, srcId, record))
 {
-    public HandshakePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null) : base(PreparePacketBase(idSignature, ephPubkey, srcId, record))
-    {
-        IdSignature = idSignature;
-        EphPubkey = ephPubkey;
-        SrcId = srcId;
-        Record = record;
-    }
-    
-    public byte[] IdSignature { get; }
-    
-    public byte[] EphPubkey { get; }
-    
-    public byte[]? SrcId { get; }
-    
-    public byte[]? Record { get; }
+    public byte[] IdSignature { get; } = idSignature;
+
+    public byte[] EphPubkey { get; } = ephPubkey;
+
+    public byte[]? SrcId { get; } = srcId;
+
+    public byte[]? Record { get; } = record;
 
     private static byte[] PreparePacketBase(byte[] idSignature, byte[] ephPubkey, byte[] srcId, byte[]? record = null)
     {

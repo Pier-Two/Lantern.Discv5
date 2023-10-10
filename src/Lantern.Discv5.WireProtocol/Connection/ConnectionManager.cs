@@ -4,37 +4,26 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public sealed class ConnectionManager : IConnectionManager
+public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnection connection,
+        ICancellationTokenSourceWrapper cts, IGracefulTaskRunner taskRunner, ILoggerFactory loggerFactory)
+    : IConnectionManager
 {
-    private readonly IPacketManager _packetManager;
-    private readonly IUdpConnection _connection;
-    private readonly ILogger<ConnectionManager> _logger;
-    private readonly ICancellationTokenSourceWrapper _cts;
-    private readonly IGracefulTaskRunner _taskRunner;
+    private readonly ILogger<ConnectionManager> _logger = loggerFactory.CreateLogger<ConnectionManager>();
     private Task? _listenTask;
     private Task? _handleTask;
-
-    public ConnectionManager(IPacketManager packetManager, IUdpConnection connection, ICancellationTokenSourceWrapper cts, IGracefulTaskRunner taskRunner, ILoggerFactory loggerFactory)
-    {
-        _packetManager = packetManager;
-        _connection = connection;
-        _logger = loggerFactory.CreateLogger<ConnectionManager>();
-        _cts = cts;
-        _taskRunner = taskRunner;
-    }
 
     public void StartConnectionManagerAsync()
     {
         _logger.LogInformation("Starting ConnectionManagerAsync");
     
-        _listenTask = _taskRunner.RunWithGracefulCancellationAsync(_connection.ListenAsync, "Listen", _cts.GetToken());
-        _handleTask = _taskRunner.RunWithGracefulCancellationAsync(HandleIncomingPacketsAsync, "HandleIncomingPackets", _cts.GetToken());
+        _listenTask = taskRunner.RunWithGracefulCancellationAsync(connection.ListenAsync, "Listen", cts.GetToken());
+        _handleTask = taskRunner.RunWithGracefulCancellationAsync(HandleIncomingPacketsAsync, "HandleIncomingPackets", cts.GetToken());
     }
 
     public async Task StopConnectionManagerAsync()
     {
         _logger.LogInformation("Stopping ConnectionManagerAsync");
-        _cts.Cancel();
+        cts.Cancel();
 
         try
         {
@@ -49,14 +38,14 @@ public sealed class ConnectionManager : IConnectionManager
             throw;
         }
     
-        if (_cts.IsCancellationRequested())
+        if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("ConnectionManagerAsync was canceled gracefully");
         }
     
         try
         {
-            _connection.Close(); 
+            connection.Close(); 
         }  
         catch (Exception ex)
         {
@@ -71,11 +60,11 @@ public sealed class ConnectionManager : IConnectionManager
 
         try
         {
-            await foreach (var packet in _connection.ReadMessagesAsync(token).ConfigureAwait(false))
+            await foreach (var packet in connection.ReadMessagesAsync(token).ConfigureAwait(false))
             {
                 try 
                 {
-                    await _packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
+                    await packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {         

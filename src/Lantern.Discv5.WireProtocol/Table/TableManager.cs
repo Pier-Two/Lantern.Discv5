@@ -7,59 +7,38 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class TableManager : ITableManager
+public class TableManager(IPacketManager packetManager,
+        IIdentityManager identityManager,
+        ILookupManager lookupManager,
+        IRoutingTable routingTable,
+        IEnrFactory enrFactory,
+        ILoggerFactory loggerFactory,
+        ICancellationTokenSourceWrapper cts,
+        IGracefulTaskRunner taskRunner,
+        TableOptions tableOptions)
+    : ITableManager
 {
-    private readonly IPacketManager _packetManager;
-    private readonly IIdentityManager _identityManager;
-    private readonly ILookupManager _lookupManager;
-    private readonly IRoutingTable _routingTable;
-    private readonly TableOptions _tableOptions;
-    private readonly IEnrFactory _enrFactory;
-    private readonly ILogger<TableManager> _logger;
-    private readonly ICancellationTokenSourceWrapper _shutdownCts;
-    private readonly IGracefulTaskRunner _taskRunner;
+    private readonly ILogger<TableManager> _logger = loggerFactory.CreateLogger<TableManager>();
     private Task? _refreshTask;
     private Task? _pingTask;
-    
-    public TableManager(
-        IPacketManager packetManager, 
-        IIdentityManager identityManager, 
-        ILookupManager lookupManager, 
-        IRoutingTable routingTable, 
-        IEnrFactory enrFactory, 
-        ILoggerFactory loggerFactory, 
-        ICancellationTokenSourceWrapper cts, 
-        IGracefulTaskRunner taskRunner, 
-        TableOptions tableOptions)
-    {
-        _packetManager = packetManager;
-        _identityManager = identityManager;
-        _lookupManager = lookupManager;
-        _routingTable = routingTable;
-        _tableOptions = tableOptions;
-        _enrFactory = enrFactory;
-        _logger = loggerFactory.CreateLogger<TableManager>();
-        _taskRunner = taskRunner;
-        _shutdownCts = cts;
-    }
 
     public async Task StartTableManagerAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
         
         await InitialiseFromBootstrapAsync();
-        _refreshTask = _taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", _shutdownCts.GetToken());
-        _pingTask = _taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", _shutdownCts.GetToken());
+        _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
+        _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
     }
     
     public async Task StopTableManagerAsync()
     {
         _logger.LogInformation("Stopping TableManagerAsync");
-        _shutdownCts.Cancel();
+        cts.Cancel();
 
         await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
 	
-        if (_shutdownCts.IsCancellationRequested())
+        if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("TableManagerAsync was canceled gracefully");
         }
@@ -67,19 +46,19 @@ public class TableManager : ITableManager
     
     public async Task InitialiseFromBootstrapAsync()
     {
-        if (_routingTable.GetNodesCount() == 0)
+        if (routingTable.GetNodesCount() == 0)
         {
             _logger.LogInformation("Initialising from bootstrap ENRs");
             
-            var bootstrapEnrs = _routingTable.TableOptions.BootstrapEnrs
-                .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
+            var bootstrapEnrs = routingTable.TableOptions.BootstrapEnrs
+                .Select(enr => enrFactory.CreateFromString(enr, identityManager.Verifier))
                 .ToArray();
 
             foreach (var bootstrapEnr in bootstrapEnrs)
             {
                 try
                 {
-                    await _packetManager.SendPacket(bootstrapEnr, MessageType.Ping);
+                    await packetManager.SendPacket(bootstrapEnr, MessageType.Ping);
                 }
                 catch (Exception ex)
                 {
@@ -96,7 +75,7 @@ public class TableManager : ITableManager
         while (!token.IsCancellationRequested)
         {
             await RefreshBucket().ConfigureAwait(false);
-            await Task.Delay(_tableOptions.RefreshIntervalMilliseconds, token).ConfigureAwait(false);
+            await Task.Delay(tableOptions.RefreshIntervalMilliseconds, token).ConfigureAwait(false);
         }
     }
     
@@ -106,35 +85,35 @@ public class TableManager : ITableManager
     
         while (!token.IsCancellationRequested)
         {
-            if (_routingTable.GetNodesCount() <= 0) 
+            if (routingTable.GetNodesCount() <= 0) 
                 continue;
         
-            await Task.Delay(_tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
+            await Task.Delay(tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
         
             var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
-            var nodeEntry = _routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();
+            var nodeEntry = routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();
         
             if (nodeEntry == null)
                 continue;
 
-            await _packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
+            await packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
         }
     }
 
     public async Task RefreshBucket()
     {
-        var targetNodeId = _routingTable.GetLeastRecentlySeenNode();
+        var targetNodeId = routingTable.GetLeastRecentlySeenNode();
 
         if (targetNodeId == null)
             return;
 
-        var closestNodes = await _lookupManager.LookupAsync(targetNodeId.Id);
+        var closestNodes = await lookupManager.LookupAsync(targetNodeId.Id);
 
         if (closestNodes != null)
         {
             foreach(var node in closestNodes)
             {
-                _routingTable.UpdateFromEnr(node.Record);
+                routingTable.UpdateFromEnr(node.Record);
             }
         }
     }

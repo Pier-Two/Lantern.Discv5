@@ -3,14 +3,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.Entries;
 
-public class EntrySecp256K1 : IEntry
+public class EntrySecp256K1(byte[] value) : IEntry
 {
-    public EntrySecp256K1(byte[] value)
-    {
-        Value = value;
-    }
-
-    public byte[] Value { get; }
+    public byte[] Value { get; } = value;
 
     public EnrEntryKey Key => EnrEntryKey.Secp256K1;
 

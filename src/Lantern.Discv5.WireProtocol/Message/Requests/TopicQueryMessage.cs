@@ -2,14 +2,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Message.Requests;
 
-public class TopicQueryMessage : Message
+public class TopicQueryMessage(byte[] topic) : Message(MessageType.TopicQuery)
 {
-    public TopicQueryMessage(byte[] topic) : base(MessageType.TopicQuery)
-    {
-        Topic = topic;
-    }
-
-    public byte[] Topic { get; }
+    public byte[] Topic { get; } = topic;
 
     public override byte[] EncodeMessage()
     {

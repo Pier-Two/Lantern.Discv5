@@ -4,15 +4,8 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr;
 
-public sealed class EnrFactory : IEnrFactory
+public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
 {
-    private readonly IEnrEntryRegistry _entryRegistry;
-    
-    public EnrFactory(IEnrEntryRegistry entryRegistry) 
-    {
-        _entryRegistry = entryRegistry;
-    }
-
     public Enr CreateFromString(string enrString, IIdentityVerifier verifier)
     {
         if (string.IsNullOrEmpty(enrString))
@@ -49,7 +42,7 @@ public sealed class EnrFactory : IEnrFactory
         for (var i = 2; i < items.Count - 1; i++)
         {
             var key = Encoding.ASCII.GetString(items[i]);
-            var entry = _entryRegistry.GetEnrEntry(key, items[i + 1]);
+            var entry = entryRegistry.GetEnrEntry(key, items[i + 1]);
 
             if (entry == null)
                 continue;

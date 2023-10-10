@@ -2,19 +2,12 @@ using System.Collections.Concurrent;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public class LruCache<TKey, TValue>
+public class LruCache<TKey, TValue>(int capacity)
 {
-    private readonly int _capacity;
-    private readonly ConcurrentDictionary<TKey, LinkedListNode<CacheItem>> _cache;
+    private readonly ConcurrentDictionary<TKey, LinkedListNode<CacheItem>> _cache = new(capacity, capacity);
     private readonly LinkedList<CacheItem> _lruList = new();
     private readonly object _lock = new();
 
-    public LruCache(int capacity)
-    {
-        _capacity = capacity;
-        _cache = new ConcurrentDictionary<TKey, LinkedListNode<CacheItem>>(capacity, capacity);
-    }
-    
     public int Count => _cache.Count;
 
     public TValue? Get(TKey key)
@@ -37,7 +30,7 @@ public class LruCache<TKey, TValue>
         }
         else
         {
-            if (_cache.Count >= _capacity)
+            if (_cache.Count >= capacity)
             {
                 RemoveFirst();
             }

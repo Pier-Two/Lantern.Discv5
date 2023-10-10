@@ -2,17 +2,11 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Types;
 
-public class WhoAreYouPacketBase : PacketBase
+public class WhoAreYouPacketBase(byte[] idNonce, ulong enrSeq) : PacketBase(PreparePacketBase(idNonce, enrSeq))
 {
-    public WhoAreYouPacketBase(byte[] idNonce, ulong enrSeq) : base(PreparePacketBase(idNonce, enrSeq))
-    {
-        IdNonce = idNonce;
-        EnrSeq = enrSeq;
-    }
+    public byte[] IdNonce { get; } = idNonce;
 
-    public byte[] IdNonce { get; }
-
-    public ulong EnrSeq { get; }
+    public ulong EnrSeq { get; } = enrSeq;
 
     private static byte[] PreparePacketBase(byte[] idNonce, ulong enrSeq)
     {

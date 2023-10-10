@@ -4,14 +4,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryIp6 : IEntry
+public class EntryIp6(IPAddress value) : IEntry
 {
-    public EntryIp6(IPAddress value)
-    {
-        Value = value;
-    }
-
-    public IPAddress Value { get; }
+    public IPAddress Value { get; } = value;
 
     public EnrEntryKey Key => EnrEntryKey.Ip6;
 

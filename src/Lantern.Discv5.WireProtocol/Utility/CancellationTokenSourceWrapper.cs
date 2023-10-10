@@ -2,13 +2,8 @@ namespace Lantern.Discv5.WireProtocol.Utility;
 
 public class CancellationTokenSourceWrapper : ICancellationTokenSourceWrapper
 {
-    private readonly CancellationTokenSource _cts;
+    private readonly CancellationTokenSource _cts = new();
 
-    public CancellationTokenSourceWrapper()
-    {
-        _cts = new CancellationTokenSource();
-    }
-    
     public CancellationToken GetToken()
     {
         return _cts.Token;

@@ -2,14 +2,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Message.Requests;
 
-public class FindNodeMessage : Message
+public class FindNodeMessage(int[] distances) : Message(MessageType.FindNode)
 {
-    public FindNodeMessage(int[] distances) : base(MessageType.FindNode)
-    {
-        Distances = distances;
-    }
-
-    public int[] Distances { get; }
+    public int[] Distances { get; } = distances;
 
     public override byte[] EncodeMessage()
     {

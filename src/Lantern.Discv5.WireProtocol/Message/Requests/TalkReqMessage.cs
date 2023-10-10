@@ -2,17 +2,11 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Message.Requests;
 
-public class TalkReqMessage : Message
+public class TalkReqMessage(byte[] protocol, byte[] request) : Message(MessageType.TalkReq)
 {
-    public TalkReqMessage(byte[] protocol, byte[] request) : base(MessageType.TalkReq)
-    {
-        Protocol = protocol;
-        Request = request;
-    }
+    public byte[] Protocol { get; } = protocol;
 
-    public byte[] Protocol { get; }
-
-    public byte[] Request { get; }
+    public byte[] Request { get; } = request;
 
     public override byte[] EncodeMessage()
     {

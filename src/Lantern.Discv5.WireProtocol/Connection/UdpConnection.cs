@@ -10,21 +10,17 @@ using IPEndPoint = System.Net.IPEndPoint;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public sealed class UdpConnection : IUdpConnection, IDisposable
+public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory,
+        IGracefulTaskRunner taskRunner)
+    : IUdpConnection, IDisposable
 {
-    private readonly UdpClient _udpClient;
-    private readonly ILogger<UdpConnection> _logger;
-    private readonly Channel<UdpReceiveResult> _messageChannel; 
-    private readonly IGracefulTaskRunner _taskRunner;
+    private readonly UdpClient _udpClient = new(new IPEndPoint(IPAddress.Any, options.Port));
+    
+    private readonly ILogger<UdpConnection> _logger = loggerFactory.CreateLogger<UdpConnection>();
+    
+    private readonly Channel<UdpReceiveResult> _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
+    
     private readonly SemaphoreSlim _semaphore = new(1, 1);
-  
-    public UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory, IGracefulTaskRunner taskRunner)
-    {
-        _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, options.Port));
-        _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
-        _logger = loggerFactory.CreateLogger<UdpConnection>(); 
-        _taskRunner = taskRunner;
-    }
 
     public async Task SendAsync(byte[] data, IPEndPoint destination)
     {
@@ -52,7 +48,7 @@ public sealed class UdpConnection : IUdpConnection, IDisposable
         
         try 
         {
-            await _taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
+            await taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -111,9 +107,18 @@ public sealed class UdpConnection : IUdpConnection, IDisposable
     
     private async Task<UdpReceiveResult> ReceiveAsync(CancellationToken token = default)
     {
-        var receiveResult = await _udpClient.ReceiveAsync(token).ConfigureAwait(false);
-        ValidatePacketSize(receiveResult.Buffer);
-  
+        UdpReceiveResult receiveResult;
+        try
+        {
+            receiveResult = await _udpClient.ReceiveAsync(token).ConfigureAwait(false);
+            ValidatePacketSize(receiveResult.Buffer);
+        }
+        catch (InvalidPacketException ex)
+        {
+            _logger.LogWarning("{Message}, packet ignored. ", ex.Message);
+            return await ReceiveAsync(token).ConfigureAwait(false);
+        }
+
         _logger.LogDebug("Received packet from {Source}", receiveResult.RemoteEndPoint);
         return receiveResult;
     }

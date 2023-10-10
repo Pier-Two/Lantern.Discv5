@@ -15,7 +15,6 @@ public class UdpConnectionTests
     private Mock<ILoggerFactory> _mockLoggerFactory;
     private Mock<ILogger<UdpConnection>> _mockLogger;
     private Mock<IGracefulTaskRunner> _mockGracefulTaskRunner;
-    private UdpClient _udpClient;
 
     [OneTimeSetUp]
     public void SetUp()
@@ -23,7 +22,6 @@ public class UdpConnectionTests
         _mockLoggerFactory = new Mock<ILoggerFactory>();
         _mockLogger = new Mock<ILogger<UdpConnection>>();
         _mockGracefulTaskRunner = new Mock<IGracefulTaskRunner>();
-        _udpClient = new UdpClient();
         _mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(_mockLogger.Object);
     }

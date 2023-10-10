@@ -3,14 +3,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryUdp : IEntry
+public class EntryUdp(int value) : IEntry
 {
-    public EntryUdp(int value)
-    {
-        Value = value;
-    }
-
-    public int Value { get; }
+    public int Value { get; } = value;
 
     public EnrEntryKey Key => EnrEntryKey.Udp;
 

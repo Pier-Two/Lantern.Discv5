@@ -1,16 +1,10 @@
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public abstract class Message
+public abstract class Message(MessageType messageType, byte[]? requestId = null)
 {
-    protected Message(MessageType messageType, byte[]? requestId = null)
-    {
-        MessageType = messageType;
-        RequestId = requestId ?? MessageUtility.GenerateRequestId(MessageConstants.RequestIdLength);
-    }
-    
-    public MessageType MessageType { get; }
+    public MessageType MessageType { get; } = messageType;
 
-    public byte[] RequestId { get; set; }
+    public byte[] RequestId { get; set; } = requestId ?? MessageUtility.GenerateRequestId(MessageConstants.RequestIdLength);
 
     public abstract byte[] EncodeMessage();
 }
