@@ -3,20 +3,13 @@ using Lantern.Discv5.Enr.Identity;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class NodeTableEntry
+public class NodeTableEntry(IEnr record, IIdentityVerifier verifier)
 {
-    public NodeTableEntry(IEnr record, IIdentityVerifier verifier)
-    {
-        Record = record;
-        Id = verifier.GetNodeIdFromRecord(record);
-        Status = NodeStatus.None;
-    }
+    public byte[] Id { get; } = verifier.GetNodeIdFromRecord(record);
 
-    public byte[] Id { get; }
-    
-    public IEnr Record { get; }
+    public IEnr Record { get; } = record;
 
-    public NodeStatus Status { get; set; }
+    public NodeStatus Status { get; set; } = NodeStatus.None;
 
     public int FailureCounter { get; set; }
     

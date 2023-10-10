@@ -3,43 +3,28 @@ using Lantern.Discv5.WireProtocol.Utility;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class PathBucket
+public class PathBucket(byte[] targetNodeId, int index)
 {
-    public int Index { get; }
-    
-    public byte[] TargetNodeId { get; }
-    
-    public ConcurrentDictionary<byte[], TaskCompletionSource<bool>> PendingQueries { get; }
-    
+    public int Index { get; } = index;
+
+    public byte[] TargetNodeId { get; } = targetNodeId;
+
     public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
 
-    public ConcurrentBag<NodeTableEntry> DiscoveredNodes { get; }
+    public ConcurrentBag<NodeTableEntry> DiscoveredNodes { get; } = new();
 
-    public ConcurrentDictionary<byte[], List<NodeTableEntry>> Responses { get; }
-    
-    public ConcurrentDictionary<byte[], int> ExpectedResponses { get; }
-    
-    public bool IsComplete { get; private set; }
-    
+    public ConcurrentDictionary<byte[], List<NodeTableEntry>> Responses { get; } = new(ByteArrayEqualityComparer.Instance);
+
+    public ConcurrentDictionary<byte[], int> ExpectedResponses { get; } = new();
+
     public TaskCompletionSource<bool> Completion { get; } = new();
 
-    public PathBucket(byte[] targetNodeId, int index) 
-    {
-        Index = index;
-        TargetNodeId = targetNodeId;
-        PendingQueries = new ConcurrentDictionary<byte[], TaskCompletionSource<bool>>(ByteArrayEqualityComparer.Instance);
-        DiscoveredNodes = new ConcurrentBag<NodeTableEntry>();
-        Responses = new ConcurrentDictionary<byte[], List<NodeTableEntry>>(ByteArrayEqualityComparer.Instance);
-        ExpectedResponses = new ConcurrentDictionary<byte[], int>();
-    }
-    
     // Method of setting completion status
     public void SetComplete()
     {
         if (Completion.Task.IsCompleted) 
             return;
         
-        IsComplete = true;
         Completion.SetResult(true);
     }
     

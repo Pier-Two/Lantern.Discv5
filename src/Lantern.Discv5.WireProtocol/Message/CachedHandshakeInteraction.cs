@@ -2,15 +2,9 @@ using System.Diagnostics;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class CachedHandshakeInteraction
+public class CachedHandshakeInteraction(byte[] nodeId)
 {
-    public byte[] NodeId { get; }
-    
-    public Stopwatch ElapsedTime { get; } 
-    
-    public CachedHandshakeInteraction(byte[] nodeId)
-    {
-        NodeId = nodeId;
-        ElapsedTime = Stopwatch.StartNew();
-    }
+    public byte[] NodeId { get; } = nodeId;
+
+    public Stopwatch ElapsedTime { get; } = Stopwatch.StartNew();
 }

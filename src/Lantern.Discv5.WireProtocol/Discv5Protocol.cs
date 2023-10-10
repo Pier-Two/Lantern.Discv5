@@ -10,98 +10,74 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public class Discv5Protocol
+public class Discv5Protocol(IConnectionManager connectionManager,
+    IIdentityManager identityManager,
+    ITableManager tableManager,
+    IRequestManager requestManager,
+    IPacketManager packetManager,
+    IRoutingTable routingTable,
+    ISessionManager sessionManager,
+    ILookupManager lookupManager,
+    ILogger<Discv5Protocol> logger)
 {
-    private readonly IConnectionManager _connectionManager;
-    private readonly IIdentityManager _identityManager;
-    private readonly ITableManager _tableManager;
-    private readonly IRequestManager _requestManager;
-    private readonly IPacketManager _packetManager;
-    private readonly IRoutingTable _routingTable;
-    private readonly ISessionManager _sessionManager;
-    private readonly ILookupManager _lookupManager;
-    private readonly ILogger<Discv5Protocol> _logger;
+    public IEnr SelfEnr => identityManager.Record;
     
-    public Discv5Protocol(
-        IConnectionManager connectionManager,
-        IIdentityManager identityManager,
-        ITableManager tableManager,
-        IRequestManager requestManager,
-        IPacketManager packetManager,
-        IRoutingTable routingTable,
-        ISessionManager sessionManager,
-        ILookupManager lookupManager,
-        ILogger<Discv5Protocol> logger)
-    {
-        _connectionManager = connectionManager;
-        _identityManager = identityManager;
-        _tableManager = tableManager;
-        _requestManager = requestManager;
-        _packetManager = packetManager;
-        _routingTable = routingTable;
-        _sessionManager = sessionManager;
-        _lookupManager = lookupManager;
-        _logger = logger;
-    }
+    public int NodesCount => routingTable.GetNodesCount();
     
-    public IEnr SelfEnr => _identityManager.Record;
+    public int PeerCount => routingTable.GetActiveNodesCount();
     
-    public int NodesCount => _routingTable.GetNodesCount();
+    public int ActiveSessionCount => sessionManager.TotalSessionCount;
     
-    public int PeerCount => _routingTable.GetActiveNodesCount();
-    
-    public int ActiveSessionCount => _sessionManager.TotalSessionCount;
-    
-    public NodeTableEntry? GetNodeFromId(byte[] nodeId) => _routingTable.GetNodeEntry(nodeId);
+    public NodeTableEntry? GetNodeFromId(byte[] nodeId) => routingTable.GetNodeEntry(nodeId);
 
-    public NodeTableEntry[] GetAllNodes() => _routingTable.GetAllNodes();
+    public NodeTableEntry[] GetAllNodes() => routingTable.GetAllNodes();
 
     public async Task StartProtocolAsync()
     {
-        _connectionManager.StartConnectionManagerAsync();
-        _requestManager.StartRequestManager();
+        connectionManager.StartConnectionManagerAsync();
+        requestManager.StartRequestManager();
         
-        await _tableManager.StartTableManagerAsync();
+        await tableManager.StartTableManagerAsync();
     }
     
     public async Task StopProtocolAsync()
     {
-        var stopConnectionManagerTask = _connectionManager.StopConnectionManagerAsync();
-        var stopTableManagerTask = _tableManager.StopTableManagerAsync();
-        var stopRequestManagerTask = _requestManager.StopRequestManagerAsync();
+        var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
+        var stopTableManagerTask = tableManager.StopTableManagerAsync();
+        var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
         
         await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
     }
     
     public event Action<NodeTableEntry> NodeAdded
     {
-        add => _routingTable.NodeAdded += value;
-        remove => _routingTable.NodeAdded -= value;
+        add => routingTable.NodeAdded += value;
+        remove => routingTable.NodeAdded -= value;
     }
     
     public event Action<NodeTableEntry> NodeRemoved
     {
-        add => _routingTable.NodeRemoved += value;
-        remove => _routingTable.NodeRemoved -= value;
+        add => routingTable.NodeRemoved += value;
+        remove => routingTable.NodeRemoved -= value;
     }
     
     public event Action<NodeTableEntry> NodeAddedToCache
     {
-        add => _routingTable.NodeAddedToCache += value;
-        remove => _routingTable.NodeAddedToCache -= value;
+        add => routingTable.NodeAddedToCache += value;
+        remove => routingTable.NodeAddedToCache -= value;
     }
 
     public event Action<NodeTableEntry> NodeRemovedFromCache
     {
-        add => _routingTable.NodeRemovedFromCache += value;
-        remove => _routingTable.NodeRemovedFromCache -= value;
+        add => routingTable.NodeRemovedFromCache += value;
+        remove => routingTable.NodeRemovedFromCache -= value;
     }
 
     public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
     {
-        if (_routingTable.GetActiveNodesCount() > 0)
+        if (routingTable.GetActiveNodesCount() > 0)
         {
-            var closestNodes = await _lookupManager.LookupAsync(targetNodeId);
+            var closestNodes = await lookupManager.LookupAsync(targetNodeId);
             
             if (closestNodes != null)
             {
@@ -116,12 +92,12 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendPacket(destination, MessageType.Ping);
+            await packetManager.SendPacket(destination, MessageType.Ping);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destination);
+            logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destination);
             return false;
         }
     }
@@ -130,12 +106,12 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendPacket(destination, MessageType.FindNode, nodeId);
+            await packetManager.SendPacket(destination, MessageType.FindNode, nodeId);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destination);
+            logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destination);
             return false;
         }
     }
@@ -144,12 +120,12 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendPacket(destination, MessageType.TalkReq, protocol, request);
+            await packetManager.SendPacket(destination, MessageType.TalkReq, protocol, request);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
+            logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
             return false;
         }
     }
@@ -158,12 +134,12 @@ public class Discv5Protocol
     {
         try
         {
-            await _packetManager.SendPacket(destination, MessageType.TalkResp, response);
+            await packetManager.SendPacket(destination, MessageType.TalkResp, response);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destination);
+            logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destination);
             return false;
         }
     }

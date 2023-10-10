@@ -14,40 +14,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
-public class PacketManager : IPacketManager
-{
-    private readonly IPacketHandlerFactory _packetHandlerFactory;
-    private readonly IIdentityManager _identityManager;
-    private readonly ISessionManager _sessionManager;
-    private readonly IMessageRequester _messageRequester;
-    private readonly IUdpConnection _udpConnection;
-    private readonly IPacketProcessor _packetProcessor;
-    private readonly IPacketBuilder _packetBuilder;
-    private readonly ILogger<PacketManager> _logger;
-
-    public PacketManager(
-        IPacketHandlerFactory packetHandlerFactory, 
+public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         IIdentityManager identityManager,
-        ISessionManager sessionManager, 
-        IMessageRequester messageRequester, 
+        ISessionManager sessionManager,
+        IMessageRequester messageRequester,
         IUdpConnection udpConnection,
-        IPacketProcessor packetProcessor, 
-        IPacketBuilder packetBuilder, 
+        IPacketProcessor packetProcessor,
+        IPacketBuilder packetBuilder,
         ILoggerFactory loggerFactory)
-    {
-        _packetHandlerFactory = packetHandlerFactory;
-        _identityManager = identityManager;
-        _sessionManager = sessionManager;
-        _messageRequester = messageRequester;
-        _udpConnection = udpConnection;
-        _packetProcessor = packetProcessor;
-        _packetBuilder = packetBuilder;
-        _logger = loggerFactory.CreateLogger<PacketManager>();
-    }
+    : IPacketManager
+{
+    private readonly ILogger<PacketManager> _logger = loggerFactory.CreateLogger<PacketManager>();
 
     public async Task SendPacket(IEnr dest, MessageType messageType, params byte[][] args)
     {
-        var destNodeId = _identityManager.Verifier.GetNodeIdFromRecord(dest);
+        var destNodeId = identityManager.Verifier.GetNodeIdFromRecord(dest);
         var destIpKey = dest.GetEntry<EntryIp>(EnrEntryKey.Ip);
         var destUdpKey = dest.GetEntry<EntryUdp>(EnrEntryKey.Udp);
 
@@ -58,7 +39,7 @@ public class PacketManager : IPacketManager
         }
 
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
-        var cryptoSession = _sessionManager.GetSession(destNodeId, destEndPoint);
+        var cryptoSession = sessionManager.GetSession(destNodeId, destEndPoint);
         var sessionEstablished = cryptoSession is { IsEstablished: true };
         var message = ConstructMessage(sessionEstablished, messageType, destNodeId, args);
 
@@ -82,17 +63,17 @@ public class PacketManager : IPacketManager
         return messageType switch
         {
             MessageType.Ping => sessionEstablished
-                ? _messageRequester.ConstructPingMessage(destNodeId)
-                : _messageRequester.ConstructCachedPingMessage(destNodeId),
+                ? messageRequester.ConstructPingMessage(destNodeId)
+                : messageRequester.ConstructCachedPingMessage(destNodeId),
             MessageType.FindNode => sessionEstablished
-                ? _messageRequester.ConstructFindNodeMessage(destNodeId, args[0])
-                : _messageRequester.ConstructCachedFindNodeMessage(destNodeId, args[0]),
+                ? messageRequester.ConstructFindNodeMessage(destNodeId, args[0])
+                : messageRequester.ConstructCachedFindNodeMessage(destNodeId, args[0]),
             MessageType.TalkReq => sessionEstablished
-                ? _messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1])
-                : _messageRequester.ConstructCachedTalkReqMessage(destNodeId, args[0], args[1]),
+                ? messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1])
+                : messageRequester.ConstructCachedTalkReqMessage(destNodeId, args[0], args[1]),
             MessageType.TalkResp => sessionEstablished
-                ? _messageRequester.ConstructTalkRespMessage(destNodeId, args[0])
-                : _messageRequester.ConstructCachedTalkRespMessage(destNodeId, args[0]),
+                ? messageRequester.ConstructTalkRespMessage(destNodeId, args[0])
+                : messageRequester.ConstructCachedTalkRespMessage(destNodeId, args[0]),
             _ => null
         };
     }
@@ -102,8 +83,8 @@ public class PacketManager : IPacketManager
         try
         {
             var packetHandler =
-                _packetHandlerFactory.GetPacketHandler(
-                    (PacketType)_packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
+                packetHandlerFactory.GetPacketHandler(
+                    (PacketType)packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
             await packetHandler.HandlePacket(returnedResult);
         }
         catch (Exception e)
@@ -117,18 +98,18 @@ public class PacketManager : IPacketManager
         byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(message,destNodeId, maskingIv, sessionMain.MessageCount);
+        var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(message,destNodeId, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
 
-        await _udpConnection.SendAsync(finalPacket, destEndPoint);
+        await udpConnection.SendAsync(finalPacket, destEndPoint);
         _logger.LogInformation("Sent ORDINARY packet to {Destination}", destEndPoint);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
     {
-        var constructedOrdinaryPacket = _packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
-        await _udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
+        var constructedOrdinaryPacket = packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
+        await udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
         _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
 }

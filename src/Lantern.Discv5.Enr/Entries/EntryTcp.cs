@@ -3,14 +3,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.Enr.Entries;
 
-public class EntryTcp : IEntry
+public class EntryTcp(int value) : IEntry
 {
-    public EntryTcp(int value)
-    {
-        Value = value;
-    }
-
-    public int Value { get; }
+    public int Value { get; } = value;
 
     public EnrEntryKey Key => EnrEntryKey.Tcp;
 

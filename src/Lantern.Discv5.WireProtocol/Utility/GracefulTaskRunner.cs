@@ -2,14 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Utility;
 
-public class GracefulTaskRunner : IGracefulTaskRunner
+public class GracefulTaskRunner(ILoggerFactory loggerFactory) : IGracefulTaskRunner
 {
-    private readonly ILogger<GracefulTaskRunner> _logger;
-
-    public GracefulTaskRunner(ILoggerFactory loggerFactory)
-    {
-        _logger = loggerFactory.CreateLogger<GracefulTaskRunner>();
-    }
+    private readonly ILogger<GracefulTaskRunner> _logger = loggerFactory.CreateLogger<GracefulTaskRunner>();
 
     public async Task RunWithGracefulCancellationAsync(Func<CancellationToken, Task> taskFunc, string description, CancellationToken cancellationToken)
     {

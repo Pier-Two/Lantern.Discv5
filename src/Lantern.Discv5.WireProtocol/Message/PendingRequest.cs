@@ -2,24 +2,17 @@ using System.Diagnostics;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class PendingRequest
+public class PendingRequest(byte[] nodeId, Message message)
 {
-    public byte[] NodeId { get; }
-    
-    public Message Message { get; }
+    public byte[] NodeId { get; } = nodeId;
 
-    public Stopwatch ElapsedTime { get; } 
-    
+    public Message Message { get; } = message;
+
+    public Stopwatch ElapsedTime { get; } = Stopwatch.StartNew();
+
     public bool IsFulfilled { get; set; }
     
     public int ResponsesCount { get; set; }
     
     public int MaxResponses { get; set; }
-
-    public PendingRequest(byte[] nodeId, Message message)
-    {
-        NodeId = nodeId;
-        Message = message;
-        ElapsedTime = Stopwatch.StartNew();
-    }
 }

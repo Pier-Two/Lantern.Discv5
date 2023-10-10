@@ -6,7 +6,7 @@ public class TableOptions
     public int RefreshIntervalMilliseconds { get; private set; } = 300000;
     public int LookupTimeoutMilliseconds { get; private set; } = 10000;
     public int MaxAllowedFailures { get; private set; } = 3;
-    public int ReplacementCacheSize { get; private set; } = 300;
+    public int ReplacementCacheSize { get; private set; } = 200;
     public int ConcurrencyParameter { get; private set; } = 3;
     public int LookupParallelism { get; private set; } = 2;
     public string[] BootstrapEnrs { get; private set; } = Array.Empty<string>();

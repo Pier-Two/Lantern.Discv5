@@ -2,14 +2,9 @@ using Lantern.Discv5.Rlp;
 
 namespace Lantern.Discv5.WireProtocol.Message.Requests;
 
-public class PingMessage : Message
+public class PingMessage(int enrSeq) : Message(MessageType.Ping)
 {
-    public PingMessage(int enrSeq) : base(MessageType.Ping)
-    {
-        EnrSeq = enrSeq;
-    }
-
-    public int EnrSeq { get; }
+    public int EnrSeq { get; } = enrSeq;
 
     public override byte[] EncodeMessage()
     {

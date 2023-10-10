@@ -6,34 +6,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class LookupManager : ILookupManager
-{
-    private readonly IRoutingTable _routingTable;
-    private readonly IPacketManager _packetManager;
-    private readonly ConnectionOptions _connectionOptions;
-    private readonly TableOptions _tableOptions;
-    private readonly IRequestManager _requestManager;
-    private readonly ILogger<LookupManager> _logger;
-    private readonly ConcurrentBag<PathBucket> _pathBuckets;
-    private readonly SemaphoreSlim _lookupSemaphore;
-
-    public LookupManager(
-        IRoutingTable routingTable, 
-        IPacketManager packetManager, 
+public class LookupManager(IRoutingTable routingTable,
+        IPacketManager packetManager,
         IRequestManager requestManager,
-        ILoggerFactory loggerFactory, 
-        ConnectionOptions connectionOptions, 
+        ILoggerFactory loggerFactory,
+        ConnectionOptions connectionOptions,
         TableOptions tableOptions)
-    {
-        _routingTable = routingTable;
-        _packetManager = packetManager;
-        _requestManager = requestManager;
-        _logger = loggerFactory.CreateLogger<LookupManager>();
-        _connectionOptions = connectionOptions;
-        _tableOptions = tableOptions;
-        _pathBuckets = new ConcurrentBag<PathBucket>();
-        _lookupSemaphore = new SemaphoreSlim(1, 1);
-    }
+    : ILookupManager
+{
+    private readonly ILogger<LookupManager> _logger = loggerFactory.CreateLogger<LookupManager>();
+    
+    private readonly ConcurrentBag<PathBucket> _pathBuckets = new();
+    
+    private readonly SemaphoreSlim _lookupSemaphore = new(1, 1);
 
     public bool IsLookupInProgress { get; private set; }
 
@@ -51,7 +36,7 @@ public class LookupManager : ILookupManager
         await StartLookupAsync(targetNodeId);
 
         var allBucketsCompleteTask = Task.WhenAll(_pathBuckets.Select(bucket => bucket.Completion.Task));
-        var delayTask = Task.Delay(_tableOptions.LookupTimeoutMilliseconds);
+        var delayTask = Task.Delay(tableOptions.LookupTimeoutMilliseconds);
 
         await Task.WhenAny(allBucketsCompleteTask, delayTask);
 
@@ -74,8 +59,8 @@ public class LookupManager : ILookupManager
     {
         _logger.LogInformation("Starting lookup for target node {NodeID}", Convert.ToHexString(targetNodeId));
 
-        var initialNodes = _routingTable.GetClosestNodes(targetNodeId)
-            .Take(_tableOptions.ConcurrencyParameter)
+        var initialNodes = routingTable.GetClosestNodes(targetNodeId)
+            .Take(tableOptions.ConcurrencyParameter)
             .ToList();
 
         _logger.LogDebug("Initial nodes count {InitialNodesCount}", initialNodes.Count);
@@ -99,7 +84,7 @@ public class LookupManager : ILookupManager
         {
             foreach (var bucket in _pathBuckets)
             {
-                if (!bucket.Responses.ContainsKey(senderNodeId))
+                if (!bucket.Responses.ContainsKey(senderNodeId) || bucket.Completion.Task.IsCompleted)
                 {
                     continue;
                 }
@@ -117,21 +102,6 @@ public class LookupManager : ILookupManager
                     "Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}",
                     bucket.ExpectedResponses[senderNodeId], Convert.ToHexString(senderNodeId), bucket.Index);
 
-                if (bucket.PendingQueries.ContainsKey(senderNodeId))
-                {
-                    if (!bucket.PendingQueries[senderNodeId].Task.IsCompleted)
-                    {
-                        bucket.PendingQueries[senderNodeId].SetResult(true);
-                        bucket.DisposeTimer(senderNodeId);
-                    }
-                }
-
-                _logger.LogDebug("Discovered {DiscoveredNodes} nodes so far in bucket {BucketIndex}",
-                    bucket.DiscoveredNodes.Count, bucket.Index);
-                _logger.LogDebug(
-                    "Received responses from {ReceivedResponsesCount} nodes so far in bucket {BucketIndex}",
-                    bucket.ExpectedResponses.Count, bucket.Index);
-
                 UpdatePathBucket(bucket, nodes, senderNodeId);
 
                 if (bucket.ExpectedResponses[senderNodeId] != 0)
@@ -139,13 +109,13 @@ public class LookupManager : ILookupManager
                     return;
                 }
 
-                if (bucket.Responses[senderNodeId].Count > 0)
+                if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 {
-                    await QueryClosestNodes(bucket, senderNodeId);
+                    bucket.SetComplete();
                 }
                 else
                 {
-                    await QuerySelfNode(bucket, senderNodeId);
+                    await QueryClosestNodes(bucket, senderNodeId);
                 }
             }
         }
@@ -171,49 +141,39 @@ public class LookupManager : ILookupManager
             }
         }
 
-        bucket.Responses[senderNodeId].Sort((node1, node2) =>
-            TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
+        bucket.Responses[senderNodeId].Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
+            .CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
+        
+        bucket.DiscoveredNodes.ToList().Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
                 .CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
-        bucket.DiscoveredNodes.ToList().Sort((node1, node2) =>
-            TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
-                .CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
-
-        if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
-        {
-            bucket.SetComplete();
-        }
     }
 
     private async Task QuerySelfNode(PathBucket bucket, byte[] senderNodeId)
     {
-        var node = _routingTable.GetNodeEntry(senderNodeId);
+        var node = routingTable.GetNodeEntry(senderNodeId);
 
         if (node == null)
             return;
 
-        if (!_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
-        {
-            if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
-                return;
+        if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
+            return;
 
-            _logger.LogInformation("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
-                bucket.Index);
-
-            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
-            bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
-                _connectionOptions.ReceiveTimeoutMs, Timeout.Infinite);
-
-            await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
-        }
+        _logger.LogInformation("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
+            bucket.Index);
+            
+        bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
+            connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
+        
+        await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
     }
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
     {
         var nodesToQuery = bucket.Responses[senderNodeId]
-            .Where(node => _routingTable.GetNodeEntry(node.Id) != null)
-            .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
+            .Where(node => routingTable.GetNodeEntry(node.Id) != null)
             .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
-            .Take(_tableOptions.ConcurrencyParameter)
+            .Where(node => !requestManager.ContainsCachedRequest(node.Id))
+            .Take(tableOptions.ConcurrencyParameter)
             .ToList();
 
         _logger.LogInformation("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}",
@@ -223,11 +183,10 @@ public class LookupManager : ILookupManager
         {
             if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 return;
-
-            bucket.PendingQueries.TryAdd(node.Id, new TaskCompletionSource<bool>());
+            
             bucket.PendingTimers[node.Id] =
-                new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, 1000, Timeout.Infinite);
-            await _packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
+                new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
+            await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
         }
     }
 
@@ -237,49 +196,33 @@ public class LookupManager : ILookupManager
         {
             await _lookupSemaphore.WaitAsync();
 
-            _logger.LogDebug("Pending {PendingQueriesCount} queries in bucket {BucketIndex}",
-                bucket.PendingQueries.Count, bucket.Index);
-
-            if (bucket.PendingQueries.TryGetValue(nodeId, out var query) && query.Task.IsCompleted)
+            bucket.DisposeTimer(nodeId);
+            
+            if (bucket.Completion.Task.IsCompleted || (bucket.Responses.ContainsKey(nodeId) && bucket.Responses[nodeId].Count > 0))
             {
-                bucket.DisposeTimer(nodeId);
                 _lookupSemaphore.Release();
                 return;
             }
 
-            if (bucket.IsComplete)
-            {
-                bucket.DisposeTimer(nodeId);
-                _lookupSemaphore.Release();
-                return;
-            }
-
-            if (bucket.PendingQueries.ContainsKey(nodeId))
-            {
-                bucket.PendingQueries[nodeId].SetResult(false);
-                bucket.DisposeTimer(nodeId);
-            }
-
-            var unqueriedNode = bucket.DiscoveredNodes
-                .Where(node => _routingTable.GetNodeEntry(node.Id) != null)
-                .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.ContainsKey(node.Id)))
+            var replacementNode = bucket.DiscoveredNodes
+                .Where(node => routingTable.GetNodeEntry(node.Id) != null)
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
-                .FirstOrDefault(node => !_requestManager.ContainsCachedRequest(node.Id));
+                .FirstOrDefault(node => !requestManager.ContainsCachedRequest(node.Id));
 
-            if (unqueriedNode == null)
+            if (replacementNode == null)
             {
                 _lookupSemaphore.Release();
+                _logger.LogInformation("No replacement node found in bucket {BucketIndex}", bucket.Index);
                 return;
             }
-
-            bucket.PendingQueries.TryAdd(unqueriedNode.Id, new TaskCompletionSource<bool>());
-            bucket.PendingTimers[unqueriedNode.Id] = new Timer(_ => QueryTimeoutCallback(unqueriedNode.Id, bucket),
-                null, _connectionOptions.RequestTimeoutMs, Timeout.Infinite);
+            
+            bucket.PendingTimers[replacementNode.Id] = new Timer(_ => QueryTimeoutCallback(replacementNode.Id, bucket),
+                null, connectionOptions.RequestTimeoutMs,connectionOptions.ReceiveTimeoutMs);
 
             _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}",
-                Convert.ToHexString(unqueriedNode.Id), bucket.Index);
-            await _packetManager.SendPacket(unqueriedNode.Record, MessageType.FindNode, bucket.TargetNodeId);
-
+                Convert.ToHexString(replacementNode.Id), bucket.Index);
+            
+            await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, bucket.TargetNodeId);
             _lookupSemaphore.Release();
         }
         catch (Exception e)
@@ -291,7 +234,7 @@ public class LookupManager : ILookupManager
 
     private List<PathBucket> PartitionInitialNodesNew(IReadOnlyList<NodeTableEntry> initialNodes, byte[] targetNodeId)
     {
-        var bucketCount = Math.Min(initialNodes.Count, _tableOptions.LookupParallelism);
+        var bucketCount = Math.Min(initialNodes.Count, tableOptions.LookupParallelism);
         var pathBuckets = new List<PathBucket>();
 
         for (var i = 0; i < bucketCount; i++)
@@ -302,7 +245,6 @@ public class LookupManager : ILookupManager
         for (var i = 0; i < initialNodes.Count; i++)
         {
             pathBuckets[i % bucketCount].Responses.TryAdd(initialNodes[i].Id, new List<NodeTableEntry>());
-            pathBuckets[i % bucketCount].ExpectedResponses.TryAdd(initialNodes[i].Id, 0);
         }
 
         return pathBuckets;
@@ -318,7 +260,6 @@ public class LookupManager : ILookupManager
             }
 
             bucket.PendingTimers.Clear();
-            bucket.PendingQueries.Clear();
         }
 
         _pathBuckets.Clear();
@@ -328,7 +269,7 @@ public class LookupManager : ILookupManager
     {
         foreach (var bucket in _pathBuckets)
         {
-            if (bucket.IsComplete)
+            if (bucket.Completion.Task.IsCompleted)
             {
                 _logger.LogInformation("Bucket {BucketIndex} is complete", bucket.Index);
             }
