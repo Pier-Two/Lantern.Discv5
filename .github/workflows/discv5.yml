@@ -42,7 +42,7 @@ jobs:
         run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
 
       - name: Test Setup
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: "8.0.x"
       - name: Run tests for the Projects
