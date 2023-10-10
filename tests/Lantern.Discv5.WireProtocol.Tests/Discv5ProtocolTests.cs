@@ -1,3 +1,4 @@
+using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Utility;
 using NUnit.Framework;
 
@@ -16,8 +17,10 @@ public class Discv5ProtocolTests
             "enr:-Le4QPUXJS2BTORXxyx2Ia-9ae4YqA_JWX3ssj4E_J-3z1A-HmFGrU8BpvpqhNabayXeOZ2Nq_sbeDgtzMJpLLnXFgAChGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISsaa0Zg2lwNpAkAIkHAAAAAPA8kv_-awoTiXNlY3AyNTZrMaEDHAD2JKYevx89W0CcFJFiskdcEzkH_Wdv9iW42qLK79ODdWRwgiMohHVkcDaCI4I"
         };
         
-        //_discv5Protocol = Discv5Builder.CreateDefault(bootstrapEnrs);
+        var connectionOptions = new ConnectionOptions();
+        connectionOptions.SetPort(new Random().Next(1, 65535));
         _discv5Protocol = new Discv5Builder()
+            .WithConnectionOptions(connectionOptions)
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();
     }

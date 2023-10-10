@@ -11,7 +11,7 @@ public class ConnectionOptions
     public int CheckPendingRequestsDelayMs { get; private set; } = 500;
     public int RemoveCompletedRequestsDelayMs { get; private set; } = 1000;
 
-    public static ConnectionOptions Default => new ConnectionOptions();
+    public static ConnectionOptions Default => new();
 
     public ConnectionOptions SetPort(int port)
     {
