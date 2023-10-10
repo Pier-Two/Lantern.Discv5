@@ -16,6 +16,11 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
+      - name: Setup .NET for Testing
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+          
       - name: Checkout branch 
         uses: actions/checkout@v3
       
@@ -27,11 +32,6 @@ jobs:
       
       - name: Build Project_WriteProtocol
         run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
-
-      - name: Setup .NET for Testing
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: "8.0.x"
 
       - name: Run tests for the Projects
         run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
@@ -46,6 +46,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
+
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
