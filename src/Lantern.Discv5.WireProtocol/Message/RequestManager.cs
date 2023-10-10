@@ -7,53 +7,44 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class RequestManager : IRequestManager
-{
-    private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests;
-    private readonly ConcurrentDictionary<byte[], byte[]> _cachedHandshakeInteractions;
-    private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests;
-    private readonly IRoutingTable _routingTable;
-    private readonly ILogger<RequestManager> _logger;
-    private readonly TableOptions _tableOptions;
-    private readonly ConnectionOptions _connectionOptions;
-    private readonly ICancellationTokenSourceWrapper _cts;
-    private readonly IGracefulTaskRunner _taskRunner;
-    private Task _checkAllRequestsTask;
-
-    public RequestManager(
-        IRoutingTable routingTable, 
-        ILoggerFactory loggerFactory, 
-        ICancellationTokenSourceWrapper cts, 
-        IGracefulTaskRunner taskRunner, 
-        TableOptions tableOptions, 
+public class RequestManager(IRoutingTable routingTable,
+        ILoggerFactory loggerFactory,
+        ICancellationTokenSourceWrapper cts,
+        IGracefulTaskRunner taskRunner,
+        TableOptions tableOptions,
         ConnectionOptions connectionOptions)
-    {
-        _pendingRequests = new ConcurrentDictionary<byte[], PendingRequest>(ByteArrayEqualityComparer.Instance);
-        _cachedHandshakeInteractions = new ConcurrentDictionary<byte[], byte[]>(ByteArrayEqualityComparer.Instance);
-        _cachedRequests = new ConcurrentDictionary<byte[], CachedRequest>(ByteArrayEqualityComparer.Instance);
-        _routingTable = routingTable;
-        _logger = loggerFactory.CreateLogger<RequestManager>();
-        _tableOptions = tableOptions;
-        _connectionOptions = connectionOptions;
-        _cts = cts;
-        _taskRunner = taskRunner;
-        _checkAllRequestsTask = Task.CompletedTask;
-    }
+    : IRequestManager
+{
+    private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests = new(ByteArrayEqualityComparer.Instance);
+    
+    private readonly ConcurrentDictionary<byte[], CachedHandshakeInteraction> _cachedHandshakeInteractions = new(ByteArrayEqualityComparer.Instance);
+    
+    private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests = new(ByteArrayEqualityComparer.Instance);
+    
+    private readonly ILogger<RequestManager> _logger = loggerFactory.CreateLogger<RequestManager>();
+    
+    private Task _checkAllRequestsTask = Task.CompletedTask;
+
+    public int PendingRequestsCount => _pendingRequests.Count;
+    
+    public int CachedRequestsCount => _cachedRequests.Count;
+    
+    public int CachedHandshakeInteractionsCount => _cachedHandshakeInteractions.Count;
     
     public void StartRequestManager()
     {
         _logger.LogInformation("Starting RequestManagerAsync");
-        _checkAllRequestsTask = _taskRunner.RunWithGracefulCancellationAsync(CheckAllRequests, "CheckAllRequests", _cts.GetToken());
+        _checkAllRequestsTask = taskRunner.RunWithGracefulCancellationAsync(CheckAllRequests, "CheckAllRequests", cts.GetToken());
     }
 
     public async Task StopRequestManagerAsync()
     {
         _logger.LogInformation("Stopping RequestManagerAsync");
-        _cts.Cancel();
+        cts.Cancel();
 
         await _checkAllRequestsTask.ConfigureAwait(false);
 	
-        if (_cts.IsCancellationRequested())
+        if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("RequestManagerAsync was canceled gracefully");
         }
@@ -67,7 +58,7 @@ public class RequestManager : IRequestManager
 
         if (!result)
         {
-            _routingTable.MarkNodeAsPending(request.NodeId);
+            routingTable.MarkNodeAsPending(request.NodeId);
             _logger.LogDebug("Added pending request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
@@ -81,7 +72,7 @@ public class RequestManager : IRequestManager
 
         if (!result)
         {
-            _routingTable.MarkNodeAsPending(request.NodeId);
+            routingTable.MarkNodeAsPending(request.NodeId);
             _logger.LogDebug("Added cached request with id {RequestId}", Convert.ToHexString(requestId));
         }
 
@@ -90,12 +81,32 @@ public class RequestManager : IRequestManager
     
     public void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
     { 
-        _cachedHandshakeInteractions.TryAdd(packetNonce, destNodeId);
+        
+        if (_cachedHandshakeInteractions.Count >= 500)
+        {
+            // If we have more than 500 cached handshake interactions, remove 250 oldest ones
+            var oldestInteractions = _cachedHandshakeInteractions.OrderBy(x => x.Value.ElapsedTime.Elapsed).Take(400).ToList();
+            
+            foreach (var interaction in oldestInteractions)
+            {
+                _cachedHandshakeInteractions.TryRemove(interaction.Key, out _);
+            }
+        }
+
+        _cachedHandshakeInteractions.TryAdd(packetNonce, new CachedHandshakeInteraction(destNodeId));
     }
     
     public byte[]? GetCachedHandshakeInteraction(byte[] packetNonce)
     {
-        return _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId) ? destNodeId : null;
+        _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId);
+        
+        if(destNodeId == null)
+        {
+            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            return null;
+        }
+
+        return destNodeId.NodeId;
     }
 
     public bool ContainsCachedRequest(byte[] requestId)
@@ -144,7 +155,7 @@ public class RequestManager : IRequestManager
         while (!token.IsCancellationRequested)
         {
             CheckRequests();
-            await Task.Delay(Math.Min(_connectionOptions.CheckPendingRequestsDelayMs, _connectionOptions.RemoveCompletedRequestsDelayMs), token);
+            await Task.Delay(Math.Min(connectionOptions.CheckPendingRequestsDelayMs, connectionOptions.RemoveCompletedRequestsDelayMs), token);
             RemoveFulfilledRequests();
         }
     }
@@ -194,19 +205,19 @@ public class RequestManager : IRequestManager
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs) 
             return;
         
         _logger.LogDebug("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
         
-        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+        var nodeEntry = routingTable.GetNodeEntry(request.NodeId);
 
         if (nodeEntry == null) 
             return;
         
-        if(nodeEntry.FailureCounter >= _tableOptions.MaxAllowedFailures)
+        if(nodeEntry.FailureCounter >= tableOptions.MaxAllowedFailures)
         {
             _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
            
@@ -214,17 +225,18 @@ public class RequestManager : IRequestManager
         else
         {
             _logger.LogDebug("Increasing failure counter for Node {NodeId}",Convert.ToHexString(request.NodeId));
-            _routingTable.IncreaseFailureCounter(request.NodeId);
+            routingTable.IncreaseFailureCounter(request.NodeId);
         }
     }
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds <= _connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs) 
             return;
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
-        var nodeEntry = _routingTable.GetNodeEntry(request.NodeId);
+        
+        var nodeEntry = routingTable.GetNodeEntry(request.NodeId);
             
         if (nodeEntry == null)
         {
@@ -232,6 +244,6 @@ public class RequestManager : IRequestManager
             return;
         }
 
-        _routingTable.MarkNodeAsDead(request.NodeId);
+        routingTable.MarkNodeAsDead(request.NodeId);
     }
 }

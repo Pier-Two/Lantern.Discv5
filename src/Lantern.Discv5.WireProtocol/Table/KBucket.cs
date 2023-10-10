@@ -2,23 +2,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class KBucket
+public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
 {
-    private readonly LinkedList<NodeTableEntry> _nodes;
-    private readonly LinkedList<NodeTableEntry> _replacementCache;
-    private readonly ILogger<KBucket> _logger;
-    private readonly object _lock;
-    private readonly int _replacementCacheSize;
+    private readonly LinkedList<NodeTableEntry> _nodes = new();
+    private readonly LinkedList<NodeTableEntry> _replacementCache = new();
+    private readonly ILogger<KBucket> _logger = loggerFactory.CreateLogger<KBucket>();
+    private readonly object _lock = new();
 
-    public KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
-    {
-        _nodes = new LinkedList<NodeTableEntry>();
-        _replacementCache = new LinkedList<NodeTableEntry>();
-        _logger = loggerFactory.CreateLogger<KBucket>();
-        _lock = new object();
-        _replacementCacheSize = replacementCacheSize;
-    }
-    
     public event Action<NodeTableEntry> NodeAdded = delegate { };
     
     public event Action<NodeTableEntry> NodeRemoved = delegate { };
@@ -108,7 +98,7 @@ public class KBucket
     
     public void AddToReplacementCache(NodeTableEntry nodeEntry)
     {
-        if (_replacementCache.Count >= _replacementCacheSize)
+        if (_replacementCache.Count >= replacementCacheSize)
         {
             _logger.LogDebug("Replacement cache full. Removed first node from the bucket's replacement cache");
             

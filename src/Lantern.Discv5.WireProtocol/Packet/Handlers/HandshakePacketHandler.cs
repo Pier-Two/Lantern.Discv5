@@ -14,39 +14,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Handlers;
 
-public class HandshakePacketHandler : PacketHandlerBase
+public class HandshakePacketHandler(IIdentityManager identityManager,
+        ISessionManager sessionManager,
+        IRoutingTable routingTable,
+        IMessageResponder messageResponder,
+        IUdpConnection udpConnection,
+        IPacketBuilder packetBuilder,
+        IPacketProcessor packetProcessor,
+        IEnrFactory enrFactory,
+        ILoggerFactory loggerFactory) 
+    : PacketHandlerBase
 {
-    private readonly IIdentityManager _identityManager;
-    private readonly ISessionManager _sessionManager;
-    private readonly IRoutingTable _routingTable;
-    private readonly IMessageResponder _messageResponder;
-    private readonly IUdpConnection _connection;
-    private readonly IPacketBuilder _packetBuilder;
-    private readonly IPacketProcessor _packetProcessor;
-    private readonly IEnrFactory _enrFactory;
-    private readonly ILogger<HandshakePacketHandler> _logger;
-
-    public HandshakePacketHandler(
-        IIdentityManager identityManager, 
-        ISessionManager sessionManager, 
-        IRoutingTable routingTable, 
-        IMessageResponder messageResponder, 
-        IUdpConnection udpConnection, 
-        IPacketBuilder packetBuilder, 
-        IPacketProcessor packetProcessor, 
-        IEnrFactory enrFactory, 
-        ILoggerFactory loggerFactory)
-    {
-        _identityManager = identityManager;
-        _sessionManager = sessionManager;
-        _routingTable = routingTable;
-        _messageResponder = messageResponder;
-        _connection = udpConnection;
-        _packetBuilder = packetBuilder;
-        _packetProcessor = packetProcessor;
-        _enrFactory = enrFactory;
-        _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
-    }
+    private readonly ILogger<HandshakePacketHandler> _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
 
     public override PacketType PacketType => PacketType.Handshake;
 
@@ -54,7 +33,7 @@ public class HandshakePacketHandler : PacketHandlerBase
     {
         _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
         var packet = returnedResult.Buffer;
-        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(_packetProcessor.GetStaticHeader(packet));
+        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packetProcessor.GetStaticHeader(packet));
         var publicKey = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!);
         
         if (publicKey == null)
@@ -63,7 +42,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
         
-        var session = _sessionManager.GetSession(handshakePacket.SrcId!, returnedResult.RemoteEndPoint);
+        var session = sessionManager.GetSession(handshakePacket.SrcId!, returnedResult.RemoteEndPoint);
 
         if (session == null)
         {
@@ -71,7 +50,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
         
-        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, _identityManager.Record.NodeId);
+        var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, identityManager.Record.NodeId);
 
         if (!idSignatureVerificationResult)
         {
@@ -79,7 +58,7 @@ public class HandshakePacketHandler : PacketHandlerBase
             return;
         }
 
-        var decryptedMessage = session.DecryptMessageWithNewKeys(_packetProcessor.GetStaticHeader(packet), _packetProcessor.GetMaskingIv(packet), _packetProcessor.GetEncryptedMessage(packet),handshakePacket, _identityManager.Record.NodeId);
+        var decryptedMessage = session.DecryptMessageWithNewKeys(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), packetProcessor.GetEncryptedMessage(packet),handshakePacket, identityManager.Record.NodeId);
 
         if (decryptedMessage == null)
         {
@@ -96,7 +75,7 @@ public class HandshakePacketHandler : PacketHandlerBase
 
         foreach (var reply in replies)
         {
-            await _connection.SendAsync(reply, returnedResult.RemoteEndPoint);
+            await udpConnection.SendAsync(reply, returnedResult.RemoteEndPoint);
             _logger.LogInformation("Sent response to HANDSHAKE packet");
         }
     }
@@ -107,11 +86,11 @@ public class HandshakePacketHandler : PacketHandlerBase
         
         if (handshakePacketBase.Record?.Length > 0)
         {
-            senderRecord = _enrFactory.CreateFromBytes(handshakePacketBase.Record, _identityManager.Verifier);
+            senderRecord = enrFactory.CreateFromBytes(handshakePacketBase.Record, identityManager.Verifier);
         }
         else if (senderNodeId != null)
         {
-            var nodeEntry = _routingTable.GetNodeEntry(senderNodeId);
+            var nodeEntry = routingTable.GetNodeEntry(senderNodeId);
             
             if (nodeEntry != null)
             {
@@ -125,14 +104,14 @@ public class HandshakePacketHandler : PacketHandlerBase
             return null;
         }
 
-        _routingTable.UpdateFromEnr(senderRecord);
+        routingTable.UpdateFromEnr(senderRecord);
         
         return senderRecord.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
     }
     
     private async Task <byte[][]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 
     {
-        var responses = await _messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
+        var responses = await messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
 
         if (responses == null || responses.Length == 0)
         {
@@ -144,7 +123,7 @@ public class HandshakePacketHandler : PacketHandlerBase
         foreach (var response in responses)
         {
             var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-            var ordinaryPacket = _packetBuilder.BuildOrdinaryPacket(response, senderNodeId, maskingIv, sessionMain.MessageCount);
+            var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(response, senderNodeId, maskingIv, sessionMain.MessageCount);
             var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
             responsesList.Add(ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage));
         }

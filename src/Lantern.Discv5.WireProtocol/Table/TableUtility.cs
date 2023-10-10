@@ -5,7 +5,6 @@ public static class TableUtility
     public static int Log2Distance(ReadOnlySpan<byte> firstNodeId, ReadOnlySpan<byte> secondNodeId)
     {
         var firstMatch = 0;
-        var logDistance = 0;
 
         for (var i = 0; i < firstNodeId.Length; i++)
         {
@@ -24,7 +23,7 @@ public static class TableUtility
             firstMatch += 8;
         }
 
-        logDistance = TableConstants.NodeIdSize - firstMatch;
+        var logDistance = TableConstants.NodeIdSize - firstMatch;
 
         return logDistance;
     }

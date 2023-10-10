@@ -7,17 +7,8 @@ using Lantern.Discv5.WireProtocol.Message.Responses;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class MessageDecoder : IMessageDecoder
+public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFactory) : IMessageDecoder
 {
-    private readonly IIdentityManager _identityManager;
-    private readonly IEnrFactory _enrFactory;
-    
-    public MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFactory)
-    {
-        _identityManager = identityManager;
-        _enrFactory = enrFactory;
-    }
-    
     public Message DecodeMessage(byte[] message)
     {
         var messageType = (MessageType)message[0];
@@ -74,8 +65,8 @@ public class MessageDecoder : IMessageDecoder
         var decodedMessage = RlpDecoder.Decode(rawMessage);
         var requestId = decodedMessage[0];
         var total = RlpExtensions.ByteArrayToInt32(decodedMessage[1]);
-        var enrs = _enrFactory.CreateFromMultipleEnrList(ExtractEnrRecord(decodedMessage.Skip(2).ToList(), total),
-            _identityManager.Verifier);
+        var enrs = enrFactory.CreateFromMultipleEnrList(ExtractEnrRecord(decodedMessage.Skip(2).ToList(), total),
+            identityManager.Verifier);
         return new NodesMessage(requestId, total, enrs);
     }
     
@@ -99,7 +90,7 @@ public class MessageDecoder : IMessageDecoder
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         var decodedTopic = decodedMessage[1];
         var decodedEnr = decodedMessage.GetRange(2, decodedMessage.Count - 2).SkipLast(1).ToList();
-        var enr = _enrFactory.CreateFromDecoded(decodedEnr.ToList(), _identityManager.Verifier);
+        var enr = enrFactory.CreateFromDecoded(decodedEnr.ToList(), identityManager.Verifier);
         var decodedTicket = decodedMessage.Last();
         return new RegTopicMessage(decodedTopic, enr, decodedTicket)
         {

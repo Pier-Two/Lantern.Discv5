@@ -6,25 +6,18 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Message;
 
-public class MessageRequester : IMessageRequester 
+public class MessageRequester(IIdentityManager identityManager, IRequestManager requestManager,
+        ILoggerFactory loggerFactory)
+    : IMessageRequester 
 {
-    private readonly IIdentityManager _identityManager;
-    private readonly IRequestManager _requestManager;
-    private readonly ILogger<MessageRequester> _logger;
-    
-    public MessageRequester(IIdentityManager identityManager, IRequestManager requestManager, ILoggerFactory loggerFactory)
-    {
-        _identityManager = identityManager;
-        _requestManager = requestManager;
-        _logger = loggerFactory.CreateLogger<MessageRequester>();
-    }
+    private readonly ILogger<MessageRequester> _logger = LoggerFactoryExtensions.CreateLogger<MessageRequester>(loggerFactory);
 
     public byte[]? ConstructPingMessage(byte[] destNodeId)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.Ping);
-        var pingMessage = new PingMessage((int)_identityManager.Record.SequenceNumber);
+        var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
         var pendingRequest = new PendingRequest(destNodeId, pingMessage);
-        var result = _requestManager.AddPendingRequest(pingMessage.RequestId, pendingRequest);
+        var result = requestManager.AddPendingRequest(pingMessage.RequestId, pendingRequest);
         
         if(!result)
         {
@@ -39,9 +32,9 @@ public class MessageRequester : IMessageRequester
     public byte[]? ConstructCachedPingMessage(byte[] destNodeId)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.Ping);
-        var pingMessage = new PingMessage((int)_identityManager.Record.SequenceNumber);
+        var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
         var cachedRequest = new CachedRequest(destNodeId, pingMessage);
-        var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
+        var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
         if(!result)
         {
@@ -62,7 +55,7 @@ public class MessageRequester : IMessageRequester
 
         var findNodesMessage = new FindNodeMessage(distances);
         var pendingRequest = new PendingRequest(destNodeId, findNodesMessage);
-        var result = _requestManager.AddPendingRequest(findNodesMessage.RequestId, pendingRequest);
+        var result = requestManager.AddPendingRequest(findNodesMessage.RequestId, pendingRequest);
 
         if(!result)
         {
@@ -83,7 +76,7 @@ public class MessageRequester : IMessageRequester
 
         var findNodesMessage = new FindNodeMessage(distances);
         var cachedRequest = new CachedRequest(destNodeId, findNodesMessage);
-        var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
+        var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
         if(!result)
         {
@@ -101,7 +94,7 @@ public class MessageRequester : IMessageRequester
 
         var talkReqMessage = new TalkReqMessage(protocol, request);
         var pendingRequest = new PendingRequest(destNodeId, talkReqMessage);
-        var result = _requestManager.AddPendingRequest(talkReqMessage.RequestId, pendingRequest);
+        var result = requestManager.AddPendingRequest(talkReqMessage.RequestId, pendingRequest);
         
         if(!result)
         {
@@ -119,7 +112,7 @@ public class MessageRequester : IMessageRequester
         
         var talkRespMessage = new TalkRespMessage(response);
         var pendingRequest = new PendingRequest(destNodeId, talkRespMessage);
-        var result = _requestManager.AddPendingRequest(talkRespMessage.RequestId, pendingRequest);
+        var result = requestManager.AddPendingRequest(talkRespMessage.RequestId, pendingRequest);
         
         if(!result)
         {
@@ -137,7 +130,7 @@ public class MessageRequester : IMessageRequester
         
         var talkReqMessage = new TalkReqMessage(protocol, request);
         var cachedRequest = new CachedRequest(destNodeId, talkReqMessage);
-        var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
+        var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
         if(!result)
         {
@@ -155,7 +148,7 @@ public class MessageRequester : IMessageRequester
         
         var talkRespMessage = new TalkRespMessage(response);
         var cachedRequest = new CachedRequest(destNodeId, talkRespMessage);
-        var result = _requestManager.AddCachedRequest(destNodeId, cachedRequest);
+        var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
         
         if(!result)
         {

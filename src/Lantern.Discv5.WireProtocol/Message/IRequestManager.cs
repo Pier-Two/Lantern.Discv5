@@ -2,6 +2,12 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public interface IRequestManager
 {
+    int CachedRequestsCount { get; }
+    
+    int PendingRequestsCount { get; }
+    
+    int CachedHandshakeInteractionsCount { get; }
+    
     void StartRequestManager();
     
     Task StopRequestManagerAsync();
