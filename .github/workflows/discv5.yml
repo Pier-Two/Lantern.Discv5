@@ -54,6 +54,10 @@ jobs:
     runs-on: windows-latest
     needs: build-and-test
     steps:
+      - name: Setup .NET for SonarCloud
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
