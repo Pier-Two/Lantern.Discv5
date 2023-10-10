@@ -16,35 +16,23 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      
       - name: Checkout branch 
         uses: actions/checkout@v3
       
-      - name: Get changed files
-        id: file-changes
-        uses: trilom/file-changes-action@v1.2.4
-        with:
-          output: 'json'
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-      - name: Print changed files
-        run: echo "Files changed are ${{ steps.file-changes.outputs.files }}"
-    
-      - name: Build Project_Enr if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Enr') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Enr')
+      - name: Build Project_Enr
         run: dotnet build src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
-        
-      - name: Build Project_Rlp if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.Rlp') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.Rlp')
+
+      - name: Build Project_Rlp
         run: dotnet build src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
       
-      - name: Build Project_WriteProtocol if changed
-        if: contains(steps.file-changes.outputs.files_modified, 'Lantern.Discv5.WireProtocol') || contains(steps.file-changes.outputs.files_added, 'Lantern.Discv5.WireProtocol')
+      - name: Build Project_WriteProtocol
         run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
 
-      - name: Test Setup
+      - name: Setup .NET for Testing
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: "8.0.x"
+
       - name: Run tests for the Projects
         run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
 
