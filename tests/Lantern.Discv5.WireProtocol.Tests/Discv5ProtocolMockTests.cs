@@ -265,40 +265,6 @@ public class Discv5ProtocolMockTests
         mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<byte[][]>()), Times.Once);
         Assert.IsFalse(result);
     }
-    
-    [Test]
-    public async Task SendTalkRespAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
-    {
-        var enrEntryRegistry = new EnrEntryRegistry();
-        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        
-        mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
-            .Returns(Task.CompletedTask);
-        
-        SetupServices();
-        var result = await _discv5Protocol.SendTalkRespAsync(enrRecord, RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkResp, It.IsAny<byte[][]>()), Times.Once);
-        Assert.IsTrue(result);
-    }
-
-    [Test]
-    public async Task SendTalkRespAsync_ShouldReturnFalse_WhenExceptionIsThrown()
-    {
-        var enrEntryRegistry = new EnrEntryRegistry();
-        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var exceptionToThrow = new Exception("Test exception");
-        
-        mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
-            .ThrowsAsync(exceptionToThrow);
-
-        SetupServices();
-        
-        var result = await _discv5Protocol.SendTalkRespAsync(enrRecord, RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkResp, It.IsAny<byte[][]>()), Times.Once);
-        Assert.IsFalse(result);
-    }
 
     private void SetupServices()
     {

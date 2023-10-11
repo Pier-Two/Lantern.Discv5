@@ -5,7 +5,6 @@ using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol;
@@ -102,11 +101,11 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         }
     }
 
-    public async Task<bool> SendFindNodeAsync(Enr.Enr destination, byte[] nodeId)
+    public async Task<bool> SendFindNodeAsync(Enr.Enr destination, byte[] targetNodeId)
     {
         try
         {
-            await packetManager.SendPacket(destination, MessageType.FindNode, nodeId);
+            await packetManager.SendPacket(destination, MessageType.FindNode, targetNodeId);
             return true;
         }
         catch (Exception ex)
@@ -126,20 +125,6 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
-            return false;
-        }
-    }
-    
-    public async Task<bool> SendTalkRespAsync(Enr.Enr destination, byte[] response)
-    {
-        try
-        {
-            await packetManager.SendPacket(destination, MessageType.TalkResp, response);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error occurred in SendTalkRespAsync. Cannot send TALKRESP to {Record}", destination);
             return false;
         }
     }
