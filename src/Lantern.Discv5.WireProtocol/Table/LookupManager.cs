@@ -20,7 +20,7 @@ public class LookupManager(IRoutingTable routingTable,
     private readonly ConcurrentBag<PathBucket> _pathBuckets = new();
     
     private readonly SemaphoreSlim _lookupSemaphore = new(1, 1);
-
+    
     public bool IsLookupInProgress { get; private set; }
 
     public async Task<List<NodeTableEntry>?> LookupAsync(byte[] targetNodeId)
@@ -30,10 +30,13 @@ public class LookupManager(IRoutingTable routingTable,
             _logger.LogInformation("Lookup is currently in progress");
             return null;
         }
-
-        IsLookupInProgress = true;
-
-        await Task.Delay(1000);
+        
+        if(routingTable.GetActiveNodesCount() == 0)
+        {
+            _logger.LogInformation("No active nodes in routing table");
+            return null;
+        }
+        
         await StartLookupAsync(targetNodeId);
 
         var allBucketsCompleteTask = Task.WhenAll(_pathBuckets.Select(bucket => bucket.Completion.Task));
@@ -47,13 +50,14 @@ public class LookupManager(IRoutingTable routingTable,
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
             .Take(TableConstants.BucketSize)
             .ToList();
-        
-        PrintLookupSummary();
-        
+
         foreach (var bucket in _pathBuckets)
         {
             bucket.Dispose();
         }
+
+        _pathBuckets.Clear();
+        PrintLookupSummary(_pathBuckets);
 
         IsLookupInProgress = false;
 
@@ -62,6 +66,7 @@ public class LookupManager(IRoutingTable routingTable,
 
     public async Task StartLookupAsync(byte[] targetNodeId)
     {
+        IsLookupInProgress = true;
         _logger.LogInformation("Starting lookup for target node {NodeID}", Convert.ToHexString(targetNodeId));
 
         var initialNodes = routingTable.GetClosestNodes(targetNodeId)
@@ -163,21 +168,16 @@ public class LookupManager(IRoutingTable routingTable,
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
     {
-        var pendingQueries = TableConstants.BucketSize - bucket.ExpectedResponses.Count;
-
-        if (pendingQueries <= 0) 
-            return; 
+        var queryCount = Math.Min(TableConstants.BucketSize - bucket.ExpectedResponses.Count, tableOptions.ConcurrencyParameter);
         
-        var nodesToQueryCount = Math.Min(pendingQueries, tableOptions.ConcurrencyParameter);
-        
-        if (nodesToQueryCount == 0)
+        if (queryCount == 0)
             return;
         
         var nodesToQuery = bucket.Responses[senderNodeId]
             .Where(node => routingTable.GetNodeEntry(node.Id) != null)
-            .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
+            .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.Contains(node.Id, ByteArrayEqualityComparer.Instance)))
             .Where(node => !requestManager.ContainsCachedRequest(node.Id))
-            .Take(nodesToQueryCount)
+            .Take(queryCount)
             .ToList();
         
         if(nodesToQuery.Count == 0)
@@ -214,13 +214,13 @@ public class LookupManager(IRoutingTable routingTable,
 
             var replacementNode = bucket.DiscoveredNodes
                 .Where(node => routingTable.GetNodeEntry(node.Id) != null)
-                .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
+                .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.Contains(node.Id, ByteArrayEqualityComparer.Instance)))
                 .FirstOrDefault(node => !requestManager.ContainsCachedRequest(node.Id));
 
             if (replacementNode == null)
             {
                 _lookupSemaphore.Release();
-                _logger.LogInformation("No replacement node found in bucket {BucketIndex}", bucket.Index);
+                _logger.LogDebug("No replacement node found in bucket {BucketIndex}", bucket.Index);
                 return;
             }
             
@@ -255,9 +255,9 @@ public class LookupManager(IRoutingTable routingTable,
         return pathBuckets;
     }
     
-    private void PrintLookupSummary()
+    private void PrintLookupSummary(ConcurrentBag<PathBucket> pathBuckets)
     {
-        foreach (var bucket in _pathBuckets)
+        foreach (var bucket in pathBuckets)
         {
             if (bucket.Completion.Task.IsCompleted)
             {
