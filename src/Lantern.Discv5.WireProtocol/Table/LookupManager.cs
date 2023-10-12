@@ -57,8 +57,6 @@ public class LookupManager(IRoutingTable routingTable,
         }
 
         _pathBuckets.Clear();
-        PrintLookupSummary(_pathBuckets);
-
         IsLookupInProgress = false;
 
         return result;
@@ -253,20 +251,5 @@ public class LookupManager(IRoutingTable routingTable,
         }
 
         return pathBuckets;
-    }
-    
-    private void PrintLookupSummary(ConcurrentBag<PathBucket> pathBuckets)
-    {
-        foreach (var bucket in pathBuckets)
-        {
-            if (bucket.Completion.Task.IsCompleted)
-            {
-                _logger.LogInformation("Bucket {BucketIndex} is complete", bucket.Index);
-            }
-            else
-            {
-                _logger.LogInformation("Bucket {BucketIndex} timed out", bucket.Index);
-            }
-        }
     }
 }
