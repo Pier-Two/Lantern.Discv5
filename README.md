@@ -52,7 +52,7 @@ This library can be used in any C# project using the following import statement:
 using Lantern.Discv5.WireProtocol;
 ```
 
-You can initialize the protocol by providing an array of bootstrap Ethereum Node Records (ENRs) strings:
+You can initialize the protocol by providing an array of bootstrap ENR ([Ethereum Node Record](https://eips.ethereum.org/EIPS/eip-778)) strings:
 
 ```
 Discv5Protocol discv5 = Discv5Builder.CreateDefault(bootstrapEnrs);
@@ -63,7 +63,7 @@ Please refer to the [Usage](https://piertwo.gitbook.io/lantern.discv5/) guide fo
 
 ## Contributing
 
-We welcome contributions to the Lantern.Discv5 project. To get involved, please read our [Contributing Guidelines](https://piertwo.gitbook.io/lantern.discv5/contribution-guidelines) for the process for submitting pull requests to us.
+We welcome contributions to the Lantern.Discv5 project. To get involved, please read our [Contributing Guidelines](https://piertwo.gitbook.io/lantern.discv5/contribution-guidelines) for the process for submitting pull requests to this repository.
 
 ## License
 This project is licensed under the [MIT License](https://github.com/Pier-Two/Lantern.Discv5/blob/main/LICENSE).
