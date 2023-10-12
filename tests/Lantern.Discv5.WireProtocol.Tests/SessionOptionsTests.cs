@@ -18,7 +18,7 @@ public class SessionOptionsTests
         Assert.NotNull(_sessionOptions.Signer);
         Assert.NotNull(_sessionOptions.Verifier);
         Assert.NotNull(_sessionOptions.SessionKeys);
-        Assert.AreEqual(1000, _sessionOptions.CacheSize);
+        Assert.AreEqual(1000, _sessionOptions.SessionCacheSize);
     }
     
     [Test]
@@ -42,6 +42,6 @@ public class SessionOptionsTests
         Assert.AreEqual(signer, _sessionOptions.Signer);
         Assert.AreEqual(verifier, _sessionOptions.Verifier);
         Assert.AreEqual(sessionKeys, _sessionOptions.SessionKeys);
-        Assert.AreEqual(2000, _sessionOptions.CacheSize);
+        Assert.AreEqual(2000, _sessionOptions.SessionCacheSize);
     }
 }
