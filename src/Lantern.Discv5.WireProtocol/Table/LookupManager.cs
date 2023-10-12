@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
@@ -46,9 +47,13 @@ public class LookupManager(IRoutingTable routingTable,
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
             .Take(TableConstants.BucketSize)
             .ToList();
-
+        
         PrintLookupSummary();
-        ClearLookupState();
+        
+        foreach (var bucket in _pathBuckets)
+        {
+            bucket.Dispose();
+        }
 
         IsLookupInProgress = false;
 
@@ -84,19 +89,13 @@ public class LookupManager(IRoutingTable routingTable,
         {
             foreach (var bucket in _pathBuckets)
             {
-                if (!bucket.Responses.ContainsKey(senderNodeId) || bucket.Completion.Task.IsCompleted)
-                {
+                if (!bucket.PendingQueries.Contains(senderNodeId, ByteArrayEqualityComparer.Instance) || bucket.Completion.Task.IsCompleted)
                     continue;
-                }
 
                 if (bucket.ExpectedResponses.TryGetValue(senderNodeId, out var value))
-                {
                     bucket.ExpectedResponses[senderNodeId] = value - 1;
-                }
                 else
-                {
                     bucket.ExpectedResponses.TryAdd(senderNodeId, expectedResponses - 1);
-                }
 
                 _logger.LogDebug(
                     "Expecting {ExpectedResponses} more responses from node {NodeId} in QueryClosestNodes in bucket {BucketIndex}",
@@ -105,18 +104,15 @@ public class LookupManager(IRoutingTable routingTable,
                 UpdatePathBucket(bucket, nodes, senderNodeId);
 
                 if (bucket.ExpectedResponses[senderNodeId] != 0)
-                {
                     return;
-                }
-
+                
                 if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 {
+                    _logger.LogInformation("Marking bucket {BucketIndex} as complete. Received responses from {Count} closest nodes", bucket.Index,bucket.ExpectedResponses.Count);
                     bucket.SetComplete();
                 }
                 else
-                {
                     await QueryClosestNodes(bucket, senderNodeId);
-                }
             }
         }
         catch (Exception e)
@@ -155,27 +151,38 @@ public class LookupManager(IRoutingTable routingTable,
         if (node == null)
             return;
 
-        if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
-            return;
-
         _logger.LogInformation("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
             bucket.Index);
             
         bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
             connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
+        bucket.PendingQueries.Add(node.Id);
         
         await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
     }
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
     {
+        var pendingQueries = TableConstants.BucketSize - bucket.ExpectedResponses.Count;
+
+        if (pendingQueries <= 0) 
+            return; 
+        
+        var nodesToQueryCount = Math.Min(pendingQueries, tableOptions.ConcurrencyParameter);
+        
+        if (nodesToQueryCount == 0)
+            return;
+        
         var nodesToQuery = bucket.Responses[senderNodeId]
             .Where(node => routingTable.GetNodeEntry(node.Id) != null)
             .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.ExpectedResponses.ContainsKey(node.Id)))
             .Where(node => !requestManager.ContainsCachedRequest(node.Id))
-            .Take(tableOptions.ConcurrencyParameter)
+            .Take(nodesToQueryCount)
             .ToList();
-
+        
+        if(nodesToQuery.Count == 0)
+            return;
+        
         _logger.LogInformation("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}",
             nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
 
@@ -186,6 +193,7 @@ public class LookupManager(IRoutingTable routingTable,
             
             bucket.PendingTimers[node.Id] =
                 new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
+            bucket.PendingQueries.Add(node.Id);
             await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
         }
     }
@@ -195,7 +203,7 @@ public class LookupManager(IRoutingTable routingTable,
         try
         {
             await _lookupSemaphore.WaitAsync();
-
+            
             bucket.DisposeTimer(nodeId);
             
             if (bucket.Completion.Task.IsCompleted || (bucket.Responses.ContainsKey(nodeId) && bucket.Responses[nodeId].Count > 0))
@@ -218,7 +226,8 @@ public class LookupManager(IRoutingTable routingTable,
             
             bucket.PendingTimers[replacementNode.Id] = new Timer(_ => QueryTimeoutCallback(replacementNode.Id, bucket),
                 null, connectionOptions.RequestTimeoutMs,connectionOptions.ReceiveTimeoutMs);
-
+            bucket.PendingQueries.Add(replacementNode.Id);
+            
             _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}",
                 Convert.ToHexString(replacementNode.Id), bucket.Index);
             
@@ -240,31 +249,12 @@ public class LookupManager(IRoutingTable routingTable,
         for (var i = 0; i < bucketCount; i++)
         {
             pathBuckets.Add(new PathBucket(targetNodeId, i));
-        }
-
-        for (var i = 0; i < initialNodes.Count; i++)
-        {
-            pathBuckets[i % bucketCount].Responses.TryAdd(initialNodes[i].Id, new List<NodeTableEntry>());
+            pathBuckets[i].Responses.TryAdd(initialNodes[i].Id, new List<NodeTableEntry>());
         }
 
         return pathBuckets;
     }
-
-    private void ClearLookupState()
-    {
-        foreach (var bucket in _pathBuckets)
-        {
-            foreach (var timer in bucket.PendingTimers.Values)
-            {
-                timer.Dispose();
-            }
-
-            bucket.PendingTimers.Clear();
-        }
-
-        _pathBuckets.Clear();
-    }
-
+    
     private void PrintLookupSummary()
     {
         foreach (var bucket in _pathBuckets)

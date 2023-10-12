@@ -9,7 +9,7 @@ public class SessionOptions
     public IIdentitySigner Signer { get; private set; }
     public IIdentityVerifier Verifier { get; private set; }
     public ISessionKeys SessionKeys { get; private set; }
-    public int CacheSize { get; private set; } = 1000;
+    public int SessionCacheSize { get; private set; } = 1000;
 
     public static SessionOptions Default 
     {
@@ -47,7 +47,7 @@ public class SessionOptions
 
     public SessionOptions SetCacheSize(int cacheSize)
     {
-        CacheSize = cacheSize;
+        SessionCacheSize = cacheSize;
         return this;
     }
 }

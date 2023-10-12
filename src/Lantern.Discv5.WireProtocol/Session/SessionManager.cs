@@ -9,7 +9,7 @@ public class SessionManager(SessionOptions options, IAesCrypto aesCrypto, ISessi
 {
     private readonly ISessionKeys _sessionKeys = options.SessionKeys;
     
-    private readonly LruCache<SessionCacheKey, ISessionMain> _sessions = new(options.CacheSize);
+    private readonly LruCache<SessionCacheKey, ISessionMain> _sessions = new(options.SessionCacheSize);
 
     public int TotalSessionCount  => _sessions.Count;
 
