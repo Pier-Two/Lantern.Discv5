@@ -17,9 +17,27 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
     
     public event Action<NodeTableEntry> NodeRemovedFromCache = delegate { };
 
-    public IEnumerable<NodeTableEntry> Nodes => _nodes;
+    public IEnumerable<NodeTableEntry> Nodes 
+    {
+        get 
+        {
+            lock (_lock)
+            {
+                return _nodes.ToArray();
+            }
+        }
+    }
     
-    public IEnumerable<NodeTableEntry> ReplacementCache => _replacementCache;
+    public IEnumerable<NodeTableEntry> ReplacementCache 
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _replacementCache.ToArray();
+            }
+        }
+    }
     
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
