@@ -14,13 +14,14 @@ public static class ByteArrayUtils
     public static byte[] Concatenate(params ReadOnlyMemory<byte>[] byteArrays)
     {
         var totalLength = byteArrays.Sum(b => b.Length);
-        using var stream = new MemoryStream(totalLength);
+        var result = new byte[totalLength];
+        var offset = 0;
         foreach (var byteArray in byteArrays)
         {
-            stream.Write(byteArray.Span);
+            byteArray.Span.CopyTo(result.AsSpan(offset));
+            offset += byteArray.Length;
         }
-
-        return stream.ToArray();
+        return result;
     }
 
     /// <summary>
