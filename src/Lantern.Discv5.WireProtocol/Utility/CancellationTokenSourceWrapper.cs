@@ -19,10 +19,19 @@ public class CancellationTokenSourceWrapper : ICancellationTokenSourceWrapper, I
         return _cts.IsCancellationRequested;
     }
     
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Dispose managed resources.
+            _cts.Dispose();
+        }
+    }
+
     public void Dispose()
     {
-        _cts.Dispose();
-        
+        // Dispose of managed resources.
+        Dispose(true);
         // Suppress finalization.
         GC.SuppressFinalize(this);
     }
