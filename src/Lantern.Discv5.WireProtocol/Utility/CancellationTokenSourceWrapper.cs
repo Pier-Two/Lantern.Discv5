@@ -1,6 +1,6 @@
 namespace Lantern.Discv5.WireProtocol.Utility;
 
-public class CancellationTokenSourceWrapper : ICancellationTokenSourceWrapper
+public class CancellationTokenSourceWrapper : ICancellationTokenSourceWrapper, IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
 
@@ -17,5 +17,22 @@ public class CancellationTokenSourceWrapper : ICancellationTokenSourceWrapper
     public bool IsCancellationRequested()
     {
         return _cts.IsCancellationRequested;
+    }
+    
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Dispose managed resources.
+            _cts.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        // Dispose of managed resources.
+        Dispose(true);
+        // Suppress finalization.
+        GC.SuppressFinalize(this);
     }
 }
