@@ -18,12 +18,11 @@ public class Discv5Builder
     private SessionOptions _sessionOptions = SessionOptions.Default;
     private IEnrEntryRegistry _entryRegistry = EnrEntryRegistry.Default;
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
-    private TableOptions _tableOptions;
+    private TableOptions? _tableOptions;
     private string[] _bootstrapEnrs;
-    private EnrBuilder _enrBuilder;
-    private Enr.Enr _enr;
-    private ITalkReqAndRespHandler _talkResponder;
-        
+    private EnrBuilder? _enrBuilder;
+    private ITalkReqAndRespHandler? _talkResponder;
+    
     public Discv5Builder WithConnectionOptions(ConnectionOptions options)
     {
         _connectionOptions = options ?? throw new ArgumentNullException(nameof(options));
@@ -76,20 +75,31 @@ public class Discv5Builder
     {
         _tableOptions ??= GetDefaultTableOptions();
         _enrBuilder ??= GetDefaultEnrBuilder("v4");
-
-        var services = ServiceConfiguration.ConfigureServices(
-            _loggerFactory, 
-            _connectionOptions, 
-            _sessionOptions, 
-            _entryRegistry,
-            _enrBuilder.Build(), 
-            _tableOptions, 
-            _talkResponder
-        );
-
-        var serviceProvider = services.BuildServiceProvider();
         
-        return serviceProvider.GetRequiredService<Discv5Protocol>();
+        return ServiceConfiguration.ConfigureServices(
+            _loggerFactory,
+            _connectionOptions,
+            _sessionOptions,
+            _entryRegistry,
+            _enrBuilder.Build(),
+            _tableOptions,
+            _talkResponder
+        )
+            .BuildServiceProvider()
+            .GetRequiredService<Discv5Protocol>();
+    }
+        
+    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
+    {
+        return new EnrBuilder()
+            .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
+    }
+    
+    private TableOptions GetDefaultTableOptions()
+    {
+        return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
     }
     
     public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
@@ -113,18 +123,5 @@ public class Discv5Builder
         }
 
         return builder.Build();
-    }
-        
-    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
-    {
-        return new EnrBuilder()
-            .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
-    }
-    
-    private TableOptions GetDefaultTableOptions()
-    {
-        return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
     }
 }
