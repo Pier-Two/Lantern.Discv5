@@ -75,7 +75,7 @@ public class Discv5Builder
     public Discv5Protocol Build()
     {
         _tableOptions ??= GetDefaultTableOptions();
-        _enrBuilder ??= GetDefaultEnrBuilder();
+        _enrBuilder ??= GetDefaultEnrBuilder("v4");
 
         var services = ServiceConfiguration.ConfigureServices(
             _loggerFactory, 
@@ -115,11 +115,11 @@ public class Discv5Builder
         return builder.Build();
     }
         
-    private EnrBuilder GetDefaultEnrBuilder()
+    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
     {
         return new EnrBuilder()
             .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
     }
     
