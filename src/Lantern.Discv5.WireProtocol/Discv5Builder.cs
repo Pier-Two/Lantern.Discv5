@@ -88,7 +88,14 @@ public class Discv5Builder
             .BuildServiceProvider()
             .GetRequiredService<Discv5Protocol>();
     }
-        
+    
+    public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
+    {
+        return new Discv5Builder()
+            .WithBootstrapEnrs(bootstrapEnrs)
+            .Build();
+    }
+    
     private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
     {
         return new EnrBuilder()
@@ -100,28 +107,5 @@ public class Discv5Builder
     private TableOptions GetDefaultTableOptions()
     {
         return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
-    }
-    
-    public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
-    {
-        return new Discv5Builder()
-            .WithBootstrapEnrs(bootstrapEnrs)
-            .Build();
-    }
-        
-    public static Enr.Enr CreateNewRecord(ConnectionOptions options, IIdentityVerifier verifier, IIdentitySigner signer)
-    {
-        var builder = new EnrBuilder()
-            .WithIdentityScheme(verifier, signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey));
-
-        if (options.IpAddress != null)
-        {
-            builder.WithEntry(EnrEntryKey.Ip, new EntryIp(options.IpAddress)) 
-                .WithEntry(EnrEntryKey.Udp, new EntryUdp(options.Port));
-        }
-
-        return builder.Build();
     }
 }
