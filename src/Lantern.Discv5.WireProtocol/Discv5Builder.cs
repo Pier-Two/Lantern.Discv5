@@ -4,7 +4,6 @@ using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
-using Lantern.Discv5.WireProtocol.Services;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,19 +87,6 @@ public class Discv5Builder
             .BuildServiceProvider()
             .GetRequiredService<Discv5Protocol>();
     }
-        
-    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
-    {
-        return new EnrBuilder()
-            .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
-    }
-    
-    private TableOptions GetDefaultTableOptions()
-    {
-        return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
-    }
     
     public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
     {
@@ -123,5 +109,18 @@ public class Discv5Builder
         }
 
         return builder.Build();
+    }
+    
+    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
+    {
+        return new EnrBuilder()
+            .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
+    }
+    
+    private TableOptions GetDefaultTableOptions()
+    {
+        return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
     }
 }
