@@ -4,7 +4,6 @@ using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
-using Lantern.Discv5.WireProtocol.Services;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,7 +75,7 @@ public class Discv5Builder
         _tableOptions ??= GetDefaultTableOptions();
         _enrBuilder ??= GetDefaultEnrBuilder("v4");
         
-        return ServiceConfiguration.ConfigureServices(
+        return Discv5ServiceConfiguration.ConfigureServices(
             _loggerFactory,
             _connectionOptions,
             _sessionOptions,
@@ -94,6 +93,22 @@ public class Discv5Builder
         return new Discv5Builder()
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();
+    }
+        
+    public static Enr.Enr CreateNewRecord(ConnectionOptions options, IIdentityVerifier verifier, IIdentitySigner signer)
+    {
+        var builder = new EnrBuilder()
+            .WithIdentityScheme(verifier, signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey));
+
+        if (options.IpAddress != null)
+        {
+            builder.WithEntry(EnrEntryKey.Ip, new EntryIp(options.IpAddress)) 
+                .WithEntry(EnrEntryKey.Udp, new EntryUdp(options.Port));
+        }
+
+        return builder.Build();
     }
     
     private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
