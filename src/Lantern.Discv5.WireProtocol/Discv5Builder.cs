@@ -94,7 +94,7 @@ public class Discv5Builder
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();
     }
-        
+
     public static Enr.Enr CreateNewRecord(ConnectionOptions options, IIdentityVerifier verifier, IIdentitySigner signer)
     {
         var builder = new EnrBuilder()
@@ -110,7 +110,7 @@ public class Discv5Builder
 
         return builder.Build();
     }
-    
+
     private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
     {
         return new EnrBuilder()

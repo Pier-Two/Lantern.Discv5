@@ -6,7 +6,6 @@ using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
-using Lantern.Discv5.WireProtocol.Services;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -37,7 +36,7 @@ public class MessageRequesterTests
         var loggerFactory = LoggingOptions.Default; 
         var enrEntryRegistry = new EnrEntryRegistry();
         var serviceProvider =
-            ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
+            Discv5ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
         
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();
