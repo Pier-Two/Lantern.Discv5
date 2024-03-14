@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Open.Nat" Version="2.1.0" />
+      <PackageReference Include="Open.Nat"/>
     </ItemGroup>
 
 </Project>

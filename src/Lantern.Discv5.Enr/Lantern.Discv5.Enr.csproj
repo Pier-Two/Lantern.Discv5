@@ -7,11 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Keccak256" Version="1.0.0" />
-        <PackageReference Include="Multiformats.Base" Version="2.0.2" />
-        <PackageReference Include="Multiformats.Hash" Version="1.5.0" />
-        <PackageReference Include="NBitcoin.Secp256k1" Version="3.1.0" />
-        <PackageReference Include="Open.Nat" Version="2.1.0" />
+        <PackageReference Include="Keccak256"/>
+        <PackageReference Include="Multiformats.Base"/>
+        <PackageReference Include="Multiformats.Hash"/>
+        <PackageReference Include="NBitcoin.Secp256k1"/>
+        <PackageReference Include="Open.Nat"/>
     </ItemGroup>
 
     <ItemGroup>
