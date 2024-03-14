@@ -75,7 +75,7 @@ public class Discv5Builder
         _tableOptions ??= GetDefaultTableOptions();
         _enrBuilder ??= GetDefaultEnrBuilder("v4");
         
-        return ServiceConfiguration.ConfigureServices(
+        return Discv5ServiceConfiguration.ConfigureServices(
             _loggerFactory,
             _connectionOptions,
             _sessionOptions,
