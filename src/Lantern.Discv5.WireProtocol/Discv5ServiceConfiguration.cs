@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public static class ServiceConfiguration
+public static class Discv5ServiceConfiguration
 {
     public static IServiceCollection ConfigureServices(
         ILoggerFactory loggerFactory,
