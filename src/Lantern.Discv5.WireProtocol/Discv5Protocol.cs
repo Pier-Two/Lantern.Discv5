@@ -35,7 +35,7 @@ public class Discv5Protocol(IConnectionManager connectionManager,
     {
         connectionManager.StartConnectionManagerAsync();
         requestManager.StartRequestManager();
-        
+
         await tableManager.StartTableManagerAsync();
     }
     

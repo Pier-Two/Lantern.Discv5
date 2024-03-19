@@ -1,8 +1,9 @@
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Engines;
-using Org.BouncyCastle.Crypto.Modes;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Security;
+extern alias BouncyCastleCryptography;
+using BouncyCastleCryptography::Org.BouncyCastle.Crypto;
+using BouncyCastleCryptography::Org.BouncyCastle.Crypto.Parameters;
+using BouncyCastleCryptography::Org.BouncyCastle.Security;
+using BouncyCastleCryptography::Org.BouncyCastle.Crypto.Modes;
+using BouncyCastleCryptography::Org.BouncyCastle.Crypto.Engines;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
