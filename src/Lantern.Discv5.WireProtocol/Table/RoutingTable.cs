@@ -73,7 +73,17 @@ public class RoutingTable : IRoutingTable
     public void UpdateFromEnr(IEnr enr)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
-        var nodeEntry = GetNodeEntry(nodeId) ?? new NodeTableEntry(enr, _identityManager.Verifier);
+        var nodeEntry = GetNodeEntry(nodeId);
+
+        if (nodeEntry != null)
+        {
+            nodeEntry.Record = enr;
+        }
+        else 
+        {
+            nodeEntry = new NodeTableEntry(enr, _identityManager.Verifier);
+        }
+        
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
 
         _buckets[bucketIndex].Update(nodeEntry);
