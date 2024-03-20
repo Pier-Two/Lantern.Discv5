@@ -7,7 +7,7 @@ public class NodeTableEntry(IEnr record, IIdentityVerifier verifier)
 {
     public byte[] Id { get; } = verifier.GetNodeIdFromRecord(record);
 
-    public IEnr Record { get; } = record;
+    public IEnr Record { get; set; } = record;
 
     public NodeStatus Status { get; set; } = NodeStatus.None;
 
