@@ -25,6 +25,8 @@ public static class Discv5ServiceConfiguration
     {
         var services = new ServiceCollection();
 
+        ValidateMandatoryConfigurations(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry, enr, tableOptions);
+        
         AddLoggerServices(services, loggerFactory);
         AddConnectionServices(services, connectionOptions, sessionOptions, tableOptions, talkResponder);
         AddIdentityServices(services, enrEntryRegistry, enr);
@@ -35,6 +37,20 @@ public static class Discv5ServiceConfiguration
         AddUtilityServices(services);
 
         return services;
+    }
+    
+    private static void ValidateMandatoryConfigurations(
+        ILoggerFactory loggerFactory,
+        ConnectionOptions connectionOptions,
+        SessionOptions sessionOptions,
+        IEnrEntryRegistry enrEntryRegistry,
+        IEnr enr,
+        TableOptions tableOptions)
+    {
+        if (loggerFactory == null || connectionOptions == null || sessionOptions == null || enrEntryRegistry == null || enr == null || tableOptions == null)
+        {
+            throw new InvalidOperationException("Missing mandatory configurations.");
+        }
     }
 
     private static void AddLoggerServices(IServiceCollection services, ILoggerFactory loggerFactory)
