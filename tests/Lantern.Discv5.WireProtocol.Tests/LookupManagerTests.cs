@@ -28,7 +28,7 @@ public class LookupManagerTests
     {
         mockRoutingTable = new Mock<IRoutingTable>();
         mockPacketManager = new Mock<IPacketManager>();
-        connectionOptions = ConnectionOptions.Default;
+        connectionOptions = new ConnectionOptions();
         tableOptions = TableOptions.Default;
         mockRequestManager = new Mock<IRequestManager>();
         mockLoggerFactory = new Mock<ILoggerFactory>(); 

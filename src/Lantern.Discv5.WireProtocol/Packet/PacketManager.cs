@@ -99,8 +99,8 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(message,destNodeId, maskingIv, sessionMain.MessageCount);
-        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, message);
-        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
+        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Header, maskingIv, message);
+        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 
         await udpConnection.SendAsync(finalPacket, destEndPoint);
         _logger.LogInformation("Sent ORDINARY packet to {Destination}", destEndPoint);
@@ -109,7 +109,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)
     {
         var constructedOrdinaryPacket = packetBuilder.BuildRandomOrdinaryPacket(destNodeId);
-        await udpConnection.SendAsync(constructedOrdinaryPacket.Item1, destEndPoint);
+        await udpConnection.SendAsync(constructedOrdinaryPacket.Packet, destEndPoint);
         _logger.LogInformation("Sent RANDOM packet to initiate handshake with {Destination}", destEndPoint);
     }
 }

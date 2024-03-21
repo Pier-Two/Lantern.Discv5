@@ -1,19 +1,20 @@
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
+using Lantern.Discv5.WireProtocol.Packet.Types;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
 public interface IPacketBuilder
 {
-    Tuple<byte[], StaticHeader> BuildRandomOrdinaryPacket(byte[] destNodeId);
+    PacketResult BuildRandomOrdinaryPacket(byte[] destNodeId);
 
-    Tuple<byte[], StaticHeader> BuildOrdinaryPacket(byte[] message, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
+    PacketResult BuildOrdinaryPacket(byte[] message, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
 
-    Tuple<byte[], StaticHeader> BuildWhoAreYouPacketWithoutEnr(byte[] destNodeId, byte[] packetNonce,
+    PacketResult BuildWhoAreYouPacketWithoutEnr(byte[] destNodeId, byte[] packetNonce,
         byte[] maskingIv);
 
-    Tuple<byte[], StaticHeader> BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce,
+    PacketResult BuildWhoAreYouPacket(byte[] destNodeId, byte[] packetNonce,
         IEnr dest, byte[] maskingIv);
 
-    Tuple<byte[], StaticHeader> BuildHandshakePacket(byte[] idSignature, byte[] ephemeralPubKey, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
+    PacketResult BuildHandshakePacket(byte[] idSignature, byte[] ephemeralPubKey, byte[] destNodeId, byte[] maskingIv, byte[] messageCount);
 }

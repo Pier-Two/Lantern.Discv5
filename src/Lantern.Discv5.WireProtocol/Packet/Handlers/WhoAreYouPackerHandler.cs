@@ -72,7 +72,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
         
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var handshakePacket = packetBuilder.BuildHandshakePacket(idSignature, session.EphemeralPublicKey, destNodeId, maskingIv, session.MessageCount);
-        var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Item2, identityManager.Record.NodeId, message, maskingIv);
+        var encryptedMessage = session.EncryptMessageWithNewKeys(nodeEntry.Record, handshakePacket.Header, identityManager.Record.NodeId, message, maskingIv);
         
         if(encryptedMessage == null)
         {
@@ -80,7 +80,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
             return;
         }
         
-        var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Item1, encryptedMessage);
+        var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Packet, encryptedMessage);
         
         await udpConnection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);
         _logger.LogInformation("Sent HANDSHAKE packet to {RemoteEndPoint}", returnedResult.RemoteEndPoint);

@@ -11,7 +11,7 @@ public class ConnectionOptionsTests
     [Test]
     public void Test_ConnectionOptions_CreateDefault()
     {
-        _connectionOptions = ConnectionOptions.Default;
+        _connectionOptions = new ConnectionOptions();
 
         Assert.NotNull(_connectionOptions);
         Assert.AreEqual(9000, _connectionOptions.Port);
@@ -22,7 +22,7 @@ public class ConnectionOptionsTests
     }
     
     [Test]
-    public void Test_ConnectionOptions_Builder()
+    public void Test_ConnectionOptions_DirectAssignment()
     {
         var ipAddress = IPAddress.Any;
         var port = 9000;
@@ -31,14 +31,16 @@ public class ConnectionOptionsTests
         var checkPendingRequestsDelayMs = 500;
         var removeCompletedRequestsDelayMs = 1000;
 
-        _connectionOptions = new ConnectionOptions()
-            .SetIpAddress(ipAddress)
-            .SetPort(port)
-            .SetReceiveTimeoutMs(receiveTimeoutMs)
-            .SetRequestTimeoutMs(requestTimeoutMs)
-            .SetCheckPendingRequestsDelayMs(checkPendingRequestsDelayMs)
-            .SetRemoveCompletedRequestsDelayMs(removeCompletedRequestsDelayMs);
-        
+        _connectionOptions = new ConnectionOptions
+        {
+            IpAddress = ipAddress,
+            Port = port,
+            ReceiveTimeoutMs = receiveTimeoutMs,
+            RequestTimeoutMs = requestTimeoutMs,
+            CheckPendingRequestsDelayMs = checkPendingRequestsDelayMs,
+            RemoveCompletedRequestsDelayMs = removeCompletedRequestsDelayMs
+        };
+
         Assert.NotNull(_connectionOptions);
         Assert.AreEqual(ipAddress, _connectionOptions.IpAddress);
         Assert.AreEqual(port, _connectionOptions.Port);

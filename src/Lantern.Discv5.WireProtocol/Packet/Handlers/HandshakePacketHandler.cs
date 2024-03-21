@@ -124,8 +124,8 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         {
             var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
             var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(response, senderNodeId, maskingIv, sessionMain.MessageCount);
-            var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
-            responsesList.Add(ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage));
+            var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Header, maskingIv, response);
+            responsesList.Add(ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage));
         }
 
         return responsesList.ToArray();

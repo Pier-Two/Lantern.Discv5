@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageVersion Include="Keccak256" Version="1.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageVersion Include="Multiformats.Base" Version="2.0.1" />
     <PackageVersion Include="Multiformats.Hash" Version="1.3.0" />
     <PackageVersion Include="NBitcoin.Secp256k1" Version="3.1.4" />

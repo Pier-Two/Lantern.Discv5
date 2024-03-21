@@ -62,7 +62,7 @@ public class OrdinaryPacketHandlerTests
         // Arrange
         mockPacketBuilder
             .Setup(x => x.BuildWhoAreYouPacketWithoutEnr(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
+            .Returns(new PacketResult(new byte[32], staticHeader));
         mockPacketProcessor
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]));
@@ -98,7 +98,7 @@ public class OrdinaryPacketHandlerTests
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
-        var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
+        var packetTuple = new PacketResult(new byte[32], staticHeader);
         
         // Arrange
         mockPacketProcessor
@@ -144,7 +144,7 @@ public class OrdinaryPacketHandlerTests
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
-        var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
+        var packetTuple = new PacketResult(new byte[32], staticHeader);
         
         // Arrange
         mockPacketProcessor
@@ -195,7 +195,7 @@ public class OrdinaryPacketHandlerTests
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
-        var packetTuple = new Tuple<byte[], StaticHeader>(new byte[32], staticHeader);
+        var packetTuple = new PacketResult(new byte[32], staticHeader);
         var data = new List<byte[]> { new byte[32] }.ToArray();
 
         // Arrange
