@@ -30,13 +30,13 @@ public class MessageRequesterTests
     [SetUp]
     public void Setup()
     {
-        var connectionOptions = ConnectionOptions.Default;
+        var connectionOptions = new ConnectionOptions();
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default; 
         var enrEntryRegistry = new EnrEntryRegistry();
         var serviceProvider =
-            Discv5ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
+            Discv5ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
         
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();

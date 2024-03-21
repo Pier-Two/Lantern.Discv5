@@ -186,7 +186,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns((PendingRequest?)null);
         mockPacketBuilder
             .Setup(x => x.BuildRandomOrdinaryPacket(It.IsAny<byte[]>()))
-            .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
+            .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
@@ -241,7 +241,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
         mockPacketBuilder
             .Setup(x => x.BuildHandshakePacket(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
+            .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
@@ -371,7 +371,7 @@ public class WhoAreYouPacketHandlerTests
             .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
         mockPacketBuilder
             .Setup(x => x.BuildHandshakePacket(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .Returns(new Tuple<byte[], StaticHeader>(new byte[32], staticHeader));
+            .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
             .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));

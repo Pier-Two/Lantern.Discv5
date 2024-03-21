@@ -30,7 +30,7 @@ public class RequestManagerTests
         _mockLoggerFactory = new Mock<ILoggerFactory>();
         _mockLogger = new Mock<ILogger<RequestManager>>();
         _testTableOptions = TableOptions.Default;
-        _testConnectionOptions = ConnectionOptions.Default;
+        _testConnectionOptions = new ConnectionOptions();
         _mockLoggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(_mockLogger.Object);
 

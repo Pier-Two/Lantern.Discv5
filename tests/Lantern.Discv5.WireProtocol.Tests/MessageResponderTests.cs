@@ -23,12 +23,12 @@ public class MessageResponderTests
     [OneTimeSetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions().SetPort(2030);
+        var connectionOptions = new ConnectionOptions { Port = 2030 };
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enrRegistry = new EnrEntryRegistry();
-        var serviceProvider = Discv5ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions,enrRegistry,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions, new TestTalkReqAndRespHandler()).BuildServiceProvider();
+        var serviceProvider = Discv5ServiceConfiguration.ConfigureServices(loggerFactory, connectionOptions, sessionOptions,enrRegistry,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions, new TestTalkReqAndRespHandler()).BuildServiceProvider();
         
         _messageResponder = serviceProvider.GetRequiredService<IMessageResponder>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();

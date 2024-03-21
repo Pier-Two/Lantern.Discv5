@@ -79,9 +79,9 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         var whoAreYouPacket = packetBuilder.BuildWhoAreYouPacketWithoutEnr(staticHeader.AuthData, staticHeader.Nonce, maskingIv);
         var session = sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
 
-        session.SetChallengeData(maskingIv, whoAreYouPacket.Item2.GetHeader()); 
+        session.SetChallengeData(maskingIv, whoAreYouPacket.Header.GetHeader()); 
         
-        await connection.SendAsync(whoAreYouPacket.Item1, destEndPoint);
+        await connection.SendAsync(whoAreYouPacket.Packet, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
 
@@ -91,9 +91,9 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         var constructedWhoAreYouPacket = packetBuilder.BuildWhoAreYouPacket(staticHeader.AuthData, staticHeader.Nonce, destNode, maskingIv);
         var session = sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
 
-        session.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Item2.GetHeader());
+        session.SetChallengeData(maskingIv, constructedWhoAreYouPacket.Header.GetHeader());
 
-        await connection.SendAsync(constructedWhoAreYouPacket.Item1, destEndPoint);
+        await connection.SendAsync(constructedWhoAreYouPacket.Packet, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
     
@@ -101,8 +101,8 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
         var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(response,staticHeader.AuthData, maskingIv, sessionMain.MessageCount);
-        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Item2, maskingIv, response);
-        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Item1, encryptedMessage);
+        var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Header, maskingIv, response);
+        var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 
         await connection.SendAsync(finalPacket, destEndPoint);
         _logger.LogInformation("Sent response to ORDINARY packet to {RemoteEndPoint}", destEndPoint);

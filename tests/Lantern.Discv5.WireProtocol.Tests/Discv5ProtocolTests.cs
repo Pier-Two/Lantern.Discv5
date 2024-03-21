@@ -18,10 +18,12 @@ public class Discv5ProtocolTests
             "enr:-Le4QPUXJS2BTORXxyx2Ia-9ae4YqA_JWX3ssj4E_J-3z1A-HmFGrU8BpvpqhNabayXeOZ2Nq_sbeDgtzMJpLLnXFgAChGV0aDKQtTA_KgEAAAAAIgEAAAAAAIJpZIJ2NIJpcISsaa0Zg2lwNpAkAIkHAAAAAPA8kv_-awoTiXNlY3AyNTZrMaEDHAD2JKYevx89W0CcFJFiskdcEzkH_Wdv9iW42qLK79ODdWRwgiMohHVkcDaCI4I"
         };
         
-        var connectionOptions = new ConnectionOptions()
-            .SetPort(new Random().Next(1, 65535));
+        var connectionOptions = new ConnectionOptions
+        {
+            Port = new Random().Next(1, 65535)
+        };
         
-        _discv5Protocol = new Discv5Builder()
+        _discv5Protocol = new Discv5ProtocolBuilder()
             .WithConnectionOptions(connectionOptions)
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();

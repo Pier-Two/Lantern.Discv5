@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public class Discv5Builder
+public class Discv5ProtocolBuilder
 {
-    private ConnectionOptions _connectionOptions = ConnectionOptions.Default;
+    private ConnectionOptions _connectionOptions;
     private SessionOptions _sessionOptions = SessionOptions.Default;
     private IEnrEntryRegistry _entryRegistry = EnrEntryRegistry.Default;
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
@@ -21,50 +21,51 @@ public class Discv5Builder
     private string[] _bootstrapEnrs;
     private EnrBuilder? _enrBuilder;
     private ITalkReqAndRespHandler? _talkResponder;
+    private IServiceProvider _serviceProvider;
     
-    public Discv5Builder WithConnectionOptions(ConnectionOptions options)
+    public Discv5ProtocolBuilder WithConnectionOptions(ConnectionOptions options)
     {
         _connectionOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
     }
         
-    public Discv5Builder WithSessionOptions(SessionOptions options)
+    public Discv5ProtocolBuilder WithSessionOptions(SessionOptions options)
     {
         _sessionOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
     }
         
-    public Discv5Builder WithTableOptions(TableOptions options)
+    public Discv5ProtocolBuilder WithTableOptions(TableOptions options)
     {
         _tableOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
     }
         
-    public Discv5Builder WithBootstrapEnrs(string[] bootstrapEnrs)
+    public Discv5ProtocolBuilder WithBootstrapEnrs(string[] bootstrapEnrs)
     {
         _bootstrapEnrs = bootstrapEnrs ?? throw new ArgumentNullException(nameof(bootstrapEnrs));
         return this;
     }
 
-    public Discv5Builder WithEnrBuilder(EnrBuilder enrBuilder)
+    public Discv5ProtocolBuilder WithEnrBuilder(EnrBuilder enrBuilder)
     {
         _enrBuilder = enrBuilder ?? throw new ArgumentNullException(nameof(enrBuilder));
         return this;
     }
         
-    public Discv5Builder WithEnrEntryRegistry(IEnrEntryRegistry enrEntryRegistry)
+    public Discv5ProtocolBuilder WithEnrEntryRegistry(IEnrEntryRegistry enrEntryRegistry)
     {
         _entryRegistry = enrEntryRegistry ?? throw new ArgumentNullException(nameof(enrEntryRegistry));
         return this;
     }
         
-    public Discv5Builder WithTalkResponder(ITalkReqAndRespHandler talkResponder)
+    public Discv5ProtocolBuilder WithTalkResponder(ITalkReqAndRespHandler talkResponder)
     {
         _talkResponder = talkResponder ?? throw new ArgumentNullException(nameof(talkResponder));
         return this;
     }
 
-    public Discv5Builder WithLoggerFactory(ILoggerFactory loggerFactory)
+    public Discv5ProtocolBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         return this;
@@ -90,7 +91,7 @@ public class Discv5Builder
     
     public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
     {
-        return new Discv5Builder()
+        return new Discv5ProtocolBuilder()
             .WithBootstrapEnrs(bootstrapEnrs)
             .Build();
     }

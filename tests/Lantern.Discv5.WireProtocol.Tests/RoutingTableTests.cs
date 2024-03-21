@@ -25,7 +25,7 @@ public class RoutingTableTests
     public void SetUp()
     {
         _identityManager = new IdentityManager(SessionOptions.Default,
-            Discv5Builder.CreateNewRecord(ConnectionOptions.Default, SessionOptions.Default.Verifier,
+            Discv5ProtocolBuilder.CreateNewRecord(new ConnectionOptions(), SessionOptions.Default.Verifier,
                 SessionOptions.Default.Signer), LoggingOptions.Default);
         mockEnrFactory = new Mock<IEnrFactory>();
         mockLoggerFactory = new Mock<ILoggerFactory>();

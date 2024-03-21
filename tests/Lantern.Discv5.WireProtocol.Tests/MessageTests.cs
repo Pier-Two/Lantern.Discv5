@@ -22,13 +22,13 @@ public class MessageTests
     [SetUp]
     public void Setup()
     {
-        var connectionOptions = ConnectionOptions.Default;
+        var connectionOptions = new ConnectionOptions();
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enrEntryRegistry = new EnrEntryRegistry();
         
         _enrFactory = new EnrFactory(enrEntryRegistry);
-        _identityManager = new IdentityManager(sessionOptions,Discv5Builder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
         _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
     
