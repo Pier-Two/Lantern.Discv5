@@ -1,6 +1,7 @@
 using System.Net;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
+using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 
@@ -9,18 +10,18 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class Discv5ProtocolBuilderTests
 {
-   [Test]
-    public void WithConnectionOptions_NullInput_ThrowsArgumentNullException()
-    {
-        var builder = new Discv5ProtocolBuilder();
-        Assert.Throws<ArgumentNullException>(() => builder.WithConnectionOptions(null));
-    }
-
     [Test]
-    public void WithEnrBuilder_NullInput_ThrowsArgumentNullException()
-    {
+    public void BuilderMethods_NullInputs_ThrowArgumentNullException() {
         var builder = new Discv5ProtocolBuilder();
-        Assert.Throws<ArgumentNullException>(() => builder.WithEnrBuilder(null));
+
+        Assert.Throws<ArgumentNullException>(() => builder.WithConnectionOptions(null), "WithConnectionOptions should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithSessionOptions(null), "WithSessionOptions should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithTableOptions(null), "WithTableOptions should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithBootstrapEnrs(null), "WithBootstrapEnrs should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithEnrBuilder(null), "WithEnrBuilder should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithEnrEntryRegistry(null), "WithEnrEntryRegistry should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithTalkResponder(null), "WithTalkResponder should throw an ArgumentNullException when called with null.");
+        Assert.Throws<ArgumentNullException>(() => builder.WithLoggerFactory(null), "WithLoggerFactory should throw an ArgumentNullException when called with null.");
     }
 
     [Test]
@@ -33,6 +34,16 @@ public class Discv5ProtocolBuilderTests
         Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
+    [Test]
+    public void WithTableOptions_ChainsCorrectly_ReturnsBuilderInstance()
+    {
+        var builder = new Discv5ProtocolBuilder();
+        var tableOptions = new TableOptions();
+        var returnedBuilder = builder.WithTableOptions(tableOptions);
+        
+        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+    }
+    
     [Test]
     public void Build_WithConfigurations_ReturnsConfiguredInstance()
     {

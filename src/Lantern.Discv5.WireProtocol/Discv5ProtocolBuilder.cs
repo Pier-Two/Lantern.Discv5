@@ -8,6 +8,7 @@ using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Lantern.Discv5.WireProtocol;
 
@@ -76,15 +77,17 @@ public class Discv5ProtocolBuilder
         _tableOptions ??= GetDefaultTableOptions();
         _enrBuilder ??= GetDefaultEnrBuilder("v4");
         
+        var connectionOptionsWrapper = Options.Create(_connectionOptions);
+
         return Discv5ServiceConfiguration.ConfigureServices(
-            _loggerFactory,
-            _connectionOptions,
-            _sessionOptions,
-            _entryRegistry,
-            _enrBuilder.Build(),
-            _tableOptions,
-            _talkResponder
-        )
+                _loggerFactory,
+                connectionOptionsWrapper, 
+                _sessionOptions,
+                _entryRegistry,
+                _enrBuilder.Build(),
+                _tableOptions,
+                _talkResponder
+            )
             .BuildServiceProvider()
             .GetRequiredService<Discv5Protocol>();
     }

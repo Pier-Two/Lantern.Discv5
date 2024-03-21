@@ -9,6 +9,7 @@ using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Lantern.Discv5.WireProtocol;
 
@@ -16,7 +17,7 @@ public static class Discv5ServiceConfiguration
 {
     public static IServiceCollection ConfigureServices(
         ILoggerFactory loggerFactory,
-        ConnectionOptions connectionOptions,
+        IOptions<ConnectionOptions> connectionOptions,
         SessionOptions sessionOptions,
         IEnrEntryRegistry enrEntryRegistry,
         IEnr enr,
@@ -24,11 +25,12 @@ public static class Discv5ServiceConfiguration
         ITalkReqAndRespHandler? talkResponder = null)
     {
         var services = new ServiceCollection();
-
-        ValidateMandatoryConfigurations(loggerFactory, connectionOptions, sessionOptions, enrEntryRegistry, enr, tableOptions);
+        var connOpts = connectionOptions.Value;
+        
+        ValidateMandatoryConfigurations(loggerFactory, connOpts, sessionOptions, enrEntryRegistry, enr, tableOptions);
         
         AddLoggerServices(services, loggerFactory);
-        AddConnectionServices(services, connectionOptions, sessionOptions, tableOptions, talkResponder);
+        AddConnectionServices(services, connOpts, sessionOptions, tableOptions, talkResponder);
         AddIdentityServices(services, enrEntryRegistry, enr);
         AddTableServices(services);
         AddPacketServices(services);
