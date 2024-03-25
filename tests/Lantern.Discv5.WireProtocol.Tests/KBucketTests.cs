@@ -20,10 +20,15 @@ public class KBucketTests
     [SetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions();
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        _identityManager = new IdentityManager(sessionOptions, Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
+            .Build();
+        
+        _identityManager = new IdentityManager(sessionOptions, enr, loggerFactory);
     }
     
     [Test]

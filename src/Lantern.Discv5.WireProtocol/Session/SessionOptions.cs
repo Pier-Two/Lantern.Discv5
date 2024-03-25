@@ -6,10 +6,10 @@ namespace Lantern.Discv5.WireProtocol.Session;
 
 public class SessionOptions
 {
-    public IIdentitySigner Signer { get; private set; }
-    public IIdentityVerifier Verifier { get; private set; }
-    public ISessionKeys SessionKeys { get; private set; }
-    public int SessionCacheSize { get; private set; } = 1000;
+    public IIdentitySigner Signer { get; set; }
+    public IIdentityVerifier Verifier { get; set; }
+    public ISessionKeys SessionKeys { get; set; }
+    public int SessionCacheSize { get; set; } = 1000;
 
     public static SessionOptions Default 
     {
@@ -19,35 +19,13 @@ public class SessionOptions
             var signer = new IdentitySignerV4(privateKey);
             var verifier = new IdentityVerifierV4();
             var sessionKeys = new SessionKeys(privateKey);
-                
-            return new SessionOptions()
-                .SetSigner(signer)
-                .SetVerifier(verifier)
-                .SetSessionKeys(sessionKeys);
+
+            return new SessionOptions
+            {
+                Signer = signer,
+                Verifier = verifier,
+                SessionKeys = sessionKeys
+            };
         }
-    }
-        
-    public SessionOptions SetSigner(IIdentitySigner signer)
-    {
-        Signer = signer;
-        return this;
-    }
-
-    public SessionOptions SetVerifier(IIdentityVerifier verifier)
-    {
-        Verifier = verifier;
-        return this;
-    }
-
-    public SessionOptions SetSessionKeys(ISessionKeys sessionKeys)
-    {
-        SessionKeys = sessionKeys;
-        return this;
-    }
-
-    public SessionOptions SetCacheSize(int cacheSize)
-    {
-        SessionCacheSize = cacheSize;
-        return this;
     }
 }

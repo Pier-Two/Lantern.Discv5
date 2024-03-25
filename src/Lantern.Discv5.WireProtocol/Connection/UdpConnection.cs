@@ -14,7 +14,7 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
         IGracefulTaskRunner taskRunner)
     : IUdpConnection, IDisposable
 {
-    private readonly UdpClient _udpClient = new(new IPEndPoint(IPAddress.Any, options.Port));
+    private readonly UdpClient _udpClient = new(new IPEndPoint(options.IpAddress ?? IPAddress.Any, options.Port));
     
     private readonly ILogger<UdpConnection> _logger = loggerFactory.CreateLogger<UdpConnection>();
     

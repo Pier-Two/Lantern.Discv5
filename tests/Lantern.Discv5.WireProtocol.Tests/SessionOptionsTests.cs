@@ -28,12 +28,14 @@ public class SessionOptionsTests
         var signer = new IdentitySignerV4(privateKey);
         var verifier = new IdentityVerifierV4();
         var sessionKeys = new SessionKeys(privateKey);
-        
-        _sessionOptions = new SessionOptions()
-            .SetSigner(signer)
-            .SetVerifier(verifier)
-            .SetSessionKeys(sessionKeys)
-            .SetCacheSize(2000);
+
+        _sessionOptions = new SessionOptions
+        {
+            Signer = signer,
+            Verifier = verifier,
+            SessionKeys = sessionKeys,
+            SessionCacheSize = 2000
+        };
         
         Assert.NotNull(_sessionOptions);
         Assert.NotNull(_sessionOptions.Signer);

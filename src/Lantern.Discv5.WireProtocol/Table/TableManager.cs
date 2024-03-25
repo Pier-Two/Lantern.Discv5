@@ -54,6 +54,12 @@ public class TableManager(IPacketManager packetManager,
                 .Select(enr => enrFactory.CreateFromString(enr, identityManager.Verifier))
                 .ToArray();
 
+            if(bootstrapEnrs.Length == 0)
+            {
+                _logger.LogWarning("No bootstrap ENRs found");
+                return;
+            }
+            
             foreach (var bootstrapEnr in bootstrapEnrs)
             {
                 try
