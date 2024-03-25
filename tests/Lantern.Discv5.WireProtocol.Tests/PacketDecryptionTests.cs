@@ -1,4 +1,5 @@
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
@@ -29,13 +30,17 @@ public class PacketDecryptionTests
     [SetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions();
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enrEntryRegistry = new EnrEntryRegistry();
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
+            .Build();
         
         _enrFactory = new EnrFactory(enrEntryRegistry);
-        _identityManager = new IdentityManager(sessionOptions,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, enr, loggerFactory);
         _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
     

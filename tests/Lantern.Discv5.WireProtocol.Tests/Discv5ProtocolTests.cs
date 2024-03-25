@@ -1,6 +1,11 @@
+using System.Net;
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
+using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.WireProtocol.Tests;
@@ -8,6 +13,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class Discv5ProtocolTests
 {
     private Discv5Protocol _discv5Protocol = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     [SetUp]
     public void Setup()
@@ -22,11 +28,25 @@ public class Discv5ProtocolTests
         {
             Port = new Random().Next(1, 65535)
         };
+        var sessionOptions = SessionOptions.Default;
+        var tableOptions = new TableOptions(bootstrapEnrs);
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
+        var services = new ServiceCollection();
         
-        _discv5Protocol = new Discv5ProtocolBuilder()
-            .WithConnectionOptions(connectionOptions)
-            .WithBootstrapEnrs(bootstrapEnrs)
-            .Build();
+        services.AddDiscv5(builder =>
+        {
+            builder.WithConnectionOptions(connectionOptions)
+                   .WithTableOptions(tableOptions)
+                   .WithSessionOptions(sessionOptions)
+                   .WithEnrBuilder(enr)
+                   .Build();
+        });
+
+        _serviceProvider = services.BuildServiceProvider();
+        _discv5Protocol = _serviceProvider.GetRequiredService<Discv5Protocol>();
     }
     
     [Test]

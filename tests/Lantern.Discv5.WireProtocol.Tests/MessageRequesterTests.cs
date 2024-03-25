@@ -1,4 +1,5 @@
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
@@ -31,19 +32,32 @@ public class MessageRequesterTests
     [SetUp]
     public void Setup()
     {
-        var connectionOptions = new ConnectionOptions();
-        var optionsConnection = Options.Create(connectionOptions);
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
-        var loggerFactory = LoggingOptions.Default; 
+        var loggerFactory = LoggingOptions.Default;
         var enrEntryRegistry = new EnrEntryRegistry();
-        var serviceProvider =
-            Discv5ServiceConfiguration.ConfigureServices(loggerFactory, optionsConnection, sessionOptions, enrEntryRegistry,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions).BuildServiceProvider();
-        
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
+
+        var services = new ServiceCollection();
+        services.AddDiscv5(builder =>
+        {
+            builder.WithConnectionOptions(new ConnectionOptions())
+            .WithSessionOptions(sessionOptions)
+            .WithTableOptions(tableOptions)
+            .WithEnrEntryRegistry(enrEntryRegistry)
+            .WithEnrBuilder(enr)
+            .WithLoggerFactory(loggerFactory);
+        });
+
+        var serviceProvider = services.BuildServiceProvider();
+
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();
         _messageRequester = serviceProvider.GetRequiredService<IMessageRequester>();
-        
+
         mockIdentityManager = new Mock<IIdentityManager>();
         mockRequestManager = new Mock<IRequestManager>();
         mockLoggerFactory = new Mock<ILoggerFactory>();

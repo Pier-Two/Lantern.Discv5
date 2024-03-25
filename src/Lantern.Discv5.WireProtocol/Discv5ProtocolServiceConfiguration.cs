@@ -13,24 +13,31 @@ using Microsoft.Extensions.Options;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public static class Discv5ServiceConfiguration
+public static class Discv5ProtocolServiceConfiguration
 {
-    public static IServiceCollection ConfigureServices(
-        ILoggerFactory loggerFactory,
-        IOptions<ConnectionOptions> connectionOptions,
+    public static IServiceCollection AddDiscv5(
+        this IServiceCollection services,
+        Action<IDiscv5ProtocolBuilder> configure)
+    {
+        var builder = new Discv5ProtocolBuilder(services);
+        configure(builder);
+        builder.Build();
+        return services;
+    }
+
+    internal static IServiceCollection AddDiscv5(
+        this IServiceCollection services,
+        TableOptions tableOptions,
+        ConnectionOptions connectionOptions,
         SessionOptions sessionOptions,
         IEnrEntryRegistry enrEntryRegistry,
         IEnr enr,
-        TableOptions tableOptions,
+        ILoggerFactory loggerFactory,
         ITalkReqAndRespHandler? talkResponder = null)
     {
-        var services = new ServiceCollection();
-        var connOpts = connectionOptions.Value;
-        
-        ValidateMandatoryConfigurations(loggerFactory, connOpts, sessionOptions, enrEntryRegistry, enr, tableOptions);
-        
+        ValidateMandatoryConfigurations(tableOptions, connectionOptions, sessionOptions, enrEntryRegistry, enr, loggerFactory);
         AddLoggerServices(services, loggerFactory);
-        AddConnectionServices(services, connOpts, sessionOptions, tableOptions, talkResponder);
+        AddConnectionServices(services, connectionOptions, sessionOptions, tableOptions, talkResponder);
         AddIdentityServices(services, enrEntryRegistry, enr);
         AddTableServices(services);
         AddPacketServices(services);
@@ -42,12 +49,12 @@ public static class Discv5ServiceConfiguration
     }
     
     private static void ValidateMandatoryConfigurations(
-        ILoggerFactory loggerFactory,
+        TableOptions tableOptions,
         ConnectionOptions connectionOptions,
         SessionOptions sessionOptions,
         IEnrEntryRegistry enrEntryRegistry,
         IEnr enr,
-        TableOptions tableOptions)
+        ILoggerFactory loggerFactory)
     {
         if (loggerFactory == null || connectionOptions == null || sessionOptions == null || enrEntryRegistry == null || enr == null || tableOptions == null)
         {

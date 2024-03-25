@@ -1,6 +1,4 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.Enr.Entries;
-using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
@@ -8,123 +6,108 @@ using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public class Discv5ProtocolBuilder
+public class Discv5ProtocolBuilder : IDiscv5ProtocolBuilder
 {
+    private readonly IServiceCollection _services;
     private ConnectionOptions _connectionOptions;
     private SessionOptions _sessionOptions = SessionOptions.Default;
-    private IEnrEntryRegistry _entryRegistry = EnrEntryRegistry.Default;
+    private IEnrEntryRegistry _entryRegistry = new EnrEntryRegistry();
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
-    private TableOptions? _tableOptions;
-    private string[] _bootstrapEnrs;
-    private EnrBuilder? _enrBuilder;
+    private TableOptions _tableOptions;
+    private EnrBuilder _enrBuilder;
     private ITalkReqAndRespHandler? _talkResponder;
-    private IServiceProvider _serviceProvider;
-    
-    public Discv5ProtocolBuilder WithConnectionOptions(ConnectionOptions options)
+
+    public Discv5ProtocolBuilder(IServiceCollection services)
     {
-        _connectionOptions = options ?? throw new ArgumentNullException(nameof(options));
-        return this;
+        _services = services;
+        _connectionOptions = new ConnectionOptions();
+        _tableOptions = new TableOptions([]);
+        _enrBuilder = new EnrBuilder();
     }
-        
-    public Discv5ProtocolBuilder WithSessionOptions(SessionOptions options)
+
+    public IDiscv5ProtocolBuilder WithConnectionOptions(ConnectionOptions connectionOptions)
     {
-        _sessionOptions = options ?? throw new ArgumentNullException(nameof(options));
-        return this;
-    }
-        
-    public Discv5ProtocolBuilder WithTableOptions(TableOptions options)
-    {
-        _tableOptions = options ?? throw new ArgumentNullException(nameof(options));
-        return this;
-    }
-        
-    public Discv5ProtocolBuilder WithBootstrapEnrs(string[] bootstrapEnrs)
-    {
-        _bootstrapEnrs = bootstrapEnrs ?? throw new ArgumentNullException(nameof(bootstrapEnrs));
+        _connectionOptions = connectionOptions ?? throw new ArgumentNullException(nameof(connectionOptions));
         return this;
     }
 
-    public Discv5ProtocolBuilder WithEnrBuilder(EnrBuilder enrBuilder)
+    public IDiscv5ProtocolBuilder WithConnectionOptions(Action<ConnectionOptions> configure)
+    {
+        configure(_connectionOptions);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithSessionOptions(SessionOptions sessionOptions)
+    {
+        _sessionOptions = sessionOptions ?? throw new ArgumentNullException(nameof(sessionOptions));
+        return this;
+    }
+    
+    public IDiscv5ProtocolBuilder WithSessionOptions(Action<SessionOptions> configure)
+    {
+        configure(_sessionOptions);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithTableOptions(TableOptions tableOptions)
+    {
+        _tableOptions = tableOptions ?? throw new ArgumentNullException(nameof(tableOptions));
+        return this;
+    }
+    
+    public IDiscv5ProtocolBuilder WithTableOptions(Action<TableOptions> configure)
+    {
+        configure(_tableOptions);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithEnrBuilder(EnrBuilder enrBuilder)
     {
         _enrBuilder = enrBuilder ?? throw new ArgumentNullException(nameof(enrBuilder));
         return this;
     }
-        
-    public Discv5ProtocolBuilder WithEnrEntryRegistry(IEnrEntryRegistry enrEntryRegistry)
+    
+    public IDiscv5ProtocolBuilder WithEnrBuilder(Action<EnrBuilder> configure)
+    {
+        configure(_enrBuilder);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithLoggerFactory(Action<ILoggerFactory> configure)
+    {
+        configure(_loggerFactory);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithTalkResponder(Action<ITalkReqAndRespHandler> configure)
+    {
+        configure(_talkResponder);
+        return this;
+    }
+
+    public IDiscv5ProtocolBuilder WithEnrEntryRegistry(IEnrEntryRegistry enrEntryRegistry)
     {
         _entryRegistry = enrEntryRegistry ?? throw new ArgumentNullException(nameof(enrEntryRegistry));
         return this;
     }
-        
-    public Discv5ProtocolBuilder WithTalkResponder(ITalkReqAndRespHandler talkResponder)
+
+    public IDiscv5ProtocolBuilder WithTalkResponder(ITalkReqAndRespHandler talkResponder)
     {
         _talkResponder = talkResponder ?? throw new ArgumentNullException(nameof(talkResponder));
         return this;
     }
 
-    public Discv5ProtocolBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
+    public IDiscv5ProtocolBuilder WithLoggerFactory(ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         return this;
     }
 
-    public Discv5Protocol Build()
+    public IServiceCollection Build()
     {
-        _tableOptions ??= GetDefaultTableOptions();
-        _enrBuilder ??= GetDefaultEnrBuilder("v4");
-        
-        var connectionOptionsWrapper = Options.Create(_connectionOptions);
-
-        return Discv5ServiceConfiguration.ConfigureServices(
-                _loggerFactory,
-                connectionOptionsWrapper, 
-                _sessionOptions,
-                _entryRegistry,
-                _enrBuilder.Build(),
-                _tableOptions,
-                _talkResponder
-            )
-            .BuildServiceProvider()
-            .GetRequiredService<Discv5Protocol>();
-    }
-    
-    public static Discv5Protocol CreateDefault(string[] bootstrapEnrs)
-    {
-        return new Discv5ProtocolBuilder()
-            .WithBootstrapEnrs(bootstrapEnrs)
-            .Build();
-    }
-
-    public static Enr.Enr CreateNewRecord(ConnectionOptions options, IIdentityVerifier verifier, IIdentitySigner signer)
-    {
-        var builder = new EnrBuilder()
-            .WithIdentityScheme(verifier, signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey));
-
-        if (options.IpAddress != null)
-        {
-            builder.WithEntry(EnrEntryKey.Ip, new EntryIp(options.IpAddress)) 
-                .WithEntry(EnrEntryKey.Udp, new EntryUdp(options.Port));
-        }
-
-        return builder.Build();
-    }
-
-    private EnrBuilder GetDefaultEnrBuilder(string identityScheme)
-    {
-        return new EnrBuilder()
-            .WithIdentityScheme(_sessionOptions.Verifier, _sessionOptions.Signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId(identityScheme))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(_sessionOptions.Signer.PublicKey));
-    }
-    
-    private TableOptions GetDefaultTableOptions()
-    {
-        return new TableOptions().SetBootstrapEnrs(_bootstrapEnrs);
+        return _services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);
     }
 }

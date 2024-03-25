@@ -1,5 +1,6 @@
 using System.Net;
 using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Logging;
@@ -25,13 +26,24 @@ public class MessageResponderTests
     public void Setup()
     {
         var connectionOptions = new ConnectionOptions { Port = 2030 };
-        var optionsConnection = Options.Create(connectionOptions);
         var sessionOptions = SessionOptions.Default;
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        var enrRegistry = new EnrEntryRegistry();
-        var serviceProvider = Discv5ServiceConfiguration.ConfigureServices(loggerFactory, optionsConnection, sessionOptions,enrRegistry,Discv5ProtocolBuilder.CreateNewRecord(connectionOptions, sessionOptions.Verifier, sessionOptions.Signer), tableOptions, new TestTalkReqAndRespHandler()).BuildServiceProvider();
-        
+        var enrBuilder = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
+        var services = new ServiceCollection();
+        services.AddDiscv5(builder =>
+        {
+            builder.WithConnectionOptions(connectionOptions)
+                .WithSessionOptions(sessionOptions)
+                .WithTableOptions(tableOptions)
+                .WithLoggerFactory(loggerFactory)
+                .WithEnrBuilder(enrBuilder)
+                .WithTalkResponder(new TestTalkReqAndRespHandler());
+        });
+        var serviceProvider = services.BuildServiceProvider();
         _messageResponder = serviceProvider.GetRequiredService<IMessageResponder>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();
@@ -81,7 +93,8 @@ public class MessageResponderTests
         var talkRequestMessage = new TalkReqMessage("protocol"u8.ToArray(), "request"u8.ToArray());
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9312);
         var response = await _messageResponder.HandleMessageAsync(talkRequestMessage.EncodeMessage(), ipEndPoint);
-        var talkRespMessage = (TalkRespMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(response[0]!);
+        var talkRespMessage = (TalkRespMessage)new MessageDecoder(_identityManager, _enrFactory)
+            .DecodeMessage(response[0]!);
         Assert.NotNull(talkRespMessage);
         Assert.AreEqual(MessageType.TalkResp, talkRespMessage.MessageType);
         Assert.AreEqual("request"u8.ToArray(), talkRespMessage.Response);

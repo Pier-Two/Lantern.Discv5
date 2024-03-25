@@ -43,10 +43,12 @@ public class TableManagerTests
     [Test]
     public async Task Test_TableManager_EnsureShutdownTokenIsRequested_WhenTableManagerIsStopped()
     {
-        tableOptions = new TableOptions()
-            .SetLookupTimeoutMilliseconds(100)
-            .SetPingIntervalMilliseconds(100)
-            .SetRefreshIntervalMilliseconds(100);
+        tableOptions = new TableOptions([])
+        {
+            LookupTimeoutMilliseconds = 100,
+            PingIntervalMilliseconds = 100,
+            RefreshIntervalMilliseconds = 100
+        };
 
         mockRoutingTable
             .Setup(x => x.GetNodesCount())
@@ -63,11 +65,13 @@ public class TableManagerTests
     [Test]
     public async Task Test_TableManager_PingNodeAsync()
     {
-        tableOptions = new TableOptions()
-            .SetLookupTimeoutMilliseconds(100)
-            .SetPingIntervalMilliseconds(100)
-            .SetRefreshIntervalMilliseconds(100);
-        
+        tableOptions = new TableOptions([])
+        {
+            LookupTimeoutMilliseconds = 100,
+            PingIntervalMilliseconds = 100,
+            RefreshIntervalMilliseconds = 100
+        };
+
         mockRoutingTable
             .Setup(x => x.GetNodesCount())
             .Returns(10);
