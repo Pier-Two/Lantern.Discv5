@@ -15,119 +15,120 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 [TestFixture]
 public class Discv5ProtocolBuilderTests
 {
+    private IDiscv5ProtocolBuilder _builder = null!;
     
     [Test]
     public void WithSessionOptions_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithSessionOptions(new SessionOptions());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithSessionOptions(new SessionOptions());
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
     [Test]
     public void WithTableOptions_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithTableOptions(new TableOptions([]));
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithTableOptions(new TableOptions([]));
         
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithConnectionOptions_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithConnectionOptions(new ConnectionOptions());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithConnectionOptions(new ConnectionOptions());
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithConnectionOptions_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithConnectionOptions(options => 
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithConnectionOptions(options => 
         {
             options.Port = 30303;
         });
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithSessionOptions_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithSessionOptions(options =>
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithSessionOptions(options =>
         {
             options.Verifier = SessionOptions.Default.Verifier;
         });
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithEnrBuilder_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var enrBuilder = new EnrBuilder();
-        var returnedBuilder = builder.WithEnrBuilder(enrBuilder);
+        var returnedBuilder = _builder.WithEnrBuilder(enrBuilder);
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithEnrBuilder_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithEnrBuilder(enrBuilder =>
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithEnrBuilder(enrBuilder =>
         {
             enrBuilder.WithEntry(EnrEntryKey.Id, new EntryId("v4"));
         });
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
     
     [Test]
     public void WithTableOptions_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = builder.WithTableOptions(options =>
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        var returnedBuilder = _builder.WithTableOptions(options =>
         {
             options.BootstrapEnrs = ["enr:-example"];
         });
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithLoggerFactory_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var loggerFactory = new LoggerFactory();
-        var returnedBuilder = builder.WithLoggerFactory(loggerFactory);
+        var returnedBuilder = _builder.WithLoggerFactory(loggerFactory);
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithEnrEntryRegistry_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var entryRegistry = new EnrEntryRegistry();
-        var returnedBuilder = builder.WithEnrEntryRegistry(entryRegistry);
+        var returnedBuilder = _builder.WithEnrEntryRegistry(entryRegistry);
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
     public void WithTalkResponder_ChainsCorrectly_ReturnsBuilderInstance()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var talkResponder = Mock.Of<ITalkReqAndRespHandler>();
-        var returnedBuilder = builder.WithTalkResponder(talkResponder);
+        var returnedBuilder = _builder.WithTalkResponder(talkResponder);
 
-        Assert.AreSame(builder, returnedBuilder, "Method chaining should return the same builder instance.");
+        Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
     [Test]
@@ -158,7 +159,7 @@ public class Discv5ProtocolBuilderTests
     [Test]
     public void Build_WithoutMandatoryConfigurations_ThrowsException()
     {
-        var builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        Assert.Throws<InvalidOperationException>(() => builder.Build(), "Expected to throw due to missing configurations.");
+        _builder = new Discv5ProtocolBuilder(new ServiceCollection());
+        Assert.Throws<InvalidOperationException>(() => _builder.Build(), "Expected to throw due to missing configurations.");
     }
 }
