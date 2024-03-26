@@ -21,7 +21,6 @@ public class RoutingTable : IRoutingTable
             .Select(_ => new KBucket(loggerFactory, options.ReplacementCacheSize))
             .ToList();
         TableOptions = options;
-        Console.WriteLine("Enrs length: " + TableOptions.BootstrapEnrs.Length);
         ConfigureBucketEventHandlers();
     }
     

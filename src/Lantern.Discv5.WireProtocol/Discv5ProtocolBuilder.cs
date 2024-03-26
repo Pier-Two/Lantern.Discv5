@@ -9,25 +9,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol;
 
-public class Discv5ProtocolBuilder : IDiscv5ProtocolBuilder
+public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5ProtocolBuilder
 {
-    private readonly IServiceCollection _services;
-    private ConnectionOptions _connectionOptions;
-    private SessionOptions _sessionOptions = SessionOptions.Default;
+    private ConnectionOptions _connectionOptions = new();
+    private SessionOptions _sessionOptions = new();
     private IEnrEntryRegistry _entryRegistry = new EnrEntryRegistry();
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
-    private TableOptions _tableOptions;
-    private EnrBuilder _enrBuilder;
+    private TableOptions _tableOptions = new([]);
+    private EnrBuilder _enrBuilder = new();
     private ITalkReqAndRespHandler? _talkResponder;
-
-    public Discv5ProtocolBuilder(IServiceCollection services)
-    {
-        _services = services;
-        _connectionOptions = new ConnectionOptions();
-        _tableOptions = new TableOptions([]);
-        _enrBuilder = new EnrBuilder();
-    }
-
+    
     public IDiscv5ProtocolBuilder WithConnectionOptions(ConnectionOptions connectionOptions)
     {
         _connectionOptions = connectionOptions ?? throw new ArgumentNullException(nameof(connectionOptions));
@@ -108,6 +99,6 @@ public class Discv5ProtocolBuilder : IDiscv5ProtocolBuilder
 
     public IServiceCollection Build()
     {
-        return _services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);
+        return services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);
     }
 }
