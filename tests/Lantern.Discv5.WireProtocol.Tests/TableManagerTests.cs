@@ -56,7 +56,7 @@ public class TableManagerTests
 
         var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
-        tableManager.StartTableManagerAsync();
+        tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();
 
         mockCancellationTokenSource.Verify(x => x.Cancel(), Times.Once);
@@ -78,7 +78,7 @@ public class TableManagerTests
         
         var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
-        tableManager.StartTableManagerAsync();
+        tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();
     }
 }

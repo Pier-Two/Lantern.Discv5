@@ -3,29 +3,21 @@ using System.Net.Sockets;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
+using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Session;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Identity;
 
-public class IdentityManager: IIdentityManager
+public class IdentityManager(SessionOptions sessionOptions, ConnectionOptions connectionOptions, IEnr enr, ILoggerFactory loggerFactory): IIdentityManager
 {
-    private readonly ILogger<IdentityManager> _logger;
+    private readonly ILogger<IdentityManager> _logger = loggerFactory.CreateLogger<IdentityManager>(); 
     
-    public IdentityManager(SessionOptions sessionOptions, IEnr enr, ILoggerFactory loggerFactory)
-    {
-        Signer = sessionOptions.Signer;
-        Verifier = sessionOptions.Verifier;
-        Record = enr;
-        _logger = loggerFactory.CreateLogger<IdentityManager>();
-        _logger.LogInformation("Self ENR record created => {Record}", Record);
-    }
+    public IIdentityVerifier Verifier => sessionOptions.Verifier;
     
-    public IIdentityVerifier Verifier { get; }
-    
-    public IIdentitySigner Signer { get; }
+    public IIdentitySigner Signer => sessionOptions.Signer;
 
-    public IEnr Record { get; }
+    public IEnr Record => enr;
     
     public bool IsIpAddressAndPortSet()
     {
@@ -37,12 +29,12 @@ public class IdentityManager: IIdentityManager
         if (endpoint.AddressFamily == AddressFamily.InterNetwork)
         {
             Record.UpdateEntry(new EntryIp(endpoint.Address));
-            Record.UpdateEntry(new EntryUdp(endpoint.Port));
+            Record.UpdateEntry(new EntryUdp(connectionOptions.UdpPort));
         }
         else if(endpoint.AddressFamily == AddressFamily.InterNetworkV6)
         {
             Record.UpdateEntry(new EntryIp6(endpoint.Address));
-            Record.UpdateEntry(new EntryUdp6(endpoint.Port));
+            Record.UpdateEntry(new EntryUdp6(connectionOptions.UdpPort));
         }
         
         Record.UpdateSignature();

@@ -14,7 +14,7 @@ public class ConnectionOptionsTests
         _connectionOptions = new ConnectionOptions();
 
         Assert.NotNull(_connectionOptions);
-        Assert.AreEqual(9000, _connectionOptions.Port);
+        Assert.AreEqual(9000, _connectionOptions.UdpPort);
         Assert.AreEqual(1000, _connectionOptions.ReceiveTimeoutMs);
         Assert.AreEqual(2000, _connectionOptions.RequestTimeoutMs);
         Assert.AreEqual(500, _connectionOptions.CheckPendingRequestsDelayMs);
@@ -34,7 +34,7 @@ public class ConnectionOptionsTests
         _connectionOptions = new ConnectionOptions
         {
             IpAddress = ipAddress,
-            Port = port,
+            UdpPort = port,
             ReceiveTimeoutMs = receiveTimeoutMs,
             RequestTimeoutMs = requestTimeoutMs,
             CheckPendingRequestsDelayMs = checkPendingRequestsDelayMs,
@@ -43,7 +43,7 @@ public class ConnectionOptionsTests
 
         Assert.NotNull(_connectionOptions);
         Assert.AreEqual(ipAddress, _connectionOptions.IpAddress);
-        Assert.AreEqual(port, _connectionOptions.Port);
+        Assert.AreEqual(port, _connectionOptions.UdpPort);
         Assert.AreEqual(receiveTimeoutMs, _connectionOptions.ReceiveTimeoutMs);
         Assert.AreEqual(requestTimeoutMs, _connectionOptions.RequestTimeoutMs);
         Assert.AreEqual(checkPendingRequestsDelayMs, _connectionOptions.CheckPendingRequestsDelayMs);

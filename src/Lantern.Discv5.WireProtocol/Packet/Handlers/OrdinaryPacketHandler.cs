@@ -33,7 +33,7 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         var staticHeader = packetProcessor.GetStaticHeader(returnedResult.Buffer);
         var maskingIv = packetProcessor.GetMaskingIv(returnedResult.Buffer);
         var encryptedMessage = packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
-        var nodeEntry = routingTable.GetNodeEntry(staticHeader.AuthData);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(staticHeader.AuthData);
 
         if(nodeEntry == null)
         {

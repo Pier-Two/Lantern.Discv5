@@ -40,7 +40,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
             return;
         }
         
-        var nodeEntry = routingTable.GetNodeEntry(destNodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(destNodeId);
         
         if(nodeEntry == null)
         {
@@ -131,6 +131,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
         _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
         
         var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message);
+        
         requestManager.AddPendingRequest(cachedRequest.Message.RequestId, pendingRequest);
 
         return cachedRequest.Message.EncodeMessage();

@@ -49,7 +49,7 @@ public class Discv5ProtocolBuilderTests
         _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var returnedBuilder = _builder.WithConnectionOptions(options => 
         {
-            options.Port = 30303;
+            options.UdpPort = 30303;
         });
 
         Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
@@ -136,23 +136,22 @@ public class Discv5ProtocolBuilderTests
     {
         string[] bootstrapEnrs = ["enr:-example"];
         var services = new ServiceCollection();
+        var discv5Builder = new Discv5ProtocolBuilder(services);
         var sessionOptions = SessionOptions.Default;
         var enr = new EnrBuilder()
             .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
-        services.AddDiscv5(builder =>
-        {
-            builder.WithConnectionOptions(connectionOptions =>
-            {
-                connectionOptions.Port = 30303;
-            }).WithTableOptions(new TableOptions(bootstrapEnrs))
-                .WithLoggerFactory(NullLoggerFactory.Instance)
-                .WithEnrBuilder(enr);
-        });
         
-        var serviceProvider = services.BuildServiceProvider();
-        var discv5Protocol = serviceProvider.GetRequiredService<Discv5Protocol>();
+        var discv5Protocol = discv5Builder.WithConnectionOptions(new ConnectionOptions
+        {
+            UdpPort = 30303
+        }).WithTableOptions(new TableOptions(bootstrapEnrs))
+            .WithLoggerFactory(NullLoggerFactory.Instance)
+            .WithEnrBuilder(enr)
+            .Build();
+        
+        
         Assert.IsNotNull(discv5Protocol, "Expected to return a configured instance.");
     }
 

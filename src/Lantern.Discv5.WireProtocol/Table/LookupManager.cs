@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Packet;
@@ -23,7 +24,7 @@ public class LookupManager(IRoutingTable routingTable,
     
     public bool IsLookupInProgress { get; private set; }
 
-    public async Task<List<NodeTableEntry>?> LookupAsync(byte[] targetNodeId)
+    public async Task<List<IEnr>?> LookupAsync(byte[] targetNodeId)
     {
         if (IsLookupInProgress)
         {
@@ -44,12 +45,14 @@ public class LookupManager(IRoutingTable routingTable,
 
         await Task.WhenAny(allBucketsCompleteTask, delayTask);
 
-        var result = _pathBuckets
+        var nodes = _pathBuckets
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
             .Take(TableConstants.BucketSize)
             .ToList();
+        
+        var result = nodes.Select(node => routingTable.GetNodeEntryForNodeId(node.Id)?.Record).ToList();
 
         foreach (var bucket in _pathBuckets)
         {
@@ -149,7 +152,7 @@ public class LookupManager(IRoutingTable routingTable,
 
     private async Task QuerySelfNode(PathBucket bucket, byte[] senderNodeId)
     {
-        var node = routingTable.GetNodeEntry(senderNodeId);
+        var node = routingTable.GetNodeEntryForNodeId(senderNodeId);
 
         if (node == null)
             return;
@@ -172,7 +175,7 @@ public class LookupManager(IRoutingTable routingTable,
             return;
         
         var nodesToQuery = bucket.Responses[senderNodeId]
-            .Where(node => routingTable.GetNodeEntry(node.Id) != null)
+            .Where(node => routingTable.GetNodeEntryForNodeId(node.Id) != null)
             .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.Contains(node.Id, ByteArrayEqualityComparer.Instance)))
             .Where(node => !requestManager.ContainsCachedRequest(node.Id))
             .Take(queryCount)
@@ -211,7 +214,7 @@ public class LookupManager(IRoutingTable routingTable,
             }
 
             var replacementNode = bucket.DiscoveredNodes
-                .Where(node => routingTable.GetNodeEntry(node.Id) != null)
+                .Where(node => routingTable.GetNodeEntryForNodeId(node.Id) != null)
                 .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.Contains(node.Id, ByteArrayEqualityComparer.Instance)))
                 .FirstOrDefault(node => !requestManager.ContainsCachedRequest(node.Id));
 

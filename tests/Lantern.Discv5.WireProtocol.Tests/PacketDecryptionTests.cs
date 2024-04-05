@@ -30,6 +30,7 @@ public class PacketDecryptionTests
     [SetUp]
     public void Setup()
     {
+        var connectionOptions = new ConnectionOptions { UdpPort = 2030 };
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enrEntryRegistry = new EnrEntryRegistry();
@@ -40,7 +41,7 @@ public class PacketDecryptionTests
             .Build();
         
         _enrFactory = new EnrFactory(enrEntryRegistry);
-        _identityManager = new IdentityManager(sessionOptions, enr, loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions, enr, loggerFactory);
         _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
     

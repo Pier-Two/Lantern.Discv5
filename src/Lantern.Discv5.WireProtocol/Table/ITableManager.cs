@@ -2,7 +2,7 @@ namespace Lantern.Discv5.WireProtocol.Table;
 
 public interface ITableManager
 {
-    Task StartTableManagerAsync();
+    Task InitAsync();
 
     Task StopTableManagerAsync();
     

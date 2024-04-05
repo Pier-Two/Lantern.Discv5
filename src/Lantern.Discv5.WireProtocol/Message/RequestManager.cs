@@ -31,7 +31,7 @@ public class RequestManager(IRoutingTable routingTable,
     
     public int CachedHandshakeInteractionsCount => _cachedHandshakeInteractions.Count;
     
-    public void StartRequestManager()
+    public void InitAsync()
     {
         _logger.LogInformation("Starting RequestManagerAsync");
         _checkAllRequestsTask = taskRunner.RunWithGracefulCancellationAsync(CheckAllRequests, "CheckAllRequests", cts.GetToken());
@@ -212,7 +212,7 @@ public class RequestManager(IRoutingTable routingTable,
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
         
-        var nodeEntry = routingTable.GetNodeEntry(request.NodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(request.NodeId);
 
         if (nodeEntry == null) 
             return;
@@ -236,7 +236,7 @@ public class RequestManager(IRoutingTable routingTable,
         
         _cachedRequests.TryRemove(request.NodeId, out _);  
         
-        var nodeEntry = routingTable.GetNodeEntry(request.NodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(request.NodeId);
             
         if (nodeEntry == null)
         {

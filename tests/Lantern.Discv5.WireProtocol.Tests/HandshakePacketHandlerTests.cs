@@ -97,7 +97,7 @@ public class HandshakePacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -134,7 +134,7 @@ public class HandshakePacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockIdentityManager
             .SetupGet(x => x.Record)
@@ -173,7 +173,7 @@ public class HandshakePacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockIdentityManager
             .SetupGet(x => x.Record)
@@ -217,7 +217,7 @@ public class HandshakePacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockIdentityManager
             .SetupGet(x => x.Record)
@@ -270,7 +270,7 @@ public class HandshakePacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockIdentityManager
             .SetupGet(x => x.Record)

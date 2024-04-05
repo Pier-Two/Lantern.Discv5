@@ -26,7 +26,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
 {
     private readonly ILogger<PacketManager> _logger = loggerFactory.CreateLogger<PacketManager>();
 
-    public async Task SendPacket(IEnr dest, MessageType messageType, params byte[][] args)
+    public async Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, params byte[][] args)
     {
         var destNodeId = identityManager.Verifier.GetNodeIdFromRecord(dest);
         var destIpKey = dest.GetEntry<EntryIp>(EnrEntryKey.Ip);
@@ -35,7 +35,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         if (destIpKey == null || destUdpKey == null)
         {
             _logger.LogWarning("No IP or UDP entry in ENR. Cannot send packet");
-            return;
+            return null;
         }
 
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
@@ -45,16 +45,18 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
 
         if (message == null)
         {
-            return;
+            return null;
         }
 
         if (sessionEstablished)
         {
             await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
+            return message;
         }
         else
         {
             await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+            return message;
         }
     }
 

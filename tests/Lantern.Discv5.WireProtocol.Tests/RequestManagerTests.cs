@@ -73,7 +73,7 @@ public class RequestManagerTests
     [Test]
     public async Task TestStopRequestManagerAsync()
     {
-        _requestManager.StartRequestManager();
+        _requestManager.InitAsync();
         await Task.Delay(100);
         await _requestManager.StopRequestManagerAsync();
 

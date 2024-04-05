@@ -35,6 +35,8 @@ public interface IDiscv5ProtocolBuilder
     IDiscv5ProtocolBuilder WithLoggerFactory(Action<ILoggerFactory> configure);
     
     IDiscv5ProtocolBuilder WithTalkResponder(Action<ITalkReqAndRespHandler> configure);
+
+    IServiceProvider GetServiceProvider();
     
-    IServiceCollection Build();
+    IDiscv5Protocol Build();
 }

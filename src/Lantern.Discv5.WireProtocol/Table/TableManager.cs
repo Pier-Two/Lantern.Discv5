@@ -22,7 +22,7 @@ public class TableManager(IPacketManager packetManager,
     private Task? _refreshTask;
     private Task? _pingTask;
 
-    public async Task StartTableManagerAsync()
+    public async Task InitAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
         
@@ -119,7 +119,7 @@ public class TableManager(IPacketManager packetManager,
         {
             foreach(var node in closestNodes)
             {
-                routingTable.UpdateFromEnr(node.Record);
+                routingTable.UpdateFromEnr(node);
             }
         }
     }

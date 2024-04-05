@@ -42,7 +42,7 @@ public class ConnectionManagerTests
     [Test]
     public void StartConnectionManagerAsync_AssertFunctionsCalled()
     {
-        _connectionManager.StartConnectionManagerAsync();
+        _connectionManager.InitAsync();
         _gracefulTaskRunnerMock.Verify(x => x.RunWithGracefulCancellationAsync(_udpConnectionMock.Object.ListenAsync, "Listen", _cancellationTokenSourceMock.Object.GetToken()), Times.Once);
         _gracefulTaskRunnerMock.Verify(x => x.RunWithGracefulCancellationAsync(_connectionManager.HandleIncomingPacketsAsync, "HandleIncomingPackets", _cancellationTokenSourceMock.Object.GetToken()), Times.Once);
     }
@@ -50,7 +50,7 @@ public class ConnectionManagerTests
     [Test]
     public async Task StopConnectionManagerAsync_AssertsFunctionsCalled()
     {
-        _connectionManager.StartConnectionManagerAsync();
+        _connectionManager.InitAsync();
         await _connectionManager.StopConnectionManagerAsync();
         
         _udpConnectionMock.Verify(x => x.Close(), Times.Once);

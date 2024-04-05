@@ -31,7 +31,7 @@ public class UdpConnectionTests
     {
         var connectionOptions = new ConnectionOptions
         {
-            Port = 8081,
+            UdpPort = 8081,
             RequestTimeoutMs = 1000
         };
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);
@@ -43,7 +43,7 @@ public class UdpConnectionTests
     {
         var connectionOptions = new ConnectionOptions
         {
-            Port = 8082,
+            UdpPort = 8082,
             RequestTimeoutMs = 1000
         };
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);
@@ -55,7 +55,7 @@ public class UdpConnectionTests
     {
         var connectionOptions = new ConnectionOptions
         {
-            Port = 8083,
+            UdpPort = 8083,
             RequestTimeoutMs = 1000
         };
         var connection = new UdpConnection(connectionOptions, _mockLoggerFactory.Object, _mockGracefulTaskRunner.Object);

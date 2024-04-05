@@ -1,13 +1,14 @@
+using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -17,10 +18,10 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class Discv5ProtocolMockTests
 {
     private Discv5Protocol _discv5Protocol;
-    private Mock<IServiceProvider> _serviceProviderMock;
     private Mock<IConnectionManager> mockConnectionManager = null!;
     private Mock<ITableManager> mockTableManager = null!;
     private Mock<IRequestManager> mockRequestManager = null!;
+    private Mock<IPacketReceiver> mockPacketReceiver = null!;
     private Mock<IPacketManager> mockPacketManager = null!;
     private Mock<IRoutingTable> mockRoutingTable = null!;
     private Mock<ISessionManager> mockSessionManager = null!;
@@ -32,10 +33,10 @@ public class Discv5ProtocolMockTests
     [SetUp]
     public void Init()
     {
-        _serviceProviderMock = new Mock<IServiceProvider>();
         mockConnectionManager = new Mock<IConnectionManager>();
         mockTableManager = new Mock<ITableManager>();
         mockRequestManager = new Mock<IRequestManager>();
+        mockPacketReceiver = new Mock<IPacketReceiver>();
         mockPacketManager = new Mock<IPacketManager>();
         mockRoutingTable = new Mock<IRoutingTable>();
         mockSessionManager = new Mock<ISessionManager>();
@@ -54,16 +55,16 @@ public class Discv5ProtocolMockTests
     public void StartProtocol_InvokesStartMethodsOnServices()
     {
         SetupServices();
-        mockConnectionManager.Verify(cm => cm.StartConnectionManagerAsync(), Times.Once);
-        mockTableManager.Verify(tm => tm.StartTableManagerAsync(), Times.Once);
-        mockRequestManager.Verify(rm => rm.StartRequestManager(), Times.Once);
+        mockConnectionManager.Verify(cm => cm.InitAsync(), Times.Once);
+        mockTableManager.Verify(tm => tm.InitAsync(), Times.Once);
+        mockRequestManager.Verify(rm => rm.InitAsync(), Times.Once);
     }
     
     [Test]
     public async Task StopProtocolAsync_InvokesStopMethodsOnServices()
     {
         SetupServices();
-        await _discv5Protocol.StopProtocolAsync();
+        await _discv5Protocol.StopAsync();
         mockConnectionManager.Verify(cm => cm.StopConnectionManagerAsync(), Times.Once);
         mockTableManager.Verify(tm => tm.StopTableManagerAsync(), Times.Once);
         mockRequestManager.Verify(rm => rm.StopRequestManagerAsync(), Times.Once);
@@ -126,12 +127,12 @@ public class Discv5ProtocolMockTests
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var nodeEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(nodeEntry.Id))
+            .Setup(x => x.GetNodeEntryForNodeId(nodeEntry.Id))
             .Returns(nodeEntry);
         
         SetupServices();
-        var result = _discv5Protocol.GetNodeFromId(nodeEntry.Id);
-        Assert.IsTrue(result.Id.SequenceEqual(nodeEntry.Id));
+        var result = _discv5Protocol.GetEnrForNodeId(nodeEntry.Id);
+        Assert.IsTrue(result.NodeId.SequenceEqual(nodeEntry.Id));
     }
 
     [Test]
@@ -139,16 +140,15 @@ public class Discv5ProtocolMockTests
     {
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var nodeEntry = new NodeTableEntry(enrRecord, new IdentityVerifierV4());
         
         mockRoutingTable
             .Setup(x => x.GetAllNodes())
-            .Returns(new [] { nodeEntry });
+            .Returns(new [] { enrRecord });
         
         SetupServices();
-        var result = _discv5Protocol.GetAllNodes();
+        var result = _discv5Protocol.GetAllNodes.ToArray();
         Assert.IsTrue(result.Length == 1);
-        Assert.IsTrue(result[0].Id.SequenceEqual(nodeEntry.Id));
+        Assert.IsTrue(result[0].NodeId.SequenceEqual(enrRecord.NodeId));
     }
 
     [Test]
@@ -164,54 +164,68 @@ public class Discv5ProtocolMockTests
     }
     
     [Test]
-    public async Task SendPingAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    public async Task SendPingAsync_ShouldReturnPongResponse_WhenNoExceptionIsThrown()
     {
         // Arrange
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
+        
+        mockPacketReceiver
+            .Setup(x => x.SendPingAsync(It.IsAny<Enr.Enr>()))
+            .ReturnsAsync(new PongMessage(1, IPAddress.Parse("127.0.0.0"), 2));
+        
         SetupServices();
 
         // Act
         var result  = await _discv5Protocol.SendPingAsync(enrRecord);
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.Ping, It.IsAny<byte[][]>()), Times.Once);
-        Assert.IsTrue(result);
+        
+        mockPacketReceiver.Verify(x => x.SendPingAsync(enrRecord), Times.Once);
+        
+        Assert.IsNotNull(result);
+        Assert.AreEqual(result!.EnrSeq, 1);
+        Assert.AreEqual(result!.RecipientIp, IPAddress.Parse("127.0.0.0"));
+        Assert.AreEqual(result!.RecipientPort, 2);
     }
 
     [Test]
-    public async Task SendPingAsync_ShouldReturnFalse_WhenExceptionThrown()
+    public async Task SendPingAsync_ShouldReturnNull_WhenExceptionThrown()
     {
         // Arrange
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
     
-        mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+        mockPacketReceiver
+            .Setup(x => x.SendPingAsync(It.IsAny<Enr.Enr>()))
             .ThrowsAsync(exceptionToThrow);
         
         SetupServices();
 
         // Act
         var result  = await _discv5Protocol.SendPingAsync(enrRecord);
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.Ping, It.IsAny<byte[][]>()), Times.Once);
-        Assert.IsFalse(result);
+        
+        mockPacketReceiver.Verify(x => x.SendPingAsync(enrRecord), Times.Once);
+        
+        Assert.IsNull(result);
     }
 
     [Test]
-    public async Task SendFindNodeAsync_ShouldReturnTrue_WhenNoExceptionIsThrown()
+    public async Task SendFindNodeAsync_ShouldReturnEnrResponse_WhenNoExceptionIsThrown()
     {
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         
-        mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
-            .Returns(Task.CompletedTask);
+        mockPacketReceiver
+            .Setup(x => x.SendFindNodeAsync(It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()))
+            .Returns(Task.FromResult(new IEnr[] { enrRecord })!);
         
         SetupServices();
         
         var result = await _discv5Protocol.SendFindNodeAsync(enrRecord, RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.FindNode, It.IsAny<byte[][]>()), Times.Once);
-        Assert.IsTrue(result);
+        
+        mockPacketReceiver.Verify(x => x.SendFindNodeAsync(enrRecord, It.IsAny<byte[]>()), Times.Once);
+        
+        Assert.IsNotNull(result);
     }
     
     [Test]
@@ -221,15 +235,17 @@ public class Discv5ProtocolMockTests
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var exceptionToThrow = new Exception("Test exception");
     
-        mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
+        mockPacketReceiver
+            .Setup(x => x.SendFindNodeAsync(It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()))
             .ThrowsAsync(exceptionToThrow);
 
         SetupServices();
         
         var result = await _discv5Protocol.SendFindNodeAsync(enrRecord, RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.FindNode, It.IsAny<byte[][]>()), Times.Once);
-        Assert.False(result);
+        
+        mockPacketReceiver.Verify(x => x.SendFindNodeAsync(enrRecord, It.IsAny<byte[]>()), Times.Once);
+        
+        Assert.IsNull(result);
     }
 
     [Test]
@@ -240,7 +256,7 @@ public class Discv5ProtocolMockTests
         
         mockPacketManager
             .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<byte[][]>()))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.FromResult(new byte[0])); 
         
         SetupServices();
         var result = await _discv5Protocol.SendTalkReqAsync(enrRecord, RandomUtility.GenerateRandomData(32), RandomUtility.GenerateRandomData(32));
@@ -273,12 +289,14 @@ public class Discv5ProtocolMockTests
             mockIdentityManager.Object,
             mockTableManager.Object,
             mockRequestManager.Object,
+            mockPacketReceiver.Object,
             mockPacketManager.Object,
             mockRoutingTable.Object,
             mockSessionManager.Object,
             mockLookupManager.Object,
             mockLoggerFactory.Object.CreateLogger<Discv5Protocol>()
         );
-        _discv5Protocol.StartProtocolAsync();
+        
+        _discv5Protocol.InitAsync();
     }
 }
