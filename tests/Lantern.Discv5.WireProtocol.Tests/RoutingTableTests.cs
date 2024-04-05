@@ -24,14 +24,14 @@ public class RoutingTableTests
     [SetUp]
     public void SetUp()
     {
+        var connectionOptions = new ConnectionOptions { UdpPort = 2030 };
         var sessionOptions = SessionOptions.Default;
-        var loggerFactory = LoggingOptions.Default;
         var enr = new EnrBuilder()
             .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
             .Build();
-        _identityManager = new IdentityManager(SessionOptions.Default, enr, LoggingOptions.Default);
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions, enr, LoggingOptions.Default);
         mockEnrFactory = new Mock<IEnrFactory>();
         mockLoggerFactory = new Mock<ILoggerFactory>();
         logger = new Mock<ILogger<RoutingTable>>();
@@ -74,7 +74,7 @@ public class RoutingTableTests
         var enr = GenerateRandomEnrs(1)[0];
         routingTable.UpdateFromEnr(enr);
 
-        var allNodeEntries = routingTable.GetAllNodes();
+        var allNodeEntries = routingTable.GetAllNodes().ToArray();
         Assert.AreEqual(1, allNodeEntries.Length);
     }
 
@@ -85,7 +85,7 @@ public class RoutingTableTests
             TableOptions.Default);
         var enr = GenerateRandomEnrs(1)[0];
         routingTable.UpdateFromEnr(enr);
-        var nodeEntry = routingTable.GetNodeEntry(_identityManager.Verifier.GetNodeIdFromRecord(enr));
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(_identityManager.Verifier.GetNodeIdFromRecord(enr));
 
         Assert.IsNotNull(nodeEntry);
         Assert.AreEqual(_identityManager.Verifier.GetNodeIdFromRecord(enr), nodeEntry.Id);
@@ -100,7 +100,7 @@ public class RoutingTableTests
         routingTable.UpdateFromEnr(enr);
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
         routingTable.IncreaseFailureCounter(nodeId);
-        var nodeEntry = routingTable.GetNodeEntry(nodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
 
         Assert.AreEqual(1, nodeEntry.FailureCounter);
     }
@@ -119,7 +119,7 @@ public class RoutingTableTests
         }
 
         var closestNodes = routingTable.GetClosestNodes(enrs[0].NodeId);
-        Assert.AreEqual(1, closestNodes.Count(node => node.Id.SequenceEqual(enrs[0].NodeId)));
+        Assert.AreEqual(1, closestNodes.Count(node => node.Record.NodeId.SequenceEqual(enrs[0].NodeId)));
     }
 
     [Test]
@@ -155,19 +155,19 @@ public class RoutingTableTests
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
         
         routingTable.MarkNodeAsLive(nodeId);
-        var nodeEntry = routingTable.GetNodeEntry(nodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Live, nodeEntry.Status);
         
         routingTable.MarkNodeAsDead(nodeId);
-        nodeEntry = routingTable.GetNodeEntry(nodeId);
+        nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Dead, nodeEntry.Status);
         
         routingTable.MarkNodeAsPending(nodeId);
-        nodeEntry = routingTable.GetNodeEntry(nodeId);
+        nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Pending, nodeEntry.Status);
         
         routingTable.MarkNodeAsResponded(nodeId);
-        nodeEntry = routingTable.GetNodeEntry(nodeId);
+        nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.IsTrue(nodeEntry.HasRespondedEver);
     }
     
@@ -224,7 +224,7 @@ public class RoutingTableTests
         
         routingTable.IncreaseFailureCounter(nonExistentNode);
         
-        var nodeEntry = routingTable.GetNodeEntry(nonExistentNode);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
 
@@ -237,7 +237,7 @@ public class RoutingTableTests
         
         routingTable.MarkNodeAsDead(nonExistentNode);       
 
-        var nodeEntry = routingTable.GetNodeEntry(nonExistentNode);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
     
@@ -250,7 +250,7 @@ public class RoutingTableTests
         
         routingTable.MarkNodeAsPending(nonExistentNode);
     
-        var nodeEntry = routingTable.GetNodeEntry(nonExistentNode);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
     
@@ -263,7 +263,7 @@ public class RoutingTableTests
         
         routingTable.MarkNodeAsResponded(nonExistentNode);
     
-        var nodeEntry = routingTable.GetNodeEntry(nonExistentNode);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
     

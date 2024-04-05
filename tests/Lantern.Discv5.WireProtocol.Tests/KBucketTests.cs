@@ -20,6 +20,7 @@ public class KBucketTests
     [SetUp]
     public void Setup()
     {
+        var connectionOptions = new ConnectionOptions { UdpPort = 2030 };
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enr = new EnrBuilder()
@@ -28,7 +29,7 @@ public class KBucketTests
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
             .Build();
         
-        _identityManager = new IdentityManager(sessionOptions, enr, loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions,enr, loggerFactory);
     }
     
     [Test]

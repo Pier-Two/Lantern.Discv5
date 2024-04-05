@@ -85,7 +85,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Never);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Never);
     }
     
     [Test]
@@ -99,7 +99,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()))
             .Returns(new byte[32]);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns((NodeTableEntry?)null);
         mockPacketProcessor
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
@@ -116,7 +116,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Never);
     }
@@ -134,7 +134,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()))
             .Returns(new byte[32]);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -157,7 +157,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockSessionManager
@@ -188,7 +188,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.BuildRandomOrdinaryPacket(It.IsAny<byte[]>()))
             .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -208,7 +208,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager
@@ -243,7 +243,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.BuildHandshakePacket(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
@@ -273,7 +273,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager
@@ -307,7 +307,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetPendingRequestByNodeId(It.IsAny<byte[]>()))
             .Returns(new PendingRequest(new byte[32], new PingMessage(2)));
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
@@ -334,7 +334,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager
@@ -373,7 +373,7 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.BuildHandshakePacket(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new PacketResult(new byte[32], staticHeader));
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord,new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.GenerateIdSignature(It.IsAny<byte[]>()))
@@ -400,7 +400,7 @@ public class WhoAreYouPacketHandlerTests
         mockRequestManager
             .Verify(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable
-            .Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+            .Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager
             .Verify(x=> x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager

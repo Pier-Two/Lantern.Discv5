@@ -8,7 +8,7 @@ public interface IRequestManager
     
     int CachedHandshakeInteractionsCount { get; }
     
-    void StartRequestManager();
+    void InitAsync();
     
     Task StopRequestManagerAsync();
 

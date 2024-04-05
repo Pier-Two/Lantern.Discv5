@@ -49,12 +49,24 @@ public class RoutingTable : IRoutingTable
             return _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive) + bucket.ReplacementCache.Count(IsNodeConsideredLive));
         }
     }
-
-    public NodeTableEntry[] GetAllNodes()
+    
+    public IEnumerable<IEnr> GetActiveNodes()
     {
         lock (_buckets)
         {
-            return _buckets.SelectMany(bucket => bucket.Nodes.Concat(bucket.ReplacementCache)).ToArray();
+            var activeNodesInBuckets = _buckets.Select(bucket => bucket.Nodes.Where(IsNodeConsideredLive));
+            var activeNodesInReplacementCache = _buckets.Select(bucket => bucket.ReplacementCache.Where(IsNodeConsideredLive));
+            return activeNodesInBuckets.Concat(activeNodesInReplacementCache).SelectMany(x => x).Select(node => node.Record).ToArray();
+        }
+    }
+    
+    public IEnumerable<IEnr> GetAllNodes()
+    {
+        lock (_buckets)
+        {
+            var allNodesInBuckets = _buckets.Select(bucket => bucket.Nodes);
+            var allNodesInReplacementCache = _buckets.Select(bucket => bucket.ReplacementCache);
+            return allNodesInBuckets.Concat(allNodesInReplacementCache).SelectMany(x => x).Select(node => node.Record).ToArray();
         }
     }
     
@@ -73,7 +85,7 @@ public class RoutingTable : IRoutingTable
     public void UpdateFromEnr(IEnr enr)
     {
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
-        var nodeEntry = GetNodeEntry(nodeId);
+        var nodeEntry = GetNodeEntryForNodeId(nodeId);
 
         if (nodeEntry != null)
         {
@@ -163,7 +175,7 @@ public class RoutingTable : IRoutingTable
         }
     }
 
-    public NodeTableEntry? GetNodeEntry(byte[] nodeId)
+    public NodeTableEntry? GetNodeEntryForNodeId(byte[] nodeId)
     {
         var nodeEntry = GetEntryFromTable(nodeId);
 
@@ -195,7 +207,7 @@ public class RoutingTable : IRoutingTable
         return nodeEntry;
     }
 
-    public List<IEnr> GetEnrRecordsAtDistances(IEnumerable<int> distances)
+    public List<IEnr>? GetEnrRecordsAtDistances(IEnumerable<int> distances)
     {
         var enrRecords = new List<IEnr>();
 

@@ -17,8 +17,10 @@ public interface IRoutingTable
     int GetNodesCount();
     
     int GetActiveNodesCount();
+    
+    IEnumerable<IEnr> GetActiveNodes();
 
-    NodeTableEntry[] GetAllNodes();
+    IEnumerable<IEnr> GetAllNodes();
 
     NodeTableEntry? GetLeastRecentlySeenNode();
     
@@ -34,9 +36,9 @@ public interface IRoutingTable
 
     void IncreaseFailureCounter(byte[] nodeId);
 
-    NodeTableEntry? GetNodeEntry(byte[] nodeId);
+    NodeTableEntry? GetNodeEntryForNodeId(byte[] nodeId);
 
     List<NodeTableEntry> GetClosestNodes(byte[] targetNodeId);
 
-    List<IEnr> GetEnrRecordsAtDistances(IEnumerable<int> distances);
+    List<IEnr>? GetEnrRecordsAtDistances(IEnumerable<int> distances);
 }

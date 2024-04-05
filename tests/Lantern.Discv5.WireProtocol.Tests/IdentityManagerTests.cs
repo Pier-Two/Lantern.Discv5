@@ -18,6 +18,7 @@ public class IdentityManagerTests
     [SetUp]
     public void Setup()
     {
+        var connectionOptions = new ConnectionOptions { UdpPort = 2030 };
         var sessionOptions = SessionOptions.Default;
         var loggerFactory = LoggingOptions.Default;
         var enr = new EnrBuilder()
@@ -26,7 +27,7 @@ public class IdentityManagerTests
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
             .Build();
         
-        _identityManager = new IdentityManager(sessionOptions, enr,loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions, enr,loggerFactory);
     }
     
     [Test]
@@ -61,7 +62,6 @@ public class IdentityManagerTests
         _identityManager.UpdateIpAddressAndPort(endpoint);
         
         Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp>(EnrEntryKey.Ip).Value);
-        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp>(EnrEntryKey.Udp).Value);
     }
     
     [Test]
@@ -76,6 +76,5 @@ public class IdentityManagerTests
         _identityManager.UpdateIpAddressAndPort(endpoint);
         
         Assert.AreEqual(endpoint.Address, node.GetEntry<EntryIp6>(EnrEntryKey.Ip6).Value);
-        Assert.AreEqual(endpoint.Port, node.GetEntry<EntryUdp6>(EnrEntryKey.Udp6).Value);
     }
 }

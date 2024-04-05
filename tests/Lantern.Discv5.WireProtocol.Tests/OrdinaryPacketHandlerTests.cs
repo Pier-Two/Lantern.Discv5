@@ -85,7 +85,7 @@ public class OrdinaryPacketHandlerTests
         mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacketWithoutEnr(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockUdpConnection.Verify(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
@@ -105,7 +105,7 @@ public class OrdinaryPacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionManager
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
@@ -130,7 +130,7 @@ public class OrdinaryPacketHandlerTests
         mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
@@ -151,7 +151,7 @@ public class OrdinaryPacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -180,7 +180,7 @@ public class OrdinaryPacketHandlerTests
         mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockSessionMain.Verify(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockPacketBuilder.Verify(x => x.BuildWhoAreYouPacket(It.IsAny<byte[]>(),It.IsAny<byte[]>(), It.IsAny<Enr.Enr>(), It.IsAny<byte[]>()), Times.Once);
@@ -203,7 +203,7 @@ public class OrdinaryPacketHandlerTests
             .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
             .Returns(staticHeader);
         mockRoutingTable
-            .Setup(x => x.GetNodeEntry(It.IsAny<byte[]>()))
+            .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
         mockSessionMain
             .Setup(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -232,7 +232,7 @@ public class OrdinaryPacketHandlerTests
         mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
-        mockRoutingTable.Verify(x => x.GetNodeEntry(It.IsAny<byte[]>()), Times.Once);
+        mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
         mockSessionManager.Verify(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);
         mockSessionMain.Verify(x => x.DecryptMessage(It.IsAny<StaticHeader>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         mockMessageResponder.Verify(x => x.HandleMessageAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()), Times.Once);

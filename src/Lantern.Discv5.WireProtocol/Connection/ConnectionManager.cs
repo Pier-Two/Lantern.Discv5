@@ -12,7 +12,7 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
     private Task? _listenTask;
     private Task? _handleTask;
 
-    public void StartConnectionManagerAsync()
+    public void InitAsync()
     {
         _logger.LogInformation("Starting ConnectionManagerAsync");
     

@@ -10,16 +10,11 @@ using IPEndPoint = System.Net.IPEndPoint;
 
 namespace Lantern.Discv5.WireProtocol.Connection;
 
-public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory,
-        IGracefulTaskRunner taskRunner)
-    : IUdpConnection, IDisposable
+public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory loggerFactory, IGracefulTaskRunner taskRunner) : IUdpConnection, IDisposable
 {
-    private readonly UdpClient _udpClient = new(new IPEndPoint(options.IpAddress ?? IPAddress.Any, options.Port));
-    
+    private readonly UdpClient _udpClient = new(new IPEndPoint(options.IpAddress ?? IPAddress.Any, options.UdpPort));
     private readonly ILogger<UdpConnection> _logger = loggerFactory.CreateLogger<UdpConnection>();
-    
     private readonly Channel<UdpReceiveResult> _messageChannel = Channel.CreateUnbounded<UdpReceiveResult>();
-    
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public async Task SendAsync(byte[] data, IPEndPoint destination)

@@ -156,4 +156,13 @@ public class EnrTests
         var enr2 = new EnrFactory(enrEntryRegistry2).CreateFromString("enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg", new IdentityVerifierV4());
         Console.WriteLine(enr2.ToPeerId());
     }
+
+    [Test]
+    public void Test()
+    {
+        var enrEntryRegistry1 = new EnrEntryRegistry();
+        var enr = new EnrFactory(enrEntryRegistry1).CreateFromString("enr:-Mq4QDbPUjBttMg0hk0XvGUUIvpPnVggdRitKsG_snlBWnmiDGbkobrL0E01tdfJhXjD0cIBVibsg43iBQnQgiKX2S-GAY4UUqLqh2F0dG5ldHOIAAAAAAAAAGCEZXRoMpCnXczyBAAQIP__________gmlkgnY0gmlwhEoyTX6Jc2VjcDI1NmsxoQJ7GxiHkV_tISNp1PBjsC8fMh_kPM29dvqZvhq7RBhvMYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4YR1ZHA2gi7g", new IdentityVerifierV4());
+        
+        Console.WriteLine("Attnets: " + Convert.ToHexString(enr.GetEntry<EntryAttnets>(EnrEntryKey.Attnets).Value));
+    }
 }

@@ -7,6 +7,7 @@ using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Message;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -25,35 +26,34 @@ public class MessageRequesterTests
     private Mock<IRequestManager> mockRequestManager = null!;
     private Mock<ILoggerFactory> mockLoggerFactory;
     private Mock<ILogger<MessageRequester>> logger; 
-    private static IIdentityManager _identityManager = null!;
-    private static IEnrFactory _enrFactory = null!;
-    private static IMessageRequester _messageRequester = null!;
+    
+    private IIdentityManager _identityManager = null!;
+    private IEnrFactory _enrFactory = null!;
+    private IMessageRequester _messageRequester = null!;
+    private IDiscv5Protocol _discv5Protocol = null!;
 
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
         var sessionOptions = SessionOptions.Default;
+        var connectionOptions = new ConnectionOptions { UdpPort = 2030 };
         var tableOptions = TableOptions.Default;
         var loggerFactory = LoggingOptions.Default;
-        var enrEntryRegistry = new EnrEntryRegistry();
-        var enr = new EnrBuilder()
+        var enrBuilder = new EnrBuilder()
             .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
-
+        
         var services = new ServiceCollection();
-        services.AddDiscv5(builder =>
-        {
-            builder.WithConnectionOptions(new ConnectionOptions())
+        var builder = services.AddDiscv5(builder => builder
+            .WithConnectionOptions(connectionOptions)
             .WithSessionOptions(sessionOptions)
             .WithTableOptions(tableOptions)
-            .WithEnrEntryRegistry(enrEntryRegistry)
-            .WithEnrBuilder(enr)
-            .WithLoggerFactory(loggerFactory);
-        });
+            .WithEnrBuilder(enrBuilder)
+            .WithLoggerFactory(loggerFactory));
 
-        var serviceProvider = services.BuildServiceProvider();
-
+        var serviceProvider = builder.GetServiceProvider();
+        _discv5Protocol = serviceProvider.GetRequiredService<IDiscv5Protocol>();
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();
         _messageRequester = serviceProvider.GetRequiredService<IMessageRequester>();
@@ -170,5 +170,11 @@ public class MessageRequesterTests
         Assert.IsNull(cachedTalkRequestResult);
         Assert.IsNull(talkResponseResult);
         Assert.IsNull(cachedTalkResponseResult);
+    }
+    
+    [OneTimeTearDown]
+    public void TearDown()
+    {
+        _discv5Protocol.StopAsync();
     }
 }

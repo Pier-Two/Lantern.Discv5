@@ -3,6 +3,7 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message.Requests;
 using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
@@ -10,6 +11,7 @@ namespace Lantern.Discv5.WireProtocol.Message;
 
 public class MessageResponder(IIdentityManager identityManager,
         IRoutingTable routingTable,
+        IPacketReceiver packetReceiver,
         IRequestManager requestManager,
         ILookupManager lookupManager,
         IMessageDecoder messageDecoder,
@@ -61,13 +63,15 @@ public class MessageResponder(IIdentityManager identityManager,
             return null;
         }
 
-        var nodeEntry = routingTable.GetNodeEntry(pendingRequest.NodeId);
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(pendingRequest.NodeId);
 
         if (nodeEntry == null)
         {
             _logger.LogWarning("ENR record is not known. Cannot handle PONG message from node. Node ID: {NodeId}", Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
+        
+        packetReceiver.RaisePongResponseReceived(new PongResponseEventArgs(decodedMessage.RequestId, decodedMessage));
         
         if (nodeEntry.Status != NodeStatus.Live)
         {
@@ -77,7 +81,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
             if (identityManager.IsIpAddressAndPortSet()) 
                 return null;
-            
+
             var endpoint = new IPEndPoint(decodedMessage.RecipientIp, decodedMessage.RecipientPort);
             identityManager.UpdateIpAddressAndPort(endpoint);
 
@@ -159,12 +163,12 @@ public class MessageResponder(IIdentityManager identityManager,
                     if (distance != distanceToNode) 
                         continue;
                 
-                    if (routingTable.GetNodeEntry(nodeId) == null)
+                    if (routingTable.GetNodeEntryForNodeId(nodeId) == null)
                     {
                         routingTable.UpdateFromEnr(enr);
                     }
                     
-                    var nodeEntry = routingTable.GetNodeEntry(nodeId);
+                    var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
                     if (nodeEntry != null)
                     {
                         receivedNodes.Add(nodeEntry);
@@ -179,6 +183,7 @@ public class MessageResponder(IIdentityManager identityManager,
         }
         
         await lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
+        packetReceiver.RaiseNodesResponseReceived(new NodesResponseEventArgs(decodedMessage.RequestId, receivedNodes));
         
         return null;
     }

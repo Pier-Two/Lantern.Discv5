@@ -2,6 +2,7 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Message.Responses;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
@@ -13,41 +14,32 @@ public class Discv5Protocol(IConnectionManager connectionManager,
     IIdentityManager identityManager,
     ITableManager tableManager,
     IRequestManager requestManager,
+    IPacketReceiver packetReceiver,
     IPacketManager packetManager,
     IRoutingTable routingTable,
     ISessionManager sessionManager,
     ILookupManager lookupManager,
-    ILogger<Discv5Protocol> logger)
+    ILogger<IDiscv5Protocol> logger) : IDiscv5Protocol
 {
-    public IEnr SelfEnr => identityManager.Record;
-    
     public int NodesCount => routingTable.GetNodesCount();
     
     public int PeerCount => routingTable.GetActiveNodesCount();
     
     public int ActiveSessionCount => sessionManager.TotalSessionCount;
     
-    public NodeTableEntry? GetNodeFromId(byte[] nodeId) => routingTable.GetNodeEntry(nodeId);
-
-    public NodeTableEntry[] GetAllNodes() => routingTable.GetAllNodes();
-
-    public async Task StartProtocolAsync()
-    {
-        connectionManager.StartConnectionManagerAsync();
-        requestManager.StartRequestManager();
-
-        await tableManager.StartTableManagerAsync();
-    }
+    public IEnr SelfEnr => identityManager.Record;
     
-    public async Task StopProtocolAsync()
-    {
-        var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
-        var stopTableManagerTask = tableManager.StopTableManagerAsync();
-        var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
-        
-        await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
-    }
+    public IEnr? GetEnrForNodeId(byte[] nodeId)
+    { 
+       var entry = routingTable.GetNodeEntryForNodeId(nodeId);
+       
+       return entry?.Record;
+    } 
+
+    public IEnumerable<IEnr> GetAllNodes => routingTable.GetAllNodes();
     
+    public IEnumerable<IEnr> GetActiveNodes => routingTable.GetActiveNodes();
+
     public event Action<NodeTableEntry> NodeAdded
     {
         add => routingTable.NodeAdded += value;
@@ -71,51 +63,63 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         add => routingTable.NodeRemovedFromCache += value;
         remove => routingTable.NodeRemovedFromCache -= value;
     }
-
-    public async Task<List<NodeTableEntry>?> PerformLookupAsync(byte[] targetNodeId)
+    
+    public async Task InitAsync()
     {
-        if (routingTable.GetActiveNodesCount() > 0)
-        {
-            var closestNodes = await lookupManager.LookupAsync(targetNodeId);
-            
-            if (closestNodes != null)
-            {
-                return closestNodes;
-            }
-        }
-        
-        return null;
+        connectionManager.InitAsync();
+        requestManager.InitAsync();
+
+        await tableManager.InitAsync();
     }
     
-    public async Task<bool> SendPingAsync(IEnr destination)
+    public async Task StopAsync()
+    {
+        var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
+        var stopTableManagerTask = tableManager.StopTableManagerAsync();
+        var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
+        
+        await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
+    }
+
+    public async Task<IEnumerable<IEnr>?> PerformLookupAsync(byte[] targetNodeId)
+    {
+        if (routingTable.GetActiveNodesCount() <= 0) 
+            return null;
+        
+        var closestNodes = await lookupManager.LookupAsync(targetNodeId);
+
+        return closestNodes;
+    }
+    
+    public async Task<PongMessage?> SendPingAsync(IEnr destination)
     {
         try
         {
-            await packetManager.SendPacket(destination, MessageType.Ping);
-            return true;
+            var response = await packetReceiver.SendPingAsync(destination);
+            return response;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in SendPingAsync. Cannot send PING to {Record}", destination);
-            return false;
+            return null;
         }
     }
 
-    public async Task<bool> SendFindNodeAsync(Enr.Enr destination, byte[] targetNodeId)
+    public async Task<IEnumerable<IEnr>?> SendFindNodeAsync(IEnr destination, byte[] targetNodeId)
     {
         try
         {
-            await packetManager.SendPacket(destination, MessageType.FindNode, targetNodeId);
-            return true;
+            var response = await packetReceiver.SendFindNodeAsync(destination, targetNodeId);
+            return response;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destination);
-            return false;
+            return null;
         }
     }
     
-    public async Task<bool> SendTalkReqAsync(Enr.Enr destination, byte[] protocol, byte[] request)
+    public async Task<bool> SendTalkReqAsync(IEnr destination, byte[] protocol, byte[] request)
     {
         try
         {

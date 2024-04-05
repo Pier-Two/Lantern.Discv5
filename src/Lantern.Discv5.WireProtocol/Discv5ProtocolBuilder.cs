@@ -13,11 +13,12 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
 {
     private ConnectionOptions _connectionOptions = new();
     private SessionOptions _sessionOptions = new();
-    private IEnrEntryRegistry _entryRegistry = new EnrEntryRegistry();
-    private ILoggerFactory _loggerFactory = LoggingOptions.Default;
     private TableOptions _tableOptions = new([]);
     private EnrBuilder _enrBuilder = new();
+    private IEnrEntryRegistry _entryRegistry = new EnrEntryRegistry();
+    private ILoggerFactory _loggerFactory = LoggingOptions.Default;
     private ITalkReqAndRespHandler? _talkResponder;
+    private IServiceProvider? _serviceProvider;
     
     public IDiscv5ProtocolBuilder WithConnectionOptions(ConnectionOptions connectionOptions)
     {
@@ -96,9 +97,16 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         return this;
     }
-
-    public IServiceCollection Build()
+    
+    public IServiceProvider GetServiceProvider()
     {
-        return services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);
+        return _serviceProvider ?? throw new InvalidOperationException("Build() must be called before accessing the service provider.");
+    }
+    
+    public IDiscv5Protocol Build()
+    {
+        services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);
+        _serviceProvider = services.BuildServiceProvider();
+        return _serviceProvider.GetRequiredService<IDiscv5Protocol>();
     }
 }

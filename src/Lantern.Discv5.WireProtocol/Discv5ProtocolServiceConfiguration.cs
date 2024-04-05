@@ -15,16 +15,6 @@ namespace Lantern.Discv5.WireProtocol;
 
 public static class Discv5ProtocolServiceConfiguration
 {
-    public static IServiceCollection AddDiscv5(
-        this IServiceCollection services,
-        Action<IDiscv5ProtocolBuilder> configure)
-    {
-        var builder = new Discv5ProtocolBuilder(services);
-        configure(builder);
-        builder.Build();
-        return services;
-    }
-
     internal static IServiceCollection AddDiscv5(
         this IServiceCollection services,
         TableOptions tableOptions,
@@ -36,6 +26,7 @@ public static class Discv5ProtocolServiceConfiguration
         ITalkReqAndRespHandler? talkResponder = null)
     {
         ValidateMandatoryConfigurations(tableOptions, connectionOptions, sessionOptions, enrEntryRegistry, enr, loggerFactory);
+        
         AddLoggerServices(services, loggerFactory);
         AddConnectionServices(services, connectionOptions, sessionOptions, tableOptions, talkResponder);
         AddIdentityServices(services, enrEntryRegistry, enr);
@@ -44,7 +35,9 @@ public static class Discv5ProtocolServiceConfiguration
         AddMessageServices(services);
         AddSessionServices(services);
         AddUtilityServices(services);
-
+        
+        services.AddSingleton<IDiscv5Protocol, Discv5Protocol>();
+        
         return services;
     }
     
@@ -65,7 +58,7 @@ public static class Discv5ProtocolServiceConfiguration
     private static void AddLoggerServices(IServiceCollection services, ILoggerFactory loggerFactory)
     {
         services.AddSingleton(loggerFactory);
-        services.AddSingleton(loggerFactory.CreateLogger<Discv5Protocol>());
+        services.AddSingleton(loggerFactory.CreateLogger<IDiscv5Protocol>());
     }
 
     private static void AddConnectionServices(IServiceCollection services, ConnectionOptions connectionOptions, SessionOptions sessionOptions, TableOptions tableOptions, ITalkReqAndRespHandler? talkResponder)
@@ -73,10 +66,10 @@ public static class Discv5ProtocolServiceConfiguration
         if (talkResponder != null)
             services.AddSingleton(talkResponder);
         
-        services.AddSingleton<IConnectionManager, ConnectionManager>();
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
+        services.AddSingleton<IConnectionManager, ConnectionManager>();
         services.AddSingleton<IUdpConnection, UdpConnection>();
     }
 
@@ -100,6 +93,7 @@ public static class Discv5ProtocolServiceConfiguration
         services.AddSingleton<IPacketManager, PacketManager>();
         services.AddSingleton<IPacketBuilder, PacketBuilder>();
         services.AddSingleton<IPacketProcessor, PacketProcessor>();
+        services.AddSingleton<IPacketReceiver, PacketReceiver>();
         services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
         services.AddTransient<OrdinaryPacketHandler>();
         services.AddTransient<WhoAreYouPacketHandler>();
@@ -123,7 +117,6 @@ public static class Discv5ProtocolServiceConfiguration
 
     private static void AddUtilityServices(IServiceCollection services)
     {
-        services.AddSingleton<Discv5Protocol>();
         services.AddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
         services.AddTransient<ICancellationTokenSourceWrapper, CancellationTokenSourceWrapper>();
         services.AddSingleton<IRoutingTable, RoutingTable>();

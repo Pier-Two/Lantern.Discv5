@@ -90,7 +90,7 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         }
         else if (senderNodeId != null)
         {
-            var nodeEntry = routingTable.GetNodeEntry(senderNodeId);
+            var nodeEntry = routingTable.GetNodeEntryForNodeId(senderNodeId);
             
             if (nodeEntry != null)
             {
