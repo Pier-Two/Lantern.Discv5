@@ -98,14 +98,15 @@ public class Enr : IEnr
     {
         return $"enr:{Base64Url.ToString(EncodeRecord())}";
     }
+    
 
     public string ToPeerId()
     {
         var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKeyProto = ByteArrayUtils.Concatenate(EnrConstants.ProtoBufferPrefix, publicKey);
-        var multihash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
+        var multiHash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
     
-        return Multibase.Encode(MultibaseEncoding.Base58Btc, multihash).Remove(0, 1);
+        return Multibase.Encode(MultibaseEncoding.Base58Btc, multiHash).Remove(0, 1);
     }
     
     private void IncrementSequenceNumber()

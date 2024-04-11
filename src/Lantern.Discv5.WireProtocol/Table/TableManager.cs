@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Table;
 
-public class TableManager(IPacketManager packetManager,
+public class TableManager(IPacketReceiver packetReceiver,
+        IPacketManager packetManager,
         IIdentityManager identityManager,
         ILookupManager lookupManager,
         IRoutingTable routingTable,
@@ -26,7 +27,8 @@ public class TableManager(IPacketManager packetManager,
     {
         _logger.LogInformation("Starting TableManagerAsync");
         
-        await InitialiseFromBootstrapAsync();
+        await InitFromBootstrapNodesAsync();
+        
         _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
         _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
     }
@@ -44,7 +46,7 @@ public class TableManager(IPacketManager packetManager,
         }
     }
     
-    public async Task InitialiseFromBootstrapAsync()
+    public async Task InitFromBootstrapNodesAsync()
     {
         if (routingTable.GetNodesCount() == 0)
         {
@@ -64,7 +66,7 @@ public class TableManager(IPacketManager packetManager,
             {
                 try
                 {
-                    await packetManager.SendPacket(bootstrapEnr, MessageType.Ping);
+                    await packetReceiver.SendPingAsync(bootstrapEnr);
                 }
                 catch (Exception ex)
                 {
@@ -80,8 +82,8 @@ public class TableManager(IPacketManager packetManager,
     
         while (!token.IsCancellationRequested)
         {
-            await RefreshBucket().ConfigureAwait(false);
             await Task.Delay(tableOptions.RefreshIntervalMilliseconds, token).ConfigureAwait(false);
+            await RefreshBucket().ConfigureAwait(false);
         }
     }
     

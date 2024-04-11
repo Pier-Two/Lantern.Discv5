@@ -11,6 +11,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 
 public class TableManagerTests
 {
+    private Mock<IPacketReceiver> mockPacketReceiver = null!;
     private Mock<IPacketManager> mockPacketManager = null!;
     private Mock<IEnrFactory> mockEnrRecordFactory = null!;
     private Mock<IIdentityManager> mockIdentityManager = null!;
@@ -25,6 +26,7 @@ public class TableManagerTests
     [SetUp]
     public void Init()
     {
+        mockPacketReceiver = new Mock<IPacketReceiver>();
         mockPacketManager = new Mock<IPacketManager>();
         mockIdentityManager = new Mock<IIdentityManager>();
         mockEnrRecordFactory = new Mock<IEnrFactory>();
@@ -54,9 +56,9 @@ public class TableManagerTests
             .Setup(x => x.GetNodesCount())
             .Returns(10);
 
-        var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
+        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
-        tableManager.InitAsync();
+        await tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();
 
         mockCancellationTokenSource.Verify(x => x.Cancel(), Times.Once);
@@ -76,9 +78,9 @@ public class TableManagerTests
             .Setup(x => x.GetNodesCount())
             .Returns(10);
         
-        var tableManager = new TableManager(mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
+        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
-        tableManager.InitAsync();
+        await tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();
     }
 }

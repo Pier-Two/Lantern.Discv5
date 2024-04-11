@@ -6,7 +6,7 @@ public interface ITableManager
 
     Task StopTableManagerAsync();
     
-    Task InitialiseFromBootstrapAsync();
+    Task InitFromBootstrapNodesAsync();
     
     Task RefreshBucketsAsync(CancellationToken token);
     
