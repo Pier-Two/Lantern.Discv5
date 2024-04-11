@@ -159,7 +159,7 @@ public class Discv5ProtocolMockTests
             .Returns(0);
         
         SetupServices();
-        var result = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
+        var result = await _discv5Protocol.DiscoverAsync(RandomUtility.GenerateRandomData(32));
         Assert.IsNull(result);
     }
     

@@ -143,6 +143,17 @@ public class EnrTests
     }
 
     [Test]
+    public void Test_ToEnode_ShouldDeriveEnodeCorrectly()
+    {
+        var enrEntryRegistry1 = new EnrEntryRegistry();
+        var enr = new EnrFactory(enrEntryRegistry1).CreateFromString(
+            "enr:-Mq4QLyFLj2R0kwCmxNgO02F2JqHOUAT9CnqK9qHBwJWPlvNR36e9YydkUzFM69E0dzX7hrpOUAJVKsBLb3PysSz-IiGAY7D6Sg4h2F0dG5ldHOIAAAAAAAAAAaEZXRoMpBqlaGpBAAAAP__________gmlkgnY0gmlwhCJkw5SJc2VjcDI1NmsxoQMc6eWKtIsR4Ref474zOEeRKEuHzxrK_jffZrkzzYSuUYhzeW5jbmV0cwCDdGNwgjLIg3VkcILLBIR1ZHA2gi7g", new IdentityVerifierV4());
+        var enode = "enode://bc852e3d91d24c029b13603b4d85d89a87394013f429ea2bda870702563e5bcd477e9ef58c9d914cc533af44d1dcd7ee1ae939400954ab012dbdcfcac4b3f888@34.100.195.148:13000?discport=51972";
+        
+        Assert.AreEqual(enode, enr.ToEnode());
+    }
+    
+    [Test]
     public void Test_V4PeerIdGeneration_ShouldDerivePeerIdCorrectly()
     {
         var enrEntryRegistry1 = new EnrEntryRegistry();
@@ -155,14 +166,5 @@ public class EnrTests
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enr2 = new EnrFactory(enrEntryRegistry2).CreateFromString("enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg", new IdentityVerifierV4());
         Console.WriteLine(enr2.ToPeerId());
-    }
-
-    [Test]
-    public void Test()
-    {
-        var enrEntryRegistry1 = new EnrEntryRegistry();
-        var enr = new EnrFactory(enrEntryRegistry1).CreateFromString("enr:-Mq4QDbPUjBttMg0hk0XvGUUIvpPnVggdRitKsG_snlBWnmiDGbkobrL0E01tdfJhXjD0cIBVibsg43iBQnQgiKX2S-GAY4UUqLqh2F0dG5ldHOIAAAAAAAAAGCEZXRoMpCnXczyBAAQIP__________gmlkgnY0gmlwhEoyTX6Jc2VjcDI1NmsxoQJ7GxiHkV_tISNp1PBjsC8fMh_kPM29dvqZvhq7RBhvMYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4YR1ZHA2gi7g", new IdentityVerifierV4());
-        
-        Console.WriteLine("Attnets: " + Convert.ToHexString(enr.GetEntry<EntryAttnets>(EnrEntryKey.Attnets).Value));
     }
 }

@@ -99,13 +99,24 @@ public class Enr : IEnr
         return $"enr:{Base64Url.ToString(EncodeRecord())}";
     }
 
+    public string ToEnode()
+    {
+        if(Signature == null)
+            throw new InvalidOperationException("Signature must be set before encoding.");
+        
+        if (!HasKey(EnrEntryKey.Tcp))
+            return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+        
+        return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}:{GetEntry<EntryTcp>(EnrEntryKey.Tcp).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+    }
+
     public string ToPeerId()
     {
         var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKeyProto = ByteArrayUtils.Concatenate(EnrConstants.ProtoBufferPrefix, publicKey);
-        var multihash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
+        var multiHash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
     
-        return Multibase.Encode(MultibaseEncoding.Base58Btc, multihash).Remove(0, 1);
+        return Multibase.Encode(MultibaseEncoding.Base58Btc, multiHash).Remove(0, 1);
     }
     
     private void IncrementSequenceNumber()

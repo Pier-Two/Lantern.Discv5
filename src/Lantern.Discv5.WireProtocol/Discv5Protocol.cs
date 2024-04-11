@@ -64,24 +64,23 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         remove => routingTable.NodeRemovedFromCache -= value;
     }
     
-    public async Task InitAsync()
+    public async Task<bool> InitAsync()
     {
-        connectionManager.InitAsync();
-        requestManager.InitAsync();
-
-        await tableManager.InitAsync();
+        try
+        {
+            connectionManager.InitAsync();
+            requestManager.InitAsync();
+            await tableManager.InitAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred in InitAsync. Cannot initialize Discv5 protocol");
+            return false; 
+        }
     }
-    
-    public async Task StopAsync()
-    {
-        var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
-        var stopTableManagerTask = tableManager.StopTableManagerAsync();
-        var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
-        
-        await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
-    }
 
-    public async Task<IEnumerable<IEnr>?> PerformLookupAsync(byte[] targetNodeId)
+    public async Task<IEnumerable<IEnr>?> DiscoverAsync(byte[] targetNodeId)
     {
         if (routingTable.GetActiveNodesCount() <= 0) 
             return null;
@@ -131,5 +130,14 @@ public class Discv5Protocol(IConnectionManager connectionManager,
             logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
             return false;
         }
+    }
+    
+    public async Task StopAsync()
+    {
+        var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
+        var stopTableManagerTask = tableManager.StopTableManagerAsync();
+        var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
+        
+        await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
     }
 }

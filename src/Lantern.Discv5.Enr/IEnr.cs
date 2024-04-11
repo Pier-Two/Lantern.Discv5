@@ -10,6 +10,8 @@ public interface IEnr
 
     string ToPeerId();
 
+    string ToEnode();
+
     bool HasKey(string key);
 
     void UpdateEntry<T>(T value) where T : class, IEntry;

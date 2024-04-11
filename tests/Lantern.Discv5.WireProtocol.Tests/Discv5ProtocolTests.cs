@@ -48,7 +48,9 @@ public class Discv5ProtocolTests
     // {
     //     await _discv5Protocol.InitAsync();
     //
-    //     var firstClosestNodes = await _discv5Protocol.PerformLookupAsync(RandomUtility.GenerateRandomData(32));
+    //     var randomNodeId = RandomUtility.GenerateRandomData(32);
+    //     
+    //     var firstClosestNodes = await _discv5Protocol.DiscoverAsync(randomNodeId);
     //     
     //     if (firstClosestNodes == null)
     //     {
@@ -57,7 +59,7 @@ public class Discv5ProtocolTests
     //     
     //     foreach (var node in firstClosestNodes)
     //     {
-    //         Console.WriteLine("Closest node: " + Convert.ToHexString(node.NodeId));
+    //         Console.WriteLine("Closest node: " + node);
     //     }
     //     
     //     await _discv5Protocol.StopAsync();

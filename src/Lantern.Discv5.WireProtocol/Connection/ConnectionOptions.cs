@@ -6,7 +6,6 @@ public class ConnectionOptions
 {
     public IPAddress? IpAddress { get; set; }
     public int UdpPort { get; set; } = 9000;
-    public int TcpPort { get; set; } = 9001;
     public int ReceiveTimeoutMs { get; set; } = 1000;
     public int RequestTimeoutMs { get; set; } = 2000;
     public int CheckPendingRequestsDelayMs { get; set; } = 500;

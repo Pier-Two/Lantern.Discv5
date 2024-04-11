@@ -18,7 +18,7 @@ public class LookupManager(IRoutingTable routingTable,
 {
     private readonly ILogger<LookupManager> _logger = loggerFactory.CreateLogger<LookupManager>();
     
-    private readonly ConcurrentBag<PathBucket> _pathBuckets = new();
+    private readonly ConcurrentBag<PathBucket> _pathBuckets = [];
     
     private readonly SemaphoreSlim _lookupSemaphore = new(1, 1);
     
@@ -37,7 +37,7 @@ public class LookupManager(IRoutingTable routingTable,
             _logger.LogInformation("No active nodes in routing table");
             return null;
         }
-        
+
         await StartLookupAsync(targetNodeId);
 
         var allBucketsCompleteTask = Task.WhenAll(_pathBuckets.Select(bucket => bucket.Completion.Task));

@@ -39,6 +39,6 @@ public class IdentityManager(SessionOptions sessionOptions, ConnectionOptions co
         
         Record.UpdateSignature();
         
-        _logger.LogInformation("Self ENR record updated => {Record}", Record);
+        _logger.LogInformation("Self ENR updated => {Enr}", Record);
     }
 }
