@@ -98,7 +98,17 @@ public class Enr : IEnr
     {
         return $"enr:{Base64Url.ToString(EncodeRecord())}";
     }
-    
+
+    public string ToEnode()
+    {
+        if(Signature == null)
+            throw new InvalidOperationException("Signature must be set before encoding.");
+        
+        if (!HasKey(EnrEntryKey.Tcp))
+            return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+        
+        return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}:{GetEntry<EntryTcp>(EnrEntryKey.Tcp).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+    }
 
     public string ToPeerId()
     {
