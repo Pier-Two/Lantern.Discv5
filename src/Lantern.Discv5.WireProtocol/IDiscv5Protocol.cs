@@ -1,10 +1,19 @@
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol;
 
 public interface IDiscv5Protocol
 {
+    event Action<NodeTableEntry> NodeAdded;
+    
+    event Action<NodeTableEntry> NodeRemoved;
+    
+    event Action<NodeTableEntry> NodeAddedToCache;
+    
+    event Action<NodeTableEntry> NodeRemovedFromCache;
+    
     IEnr SelfEnr { get; }
     
     IEnumerable<IEnr> GetActiveNodes { get; }
