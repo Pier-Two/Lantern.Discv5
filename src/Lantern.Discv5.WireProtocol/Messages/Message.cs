@@ -1,4 +1,4 @@
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public abstract class Message(MessageType messageType, byte[]? requestId = null)
 {

@@ -1,7 +1,7 @@
 using System.Net;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.WireProtocol.Message.Responses;
+namespace Lantern.Discv5.WireProtocol.Messages.Responses;
 
 public class PongMessage : Message
 {

@@ -2,10 +2,10 @@ using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message.Requests;
-using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Messages.Requests;
+using Lantern.Discv5.WireProtocol.Messages.Responses;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFactory) : IMessageDecoder
 {

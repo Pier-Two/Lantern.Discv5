@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class PendingRequest(byte[] nodeId, Message message)
 {
