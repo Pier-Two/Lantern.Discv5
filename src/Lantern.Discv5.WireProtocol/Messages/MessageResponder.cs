@@ -1,13 +1,12 @@
 using System.Net;
-using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message.Requests;
-using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Messages.Requests;
+using Lantern.Discv5.WireProtocol.Messages.Responses;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class MessageResponder(IIdentityManager identityManager,
         IRoutingTable routingTable,

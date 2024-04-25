@@ -1,11 +1,10 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class RequestManager(IRoutingTable routingTable,
         ILoggerFactory loggerFactory,

@@ -1,7 +1,6 @@
-using Lantern.Discv5.Enr;
 using Lantern.Discv5.Rlp;
 
-namespace Lantern.Discv5.WireProtocol.Message.Requests;
+namespace Lantern.Discv5.WireProtocol.Messages.Requests;
 
 public class RegTopicMessage(byte[] topic, Enr.Enr enr, byte[] ticket) : Message(MessageType.RegTopic)
 {

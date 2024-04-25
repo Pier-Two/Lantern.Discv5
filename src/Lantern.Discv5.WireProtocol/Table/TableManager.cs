@@ -1,6 +1,6 @@
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;

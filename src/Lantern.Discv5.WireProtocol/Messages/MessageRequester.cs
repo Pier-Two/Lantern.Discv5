@@ -1,10 +1,10 @@
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message.Requests;
-using Lantern.Discv5.WireProtocol.Message.Responses;
+using Lantern.Discv5.WireProtocol.Messages.Requests;
+using Lantern.Discv5.WireProtocol.Messages.Responses;
 using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class MessageRequester(IIdentityManager identityManager, IRequestManager requestManager,
         ILoggerFactory loggerFactory)

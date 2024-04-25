@@ -1,6 +1,6 @@
 using System.Net.Sockets;
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Messages;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 

@@ -2,7 +2,7 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Identity;
-using Lantern.Discv5.WireProtocol.Message;
+using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;

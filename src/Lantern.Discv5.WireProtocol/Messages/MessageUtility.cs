@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Lantern.Discv5.WireProtocol.Message;
+namespace Lantern.Discv5.WireProtocol.Messages;
 
 public static class MessageUtility
 {
