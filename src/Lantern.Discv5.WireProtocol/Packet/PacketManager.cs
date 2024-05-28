@@ -26,7 +26,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
 {
     private readonly ILogger<PacketManager> _logger = loggerFactory.CreateLogger<PacketManager>();
 
-    public async Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, params byte[][] args)
+    public async Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, bool isLookupPacket, params byte[][] args)
     {
         var destNodeId = identityManager.Verifier.GetNodeIdFromRecord(dest);
         var destIpKey = dest.GetEntry<EntryIp>(EnrEntryKey.Ip);
@@ -41,7 +41,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = sessionManager.GetSession(destNodeId, destEndPoint);
         var sessionEstablished = cryptoSession is { IsEstablished: true };
-        var message = ConstructMessage(sessionEstablished, messageType, destNodeId, args);
+        var message = ConstructMessage(sessionEstablished, messageType, destNodeId, isLookupPacket, args);
 
         if (message == null)
         {
@@ -53,14 +53,12 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
             await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
             return message;
         }
-        else
-        {
-            await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
-            return message;
-        }
+
+        await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
+        return message;
     }
 
-    private byte[]? ConstructMessage(bool sessionEstablished, MessageType messageType, byte[] destNodeId, byte[][] args)
+    private byte[]? ConstructMessage(bool sessionEstablished, MessageType messageType, byte[] destNodeId, bool isLookupPacket, byte[][] args)
     {
         return messageType switch
         {
@@ -68,8 +66,8 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
                 ? messageRequester.ConstructPingMessage(destNodeId)
                 : messageRequester.ConstructCachedPingMessage(destNodeId),
             MessageType.FindNode => sessionEstablished
-                ? messageRequester.ConstructFindNodeMessage(destNodeId, args[0])
-                : messageRequester.ConstructCachedFindNodeMessage(destNodeId, args[0]),
+                ? messageRequester.ConstructFindNodeMessage(destNodeId, isLookupPacket, args[0])
+                : messageRequester.ConstructCachedFindNodeMessage(destNodeId, isLookupPacket, args[0]),
             MessageType.TalkReq => sessionEstablished
                 ? messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1])
                 : messageRequester.ConstructCachedTalkReqMessage(destNodeId, args[0], args[1]),
@@ -105,7 +103,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 
         await udpConnection.SendAsync(finalPacket, destEndPoint);
-        _logger.LogInformation("Sent ORDINARY packet to {Destination}", destEndPoint);
+        _logger.LogInformation("Sent ORDINARY packet to {Destination} at {IpAddress}", Convert.ToHexString(destNodeId), destEndPoint.Address);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)

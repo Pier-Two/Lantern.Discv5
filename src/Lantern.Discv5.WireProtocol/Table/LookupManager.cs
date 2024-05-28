@@ -49,7 +49,7 @@ public class LookupManager(IRoutingTable routingTable,
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
-            .Take(TableConstants.BucketSize)
+            .Take(tableOptions.MaxNodesCount)
             .ToList();
         
         var result = nodes.Select(node => routingTable.GetNodeEntryForNodeId(node.Id)?.Record).ToList();
@@ -164,7 +164,7 @@ public class LookupManager(IRoutingTable routingTable,
             connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
         bucket.PendingQueries.Add(node.Id);
         
-        await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
+        await packetManager.SendPacket(node.Record, MessageType.FindNode, true, bucket.TargetNodeId);
     }
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
@@ -195,7 +195,7 @@ public class LookupManager(IRoutingTable routingTable,
             bucket.PendingTimers[node.Id] =
                 new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(node.Id);
-            await packetManager.SendPacket(node.Record, MessageType.FindNode, bucket.TargetNodeId);
+            await packetManager.SendPacket(node.Record, MessageType.FindNode, true, bucket.TargetNodeId);
         }
     }
 
@@ -232,7 +232,7 @@ public class LookupManager(IRoutingTable routingTable,
             _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}",
                 Convert.ToHexString(replacementNode.Id), bucket.Index);
             
-            await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, bucket.TargetNodeId);
+            await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, true, bucket.TargetNodeId);
             _lookupSemaphore.Release();
         }
         catch (Exception e)

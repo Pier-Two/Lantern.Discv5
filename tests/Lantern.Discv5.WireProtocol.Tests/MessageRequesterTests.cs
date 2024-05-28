@@ -89,8 +89,8 @@ public class MessageRequesterTests
     {
         var destNodeId = RandomUtility.GenerateRandomData(32);
         var targetNodeId = RandomUtility.GenerateRandomData(32);
-        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, targetNodeId)!;
-        var cachedFindNodeMessage = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, targetNodeId)!;
+        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, false, targetNodeId)!;
+        var cachedFindNodeMessage = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, false,targetNodeId)!;
         var decodedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(findNodeMessage);
         var decodedCachedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(cachedFindNodeMessage);
 
@@ -155,8 +155,8 @@ public class MessageRequesterTests
         var destNodeId = RandomUtility.GenerateRandomData(32);
         var pingResult = messageRequester.ConstructPingMessage(destNodeId);
         var cachedPingResult = messageRequester.ConstructCachedPingMessage(destNodeId);
-        var findNodeResult = messageRequester.ConstructFindNodeMessage(destNodeId, destNodeId);
-        var cachedFindNodeResult = messageRequester.ConstructCachedFindNodeMessage(destNodeId, destNodeId);
+        var findNodeResult = messageRequester.ConstructFindNodeMessage(destNodeId, false,destNodeId);
+        var cachedFindNodeResult = messageRequester.ConstructCachedFindNodeMessage(destNodeId, false,destNodeId);
         var talkRequestResult = messageRequester.ConstructTalkReqMessage(destNodeId, "discv5"u8.ToArray(), "ping"u8.ToArray());
         var cachedTalkRequestResult = messageRequester.ConstructCachedTalkReqMessage(destNodeId, "discv5"u8.ToArray(), "ping"u8.ToArray());
         var talkResponseResult = messageRequester.ConstructTalkRespMessage(destNodeId, "response"u8.ToArray());

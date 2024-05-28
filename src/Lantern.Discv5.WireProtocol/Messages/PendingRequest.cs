@@ -12,6 +12,8 @@ public class PendingRequest(byte[] nodeId, Message message)
 
     public bool IsFulfilled { get; set; }
     
+    public bool IsLookupRequest { get; set; }
+    
     public int ResponsesCount { get; set; }
     
     public int MaxResponses { get; set; }
