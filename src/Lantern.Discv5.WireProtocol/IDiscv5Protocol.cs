@@ -2,6 +2,7 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
+using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol;
 
@@ -14,8 +15,16 @@ public interface IDiscv5Protocol
     event Action<NodeTableEntry> NodeAddedToCache;
     
     event Action<NodeTableEntry> NodeRemovedFromCache;
+
+    int ActiveSessionCount { get; }
+    
+    int NodesCount { get; }
+    
+    int PeerCount { get; }
     
     IEnr SelfEnr { get; }
+
+    IEnr? GetEnrForNodeId(byte[] nodeId);
     
     IEnumerable<IEnr> GetActiveNodes { get; }
     
@@ -30,6 +39,8 @@ public interface IDiscv5Protocol
     Task<IEnumerable<IEnr>?> SendFindNodeAsync(IEnr destination, byte[] targetNodeId);
 
     Task<bool> SendTalkReqAsync(IEnr destination, byte[] protocol, byte[] request);
+
+    bool IsNodeActive(byte[] nodeId);
     
     Task StopAsync();
 }

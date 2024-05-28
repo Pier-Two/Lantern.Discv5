@@ -20,7 +20,7 @@ public class PacketReceiver(IPacketManager packetManager,
     
     public async Task<PongMessage?> SendPingAsync(IEnr dest)
     {
-        var payload = await packetManager.SendPacket(dest, MessageType.Ping);
+        var payload = await packetManager.SendPacket(dest, MessageType.Ping, false);
         
         if (payload is null)
         {
@@ -38,7 +38,7 @@ public class PacketReceiver(IPacketManager packetManager,
         if (completedTask != delayTask) 
             return await tcs.Task;
         
-        _logger.LogWarning("PING request to {NodeId} timed out", dest.NodeId);
+        _logger.LogWarning("PING request to {NodeId} timed out", Convert.ToHexString(dest.NodeId));
         PongResponseReceived -= HandlePongResponse;
         return null;
         
@@ -54,7 +54,7 @@ public class PacketReceiver(IPacketManager packetManager,
 
     public async Task<IEnr[]?> SendFindNodeAsync(IEnr dest, byte[] targetNodeId)
     {
-        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, targetNodeId);
+        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, false, targetNodeId);
 
         if (payload is null)
         {

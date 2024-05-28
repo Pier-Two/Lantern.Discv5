@@ -46,17 +46,29 @@ public class RoutingTable : IRoutingTable
     {
         lock (_buckets)
         {
-            return _buckets.Sum(bucket => bucket.Nodes.Count(IsNodeConsideredLive) + bucket.ReplacementCache.Count(IsNodeConsideredLive));
+            return _buckets.Sum(bucket => bucket.Nodes.Count(node => node.Status == NodeStatus.Live) + bucket.ReplacementCache.Count(node => node.Status == NodeStatus.Live));
         }
     }
     
     public IEnumerable<IEnr> GetActiveNodes()
     {
+        List<IEnr> activeNodes = new List<IEnr>();
         lock (_buckets)
         {
-            var activeNodesInBuckets = _buckets.Select(bucket => bucket.Nodes.Where(IsNodeConsideredLive));
-            var activeNodesInReplacementCache = _buckets.Select(bucket => bucket.ReplacementCache.Where(IsNodeConsideredLive));
-            return activeNodesInBuckets.Concat(activeNodesInReplacementCache).SelectMany(x => x).Select(node => node.Record).ToArray();
+            foreach (var bucket in _buckets)
+            {
+                foreach (var node in bucket.Nodes.Concat(bucket.ReplacementCache))
+                {
+                    if (node.Status == NodeStatus.Live)
+                    {
+                        activeNodes.Add(node.Record);
+                    }
+                }
+            }
+        }
+        foreach (var node in activeNodes)
+        {
+            yield return node;
         }
     }
     
@@ -143,10 +155,17 @@ public class RoutingTable : IRoutingTable
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
-
+        
         if (nodeEntry == null)
+        {
+            nodeEntry = bucket.GetNodeFromReplacementCache(nodeId);
+            if (nodeEntry == null)
+                return; 
+        }
+        
+        if (nodeEntry.Status == NodeStatus.Live)
             return;
-
+        
         nodeEntry.Status = NodeStatus.Live;
         nodeEntry.FailureCounter = 0;
     }
