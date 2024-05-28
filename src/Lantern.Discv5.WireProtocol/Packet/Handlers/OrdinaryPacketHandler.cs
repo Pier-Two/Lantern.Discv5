@@ -35,9 +35,11 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         var encryptedMessage = packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
         var nodeEntry = routingTable.GetNodeEntryForNodeId(staticHeader.AuthData);
 
+        _logger.LogInformation("Received ORDINARY packet from {NodeId}", Convert.ToHexString(staticHeader.AuthData));
+        
         if(nodeEntry == null)
         {
-            _logger.LogInformation("Could not find record in the table for node: {NodeId}", Convert.ToHexString(staticHeader.AuthData));
+            _logger.LogInformation("Could not find record in the table for node {NodeId} with {IpAddress}", Convert.ToHexString(staticHeader.AuthData), returnedResult.RemoteEndPoint.Address);
             await SendWhoAreYouPacketWithoutEnrAsync(staticHeader, returnedResult.RemoteEndPoint, udpConnection);
             return;
         }
@@ -64,7 +66,7 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
 
         var replies = await messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
         
-        if (replies != null && replies.Any())
+        if (replies != null && replies.Length != 0)
         {
             foreach (var reply in replies)
             {

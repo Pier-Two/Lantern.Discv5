@@ -104,7 +104,7 @@ public class TableManager(IPacketReceiver packetReceiver,
             if (nodeEntry == null)
                 continue;
 
-            await packetManager.SendPacket(nodeEntry.Record, MessageType.Ping);
+            await packetManager.SendPacket(nodeEntry.Record, MessageType.Ping, false).ConfigureAwait(false);
         }
     }
 

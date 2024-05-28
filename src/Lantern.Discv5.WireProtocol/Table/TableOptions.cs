@@ -13,6 +13,7 @@ public class TableOptions
     public int MaxAllowedFailures { get; set; } = 3;
     public int ReplacementCacheSize { get; set; } = 200;
     public int ConcurrencyParameter { get; set; } = 3;
+    public int MaxNodesCount { get; set; } = 16;
     public int LookupParallelism { get; set; } = 2;
     public string[] BootstrapEnrs { get; set; } = Array.Empty<string>();
 

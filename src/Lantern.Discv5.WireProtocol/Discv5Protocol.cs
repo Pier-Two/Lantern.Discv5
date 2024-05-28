@@ -122,7 +122,7 @@ public class Discv5Protocol(IConnectionManager connectionManager,
     {
         try
         {
-            await packetManager.SendPacket(destination, MessageType.TalkReq, protocol, request);
+            await packetManager.SendPacket(destination, MessageType.TalkReq, false,protocol, request);
             return true;
         }
         catch (Exception ex)
@@ -130,6 +130,13 @@ public class Discv5Protocol(IConnectionManager connectionManager,
             logger.LogError(ex, "Error occurred in SendTalkReqAsync. Cannot send TALKREQ to {Record}", destination);
             return false;
         }
+    }
+    
+    public bool IsNodeActive(byte[] nodeId)
+    {
+        var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
+        
+        return nodeEntry?.Status == NodeStatus.Live;
     }
     
     public async Task StopAsync()

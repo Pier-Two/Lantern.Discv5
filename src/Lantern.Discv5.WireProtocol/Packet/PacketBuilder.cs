@@ -38,7 +38,7 @@ public class PacketBuilder(IIdentityManager identityManager, IAesCrypto aesCrypt
         var ordinaryPacket = new OrdinaryPacketBase(identityManager.Record.NodeId);
         var packetNonce = ByteArrayUtils.JoinByteArrays(messageCount, RandomUtility.GenerateRandomData(PacketConstants.PartialNonceSize));
 
-        _logger.LogInformation("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
+        _logger.LogDebug("Added cached request using nonce: {PacketNonce}", Convert.ToHexString(packetNonce));
         
         requestManager.AddCachedHandshakeInteraction(packetNonce, destNodeId);
         

@@ -120,7 +120,10 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
                 return null;
             }
 
-            var newRequest = new PendingRequest(destNodeId, existingRequest.Message);
+            var newRequest = new PendingRequest(destNodeId, existingRequest.Message)
+            {
+                IsLookupRequest = existingRequest.IsLookupRequest
+            };
             
             requestManager.AddPendingRequest(existingRequest.Message.RequestId, newRequest);
             
@@ -130,7 +133,10 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
         requestManager.MarkCachedRequestAsFulfilled(destNodeId);
         _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
         
-        var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message);
+        var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message)
+        {
+            IsLookupRequest = cachedRequest.IsLookupRequest
+        };
         
         requestManager.AddPendingRequest(cachedRequest.Message.RequestId, pendingRequest);
 

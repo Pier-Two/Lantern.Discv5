@@ -1,4 +1,6 @@
 using System.Net;
+using Lantern.Discv5.Enr;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
@@ -161,16 +163,23 @@ public class MessageResponder(IIdentityManager identityManager,
 
                     if (distance != distanceToNode) 
                         continue;
-                
-                    if (routingTable.GetNodeEntryForNodeId(nodeId) == null)
+
+                    if (pendingRequest.IsLookupRequest)
                     {
-                        routingTable.UpdateFromEnr(enr);
-                    }
+                        if (routingTable.GetNodeEntryForNodeId(nodeId) == null)
+                        {
+                            routingTable.UpdateFromEnr(enr);
+                        }
                     
-                    var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
-                    if (nodeEntry != null)
+                        var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
+                        if (nodeEntry != null)
+                        {
+                            receivedNodes.Add(nodeEntry);
+                        }
+                    }
+                    else
                     {
-                        receivedNodes.Add(nodeEntry);
+                        receivedNodes.Add(new NodeTableEntry(enr, new IdentityVerifierV4()));
                     }
                 }
             }  
