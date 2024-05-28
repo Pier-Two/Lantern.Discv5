@@ -151,7 +151,7 @@ public class MessageResponder(IIdentityManager identityManager,
         
         var findNodesRequest = (FindNodeMessage)messageDecoder.DecodeMessage(pendingRequest.Message.EncodeMessage());
         var receivedNodes = new List<NodeTableEntry>();
-
+        
         try
         {
             foreach (var distance in findNodesRequest.Distances)
@@ -191,7 +191,7 @@ public class MessageResponder(IIdentityManager identityManager,
         }
         
         await lookupManager.ContinueLookupAsync(receivedNodes, pendingRequest.NodeId, decodedMessage.Total);
-        packetReceiver.RaiseNodesResponseReceived(new NodesResponseEventArgs(decodedMessage.RequestId, receivedNodes));
+        packetReceiver.RaiseNodesResponseReceived(new NodesResponseEventArgs(decodedMessage.RequestId, receivedNodes,pendingRequest.ResponsesCount == decodedMessage.Total));
         
         return null;
     }
