@@ -6,9 +6,9 @@ public interface IMessageRequester
 
     byte[]? ConstructCachedPingMessage(byte[] destNodeId);
 
-    byte[]? ConstructFindNodeMessage(byte[] destNodeId, bool isLookupPacket, byte[] targetNodeId);
+    byte[]? ConstructFindNodeMessage(byte[] destNodeId, bool isLookupPacket, int[] distances);
 
-    byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, bool isLookupPacket, byte[] targetNodeId);
+    byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, bool isLookupPacket, int[] distances);
 
     byte[]? ConstructTalkReqMessage(byte[] destNodeId, byte[] protocol, byte[] request);
 

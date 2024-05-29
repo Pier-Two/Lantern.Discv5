@@ -166,7 +166,7 @@ public class LookupManager(IRoutingTable routingTable,
             connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
         bucket.PendingQueries.Add(node.Id);
 
-        await packetManager.SendPacket(node.Record, MessageType.FindNode, true, bucket.TargetNodeId);
+        await packetManager.SendPacket(node.Record, MessageType.FindNode, true, TableUtility.Log2Distance(node.Record.NodeId, bucket.TargetNodeId));
     }
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
