@@ -45,6 +45,8 @@ public class LookupManager(IRoutingTable routingTable,
 
         await Task.WhenAny(allBucketsCompleteTask, delayTask);
 
+        _logger.LogInformation("Lookup completed for target node {NodeID}", Convert.ToHexString(targetNodeId));
+        
         var nodes = _pathBuckets
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
@@ -114,7 +116,7 @@ public class LookupManager(IRoutingTable routingTable,
                 
                 if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 {
-                    _logger.LogInformation("Marking bucket {BucketIndex} as complete. Received responses from {Count} closest nodes", bucket.Index,bucket.ExpectedResponses.Count);
+                    _logger.LogDebug("Marking bucket {BucketIndex} as complete. Received responses from {Count} closest nodes", bucket.Index,bucket.ExpectedResponses.Count);
                     bucket.SetComplete();
                 }
                 else
@@ -157,7 +159,7 @@ public class LookupManager(IRoutingTable routingTable,
         if (node == null)
             return;
 
-        _logger.LogInformation("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
+        _logger.LogDebug("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
             bucket.Index);
             
         bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
@@ -184,7 +186,7 @@ public class LookupManager(IRoutingTable routingTable,
         if(nodesToQuery.Count == 0)
             return;
         
-        _logger.LogInformation("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}",
+        _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}",
             nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
 
         foreach (var node in nodesToQuery)
@@ -229,7 +231,7 @@ public class LookupManager(IRoutingTable routingTable,
                 null, connectionOptions.RequestTimeoutMs,connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(replacementNode.Id);
             
-            _logger.LogInformation("Querying a replaced node {NodeId} in bucket {BucketIndex}",
+            _logger.LogDebug("Querying a replaced node {NodeId} in bucket {BucketIndex}",
                 Convert.ToHexString(replacementNode.Id), bucket.Index);
             
             await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, true, bucket.TargetNodeId);
