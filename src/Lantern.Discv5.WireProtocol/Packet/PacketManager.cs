@@ -98,7 +98,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         byte[] destNodeId)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(message,destNodeId, maskingIv, sessionMain.MessageCount);
+        var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(message, destNodeId, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Header, maskingIv, message);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 

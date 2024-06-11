@@ -6,7 +6,7 @@ public class TableOptions
     {
         BootstrapEnrs = bootstrapEnrs;
     }
-    
+
     public int PingIntervalMilliseconds { get; set; } = 5000;
     public int RefreshIntervalMilliseconds { get; set; } = 300000;
     public int LookupTimeoutMilliseconds { get; set; } = 10000;

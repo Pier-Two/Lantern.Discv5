@@ -49,7 +49,7 @@ public class MessageResponderTests
         _identityManager = serviceProvider.GetRequiredService<IIdentityManager>();
         _enrFactory = serviceProvider.GetRequiredService<IEnrFactory>();
     }
-    
+
     [Test]
     public async Task Test_MessageResponder_ShouldThrowArgumentException_WhenMessageIsNotSupported()
     {
@@ -66,7 +66,7 @@ public class MessageResponderTests
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9989);
         var response = await _messageResponder.HandleMessageAsync(pingMessage.EncodeMessage(), ipEndPoint);
         var pongMessage = (PongMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(response[0]!);
-        
+
         Assert.NotNull(pongMessage);
         Assert.AreEqual(MessageType.Pong, pongMessage.MessageType);
         Assert.AreEqual(_identityManager.Record.SequenceNumber, pongMessage.EnrSeq);
@@ -77,7 +77,7 @@ public class MessageResponderTests
     [Test]
     public async Task Test_MessageResponder_ShouldHandleFindNodesMessageCorrectly()
     {
-        var distances = new [] { 252, 253, 254 };
+        var distances = new[] { 252, 253, 254 };
         var findNodesMessage = new FindNodeMessage(distances);
         var ipEndPoint = new IPEndPoint(IPAddress.Any, 9319);
         var response = await _messageResponder.HandleMessageAsync(findNodesMessage.EncodeMessage(), ipEndPoint);
@@ -87,7 +87,7 @@ public class MessageResponderTests
         Assert.AreEqual(0, nodesMessage.Total);
         Assert.AreEqual(0, nodesMessage.Enrs.Length);
     }
-    
+
     [Test]
     public async Task Test_MessageResponder_ShouldHandleTalkRequestMessageCorrectly()
     {
@@ -100,18 +100,18 @@ public class MessageResponderTests
         Assert.AreEqual(MessageType.TalkResp, talkRespMessage.MessageType);
         Assert.AreEqual("request"u8.ToArray(), talkRespMessage.Response);
     }
-    
+
     [OneTimeTearDown]
     public void TearDown()
     {
         _discv5Protocol.StopAsync();
     }
-    
+
     private class TestTalkReqAndRespHandler : ITalkReqAndRespHandler
     {
         public byte[][] HandleRequest(byte[] protocol, byte[] request)
         {
-            return new[] { request};
+            return new[] { request };
         }
 
         public byte[] HandleResponse(byte[] response)

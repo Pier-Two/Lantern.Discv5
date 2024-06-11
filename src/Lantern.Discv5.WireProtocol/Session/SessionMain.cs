@@ -29,7 +29,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
     {
         _challengeData = ByteArrayUtils.JoinByteArrays(maskingIv, header);
     }
-    
+
     public byte[]? GenerateIdSignature(byte[] destNodeId)
     {
         if (_challengeData == null)
@@ -37,7 +37,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
             _logger.LogError("Challenge data is not set. Cannot generate id signature");
             return null;
         }
-        
+
         return sessionCrypto.GenerateIdSignature(sessionKeys, _challengeData, EphemeralPublicKey, destNodeId);
     }
 
@@ -48,8 +48,8 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
             _logger.LogError("Challenge data is not set. Cannot verify id signature");
             return false;
         }
-        
-        return sessionCrypto.VerifyIdSignature(handshakePacket.IdSignature, _challengeData,publicKey, handshakePacket.EphPubkey, selfNodeId, sessionKeys.CryptoContext);
+
+        return sessionCrypto.VerifyIdSignature(handshakePacket.IdSignature, _challengeData, publicKey, handshakePacket.EphPubkey, selfNodeId, sessionKeys.CryptoContext);
     }
 
     public byte[]? EncryptMessageWithNewKeys(IEnr dest, StaticHeader header, byte[] selfNodeId, byte[] message, byte[] maskingIv)
@@ -58,8 +58,8 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
         var destNodeId = new IdentityVerifierV4().GetNodeIdFromRecord(dest);
         var sharedSecret = sessionCrypto.GenerateSharedSecret(sessionKeys.EphemeralPrivateKey, publicKey, sessionKeys.CryptoContext);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
-        
-        if(_challengeData == null)
+
+        if (_challengeData == null)
         {
             _logger.LogError("Challenge data is not set. Cannot encrypt message");
             return null;
@@ -67,7 +67,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
 
         _currentSharedKeys = sessionCrypto.GenerateSessionKeys(sharedSecret, selfNodeId, destNodeId, _challengeData);
         _messageCount++;
-        
+
         _logger.LogDebug("Encrypting message with new keys");
         return aesCrypto.AesGcmEncrypt(_currentSharedKeys.InitiatorKey, header.Nonce, message, messageAd);
     }
@@ -81,16 +81,16 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
             _logger.LogError("Handshake packet does not contain a source node id. Cannot decrypt packet");
             return null;
         }
-        
-        if(_challengeData == null)
+
+        if (_challengeData == null)
         {
             _logger.LogError("Challenge data is not set. Cannot decrypt message");
             return null;
         }
-        
+
         var sharedKeys = sessionCrypto.GenerateSessionKeys(sharedSecret, handshakePacket.SrcId, selfNodeId, _challengeData);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
-        
+
         _logger.LogDebug("Decrypting message with new keys");
         var decryptedResult = aesCrypto.AesGcmDecrypt(sharedKeys.InitiatorKey, header.Nonce, encryptedMessage, messageAd);
 
@@ -102,35 +102,35 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
         return decryptedResult;
     }
 
-    public byte[]? EncryptMessage(StaticHeader header, byte[] maskingIv, byte[] rawMessage) 
+    public byte[]? EncryptMessage(StaticHeader header, byte[] maskingIv, byte[] rawMessage)
     {
-        if(_currentSharedKeys == null)
+        if (_currentSharedKeys == null)
         {
             _logger.LogError("Session keys are not available. Cannot encrypt message");
             return null;
         }
-        
+
         var encryptionKey = sessionType == SessionType.Initiator ? _currentSharedKeys.InitiatorKey : _currentSharedKeys.RecipientKey;
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
-        
+
         _logger.LogDebug("Encrypting message");
         var encryptedMessage = aesCrypto.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
-        
+
         _messageCount++;
         return encryptedMessage;
     }
-    
+
     public byte[]? DecryptMessage(StaticHeader header, byte[] maskingIv, byte[] encryptedMessage)
     {
-        if(_currentSharedKeys == null)
+        if (_currentSharedKeys == null)
         {
             _logger.LogError("Session keys are not available. Cannot decrypt message");
             return null;
         }
-        
+
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
         var decryptionKey = sessionType == SessionType.Initiator ? _currentSharedKeys.RecipientKey : _currentSharedKeys.InitiatorKey;
-        
+
         _logger.LogDebug("Decrypting message");
         var decryptedMessage = aesCrypto.AesGcmDecrypt(decryptionKey, header.Nonce, encryptedMessage, messageAd);
 

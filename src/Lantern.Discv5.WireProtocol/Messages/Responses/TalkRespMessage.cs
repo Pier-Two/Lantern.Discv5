@@ -13,7 +13,7 @@ public class TalkRespMessage : Message
     {
         Response = response;
     }
-    
+
     public byte[] Response { get; }
 
     public override byte[] EncodeMessage()

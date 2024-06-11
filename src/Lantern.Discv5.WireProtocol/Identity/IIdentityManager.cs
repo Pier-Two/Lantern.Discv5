@@ -7,11 +7,11 @@ namespace Lantern.Discv5.WireProtocol.Identity;
 public interface IIdentityManager
 {
     IIdentitySigner Signer { get; }
-    
+
     IIdentityVerifier Verifier { get; }
-    
+
     IEnr Record { get; }
-    
+
     bool IsIpAddressAndPortSet();
 
     void UpdateIpAddressAndPort(IPEndPoint endpoint);

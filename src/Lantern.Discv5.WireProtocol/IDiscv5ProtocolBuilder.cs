@@ -11,32 +11,32 @@ namespace Lantern.Discv5.WireProtocol;
 public interface IDiscv5ProtocolBuilder
 {
     IDiscv5ProtocolBuilder WithConnectionOptions(ConnectionOptions connectionOptions);
-    
+
     IDiscv5ProtocolBuilder WithSessionOptions(SessionOptions sessionOptions);
-    
+
     IDiscv5ProtocolBuilder WithTableOptions(TableOptions tableOptions);
-    
+
     IDiscv5ProtocolBuilder WithEnrBuilder(EnrBuilder enrBuilder);
-    
+
     IDiscv5ProtocolBuilder WithTalkResponder(ITalkReqAndRespHandler talkResponder);
-    
+
     IDiscv5ProtocolBuilder WithEnrEntryRegistry(IEnrEntryRegistry enrEntryRegistry);
-    
+
     IDiscv5ProtocolBuilder WithLoggerFactory(ILoggerFactory loggerFactory);
-    
+
     IDiscv5ProtocolBuilder WithConnectionOptions(Action<ConnectionOptions> configure);
-    
+
     IDiscv5ProtocolBuilder WithSessionOptions(Action<SessionOptions> configure);
-    
+
     IDiscv5ProtocolBuilder WithTableOptions(Action<TableOptions> configure);
-    
+
     IDiscv5ProtocolBuilder WithEnrBuilder(Action<EnrBuilder> configure);
-    
+
     IDiscv5ProtocolBuilder WithLoggerFactory(Action<ILoggerFactory> configure);
-    
+
     IDiscv5ProtocolBuilder WithTalkResponder(Action<ITalkReqAndRespHandler> configure);
 
     IServiceProvider GetServiceProvider();
-    
+
     IDiscv5Protocol Build();
 }

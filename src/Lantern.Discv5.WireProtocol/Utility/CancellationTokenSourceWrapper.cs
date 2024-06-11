@@ -8,12 +8,12 @@ public sealed class CancellationTokenSourceWrapper : ICancellationTokenSourceWra
     {
         return _cts.Token;
     }
-    
+
     public void Cancel()
     {
         _cts.Cancel();
     }
-    
+
     public bool IsCancellationRequested()
     {
         return _cts.IsCancellationRequested;

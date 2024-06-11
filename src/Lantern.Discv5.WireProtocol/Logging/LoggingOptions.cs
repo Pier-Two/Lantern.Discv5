@@ -6,7 +6,7 @@ namespace Lantern.Discv5.WireProtocol.Logging;
 public static class LoggingOptions
 {
     public static ILoggerFactory Default => CreateLoggerFactory();
-    
+
     private static ILoggerFactory CreateLoggerFactory()
     {
         return LoggerFactory.Create(builder =>

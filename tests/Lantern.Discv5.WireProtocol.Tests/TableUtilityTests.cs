@@ -15,14 +15,14 @@ public class TableUtilityTests
 
         Assert.AreEqual(256, firstDistance);
     }
-    
+
     [Test]
     public void Test_TableUtility_ShouldEqualZeroDistanceForSameNodeIds()
     {
         var firstNodeId = Convert.FromHexString("4A2E2A02F3DE741C7DB65A4E431BBD7FFF02C9C2AA3AD7E4E2999D906483EC4A");
         var secondNodeId = Convert.FromHexString("4A2E2A02F3DE741C7DB65A4E431BBD7FFF02C9C2AA3AD7E4E2999D906483EC4A");
         var firstDistance = TableUtility.Log2Distance(firstNodeId, secondNodeId);
-        
+
         Assert.AreEqual(0, firstDistance);
     }
 }

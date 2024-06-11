@@ -56,7 +56,7 @@ public class TableManagerTests
             .Setup(x => x.GetNodesCount())
             .Returns(10);
 
-        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
+        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object, mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
         await tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();
@@ -77,8 +77,8 @@ public class TableManagerTests
         mockRoutingTable
             .Setup(x => x.GetNodesCount())
             .Returns(10);
-        
-        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object,mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
+
+        var tableManager = new TableManager(mockPacketReceiver.Object, mockPacketManager.Object, mockIdentityManager.Object, mockLookupManager.Object, mockRoutingTable.Object, mockEnrRecordFactory.Object, mockLoggerFactory.Object, mockCancellationTokenSource.Object, mockGracefulTaskRunner.Object, tableOptions);
 
         await tableManager.InitAsync();
         await tableManager.StopTableManagerAsync();

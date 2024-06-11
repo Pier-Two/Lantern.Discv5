@@ -36,7 +36,7 @@ public static class RlpEncoder
     public static byte[] EncodeHexString(string value)
     {
         var bytes = Convert.FromHexString(value);
-        return bytes[0] == Constants.ZeroByte ? new byte[]{ 0 } : Encode(bytes, false);
+        return bytes[0] == Constants.ZeroByte ? new byte[] { 0 } : Encode(bytes, false);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public static class RlpEncoder
     public static IEnumerable<byte> EncodeByteItemsAsCollection(IEnumerable<byte> items)
     {
         using var stream = new MemoryStream();
-        
+
         foreach (var item in items)
         {
             stream.Write(Encode(new[] { item }, false));
@@ -112,7 +112,7 @@ public static class RlpEncoder
     public static byte[] EncodeCollectionsOfBytes(params byte[][] items)
     {
         using var stream = new MemoryStream();
-        
+
         foreach (var item in items)
         {
             stream.Write(EncodeCollectionOfBytes(item));
@@ -120,7 +120,7 @@ public static class RlpEncoder
 
         return Encode(stream.ToArray(), true);
     }
-    
+
     /// <summary>
     /// Encodes a byte array using RLP encoding.
     /// </summary>

@@ -12,8 +12,8 @@ public class NodeTableEntry(IEnr record, IIdentityVerifier verifier)
     public NodeStatus Status { get; set; } = NodeStatus.None;
 
     public int FailureCounter { get; set; }
-    
+
     public bool HasRespondedEver { get; set; }
-    
+
     public DateTime LastSeen { get; set; }
 }

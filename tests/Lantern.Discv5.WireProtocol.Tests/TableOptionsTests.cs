@@ -6,7 +6,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class TableOptionsTests
 {
     private TableOptions _tableOptions = null!;
-    
+
     [Test]
     public void Test_TableOptions_CreateDefault()
     {
@@ -46,7 +46,7 @@ public class TableOptionsTests
             ConcurrencyParameter = concurrencyParameter,
             LookupParallelism = lookupParallelism
         };
-        
+
         Assert.NotNull(_tableOptions);
         Assert.AreEqual(pingIntervalMilliseconds, _tableOptions.PingIntervalMilliseconds);
         Assert.AreEqual(refreshIntervalMilliseconds, _tableOptions.RefreshIntervalMilliseconds);

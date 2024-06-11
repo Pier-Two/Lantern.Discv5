@@ -29,23 +29,23 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
     public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
         _logger.LogInformation("Received ORDINARY packet from {Address}", returnedResult.RemoteEndPoint.Address);
-        
+
         var staticHeader = packetProcessor.GetStaticHeader(returnedResult.Buffer);
         var maskingIv = packetProcessor.GetMaskingIv(returnedResult.Buffer);
         var encryptedMessage = packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
         var nodeEntry = routingTable.GetNodeEntryForNodeId(staticHeader.AuthData);
 
         _logger.LogInformation("Received ORDINARY packet from {NodeId}", Convert.ToHexString(staticHeader.AuthData));
-        
-        if(nodeEntry == null)
+
+        if (nodeEntry == null)
         {
             _logger.LogInformation("Could not find record in the table for node {NodeId} with {IpAddress}", Convert.ToHexString(staticHeader.AuthData), returnedResult.RemoteEndPoint.Address);
             await SendWhoAreYouPacketWithoutEnrAsync(staticHeader, returnedResult.RemoteEndPoint, udpConnection);
             return;
         }
-        
+
         var session = sessionManager.GetSession(staticHeader.AuthData, returnedResult.RemoteEndPoint);
-        
+
         if (session == null)
         {
             _logger.LogInformation("Cannot decrypt ORDINARY packet. No session found, sending WHOAREYOU packet");
@@ -61,11 +61,11 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
             await SendWhoAreYouPacketAsync(staticHeader, nodeEntry.Record, returnedResult.RemoteEndPoint, udpConnection);
             return;
         }
-        
+
         _logger.LogDebug("Successfully decrypted ORDINARY packet");
 
         var replies = await messageResponder.HandleMessageAsync(decryptedMessage, returnedResult.RemoteEndPoint);
-        
+
         if (replies != null && replies.Length != 0)
         {
             foreach (var reply in replies)
@@ -81,8 +81,8 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         var whoAreYouPacket = packetBuilder.BuildWhoAreYouPacketWithoutEnr(staticHeader.AuthData, staticHeader.Nonce, maskingIv);
         var session = sessionManager.CreateSession(SessionType.Recipient, staticHeader.AuthData, destEndPoint);
 
-        session.SetChallengeData(maskingIv, whoAreYouPacket.Header.GetHeader()); 
-        
+        session.SetChallengeData(maskingIv, whoAreYouPacket.Header.GetHeader());
+
         await connection.SendAsync(whoAreYouPacket.Packet, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
@@ -98,11 +98,11 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
         await connection.SendAsync(constructedWhoAreYouPacket.Packet, destEndPoint);
         _logger.LogInformation("Sent WHOAREYOU packet to {RemoteEndPoint}", destEndPoint);
     }
-    
+
     private async Task SendResponseToOrdinaryPacketAsync(StaticHeader staticHeader, ISessionMain sessionMain, IPEndPoint destEndPoint, IUdpConnection connection, byte[] response)
     {
         var maskingIv = RandomUtility.GenerateRandomData(PacketConstants.MaskingIvSize);
-        var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(response,staticHeader.AuthData, maskingIv, sessionMain.MessageCount);
+        var ordinaryPacket = packetBuilder.BuildOrdinaryPacket(response, staticHeader.AuthData, maskingIv, sessionMain.MessageCount);
         var encryptedMessage = sessionMain.EncryptMessage(ordinaryPacket.Header, maskingIv, response);
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 

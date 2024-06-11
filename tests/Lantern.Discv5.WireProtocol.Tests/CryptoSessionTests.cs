@@ -8,7 +8,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class CryptoSessionTests
 {
     private static readonly SessionCrypto SessionCrypto = new();
-    
+
     [Test]
     public void Test_Ecdh_ShouldGenerateSharedSecretCorrectly()
     {
@@ -30,7 +30,7 @@ public class CryptoSessionTests
         var challengeData =
             Convert.FromHexString(
                 "000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
-        var sharedSecret =  SessionCrypto.GenerateSharedSecret(ephemeralKey, destPubkey, Context.Instance);
+        var sharedSecret = SessionCrypto.GenerateSharedSecret(ephemeralKey, destPubkey, Context.Instance);
         var initiatorKey = SessionCrypto.GenerateSessionKeys(sharedSecret, nodeIdA, nodeIdB, challengeData).InitiatorKey;
         var recipientKey = SessionCrypto.GenerateSessionKeys(sharedSecret, nodeIdA, nodeIdB, challengeData).RecipientKey;
         Assert.IsTrue(initiatorKey.SequenceEqual(Convert.FromHexString("dccc82d81bd610f4f76d3ebe97a40571")));
@@ -50,7 +50,7 @@ public class CryptoSessionTests
         var expectedSignature = Convert.FromHexString("94852a1e2318c4e5e9d422c98eaf19d1d90d876b29cd06ca7cb7546d0fff7b484fe86c09a064fe72bdbef73ba8e9c34df0cd2b53e9d65528c2c7f336d5dfc6e6");
         Assert.IsTrue(signature.SequenceEqual(expectedSignature));
     }
-    
+
     [Test]
     public void Test_IdSignatureVerification_ShouldVerifySignatureCorrectly()
     {
@@ -58,9 +58,9 @@ public class CryptoSessionTests
         var challengeData = Convert.FromHexString("000000000000000000000000000000006469736376350001010102030405060708090a0b0c00180102030405060708090a0b0c0d0e0f100000000000000000");
         var ephemeralPubkey =
             Convert.FromHexString("039961e4c2356d61bedb83052c115d311acb3a96f5777296dcf297351130266231");
-        var nodeBId = Convert.FromHexString("bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9"); 
+        var nodeBId = Convert.FromHexString("bbbb9d047f0488c0b5a93c1c3f2d8bafc7c8ff337024a55434a0d0555de64db9");
         var signature = Convert.FromHexString("94852a1e2318c4e5e9d422c98eaf19d1d90d876b29cd06ca7cb7546d0fff7b484fe86c09a064fe72bdbef73ba8e9c34df0cd2b53e9d65528c2c7f336d5dfc6e6");
-        var result = SessionCrypto.VerifyIdSignature(signature, challengeData,sessionKeys.PublicKey, ephemeralPubkey, nodeBId, Context.Instance);
+        var result = SessionCrypto.VerifyIdSignature(signature, challengeData, sessionKeys.PublicKey, ephemeralPubkey, nodeBId, Context.Instance);
         Assert.AreEqual(true, result);
     }
 }

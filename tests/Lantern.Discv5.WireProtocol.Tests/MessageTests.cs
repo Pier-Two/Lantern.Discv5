@@ -15,7 +15,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 
 [TestFixture]
 public class MessageTests
-{    
+{
     private static IEnrFactory _enrFactory = null!;
     private static IIdentityManager _identityManager = null!;
     private static IMessageDecoder _messageDecoder = null!;
@@ -32,12 +32,12 @@ public class MessageTests
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
             .Build();
-        
+
         _enrFactory = new EnrFactory(enrEntryRegistry);
-        _identityManager = new IdentityManager(sessionOptions, connectionOptions,enr, loggerFactory);
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions, enr, loggerFactory);
         _messageDecoder = new MessageDecoder(_identityManager, _enrFactory);
     }
-    
+
     [Test]
     public void Test_PingMessage_ShouldEncodeCorrectly()
     {
@@ -129,8 +129,8 @@ public class MessageTests
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enrs = new[]
         {
-            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier), 
-            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier), 
+            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier),
+            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier),
         };
         var nodesMessage = new NodesMessage(2, enrs);
         var encodedMessage = nodesMessage.EncodeMessage();
@@ -168,12 +168,12 @@ public class MessageTests
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enrs = new[]
         {
-            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier), 
-            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier), 
+            new EnrFactory(enrEntryRegistry1).CreateFromString(firstEnrString, _identityManager.Verifier),
+            new EnrFactory(enrEntryRegistry2).CreateFromString(secondEnrString, _identityManager.Verifier),
         };
         var nodesMessage = new NodesMessage(2, enrs);
         var decodedMessage = (NodesMessage)_messageDecoder.DecodeMessage(nodesMessage.EncodeMessage());
-        
+
         Assert.AreEqual(decodedMessage.RequestId, nodesMessage.RequestId);
         Assert.AreEqual(decodedMessage.Total, nodesMessage.Total);
         Assert.AreEqual(decodedMessage.Enrs.Length, nodesMessage.Enrs.Length);

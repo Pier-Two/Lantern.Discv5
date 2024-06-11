@@ -27,7 +27,7 @@ public class AesCryptographyTests
         var header = GenerateRandomBytes(16);
         var encryptedHeader = AesCrypto.AesCtrEncrypt(maskingKey, maskingIv, header);
         Assert.AreNotEqual(header, encryptedHeader);
-        
+
         var decryptedHeader = AesCrypto.AesCtrDecrypt(maskingKey, maskingIv, encryptedHeader);
         Assert.AreEqual(header, decryptedHeader);
     }
@@ -43,7 +43,7 @@ public class AesCryptographyTests
         var decrypted = AesCrypto.AesGcmDecrypt(key, nonce, cipher, ad);
         Assert.IsTrue(msg.SequenceEqual(decrypted));
     }
-    
+
     private static byte[] GenerateRandomBytes(int length)
     {
         var bytes = new byte[length];

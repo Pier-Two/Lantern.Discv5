@@ -15,21 +15,21 @@ public class RequestManager(IRoutingTable routingTable,
     : IRequestManager
 {
     private readonly ConcurrentDictionary<byte[], PendingRequest> _pendingRequests = new(ByteArrayEqualityComparer.Instance);
-    
+
     private readonly ConcurrentDictionary<byte[], CachedHandshakeInteraction> _cachedHandshakeInteractions = new(ByteArrayEqualityComparer.Instance);
-    
+
     private readonly ConcurrentDictionary<byte[], CachedRequest> _cachedRequests = new(ByteArrayEqualityComparer.Instance);
-    
+
     private readonly ILogger<RequestManager> _logger = loggerFactory.CreateLogger<RequestManager>();
-    
+
     private Task _checkAllRequestsTask = Task.CompletedTask;
 
     public int PendingRequestsCount => _pendingRequests.Count;
-    
+
     public int CachedRequestsCount => _cachedRequests.Count;
-    
+
     public int CachedHandshakeInteractionsCount => _cachedHandshakeInteractions.Count;
-    
+
     public void InitAsync()
     {
         _logger.LogInformation("Starting RequestManagerAsync");
@@ -42,7 +42,7 @@ public class RequestManager(IRoutingTable routingTable,
         cts.Cancel();
 
         await _checkAllRequestsTask.ConfigureAwait(false);
-	
+
         if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("RequestManagerAsync was canceled gracefully");
@@ -52,7 +52,7 @@ public class RequestManager(IRoutingTable routingTable,
     public bool AddPendingRequest(byte[] requestId, PendingRequest request)
     {
         var result = _pendingRequests.ContainsKey(requestId);
-        
+
         _pendingRequests.AddOrUpdate(requestId, request, (_, _) => request);
 
         if (!result)
@@ -77,15 +77,15 @@ public class RequestManager(IRoutingTable routingTable,
 
         return !result;
     }
-    
+
     public void AddCachedHandshakeInteraction(byte[] packetNonce, byte[] destNodeId)
-    { 
-        
+    {
+
         if (_cachedHandshakeInteractions.Count >= 500)
         {
             // If we have more than 500 cached handshake interactions, remove 250 oldest ones
             var oldestInteractions = _cachedHandshakeInteractions.OrderBy(x => x.Value.ElapsedTime.Elapsed).Take(400).ToList();
-            
+
             foreach (var interaction in oldestInteractions)
             {
                 _cachedHandshakeInteractions.TryRemove(interaction.Key, out _);
@@ -94,12 +94,12 @@ public class RequestManager(IRoutingTable routingTable,
 
         _cachedHandshakeInteractions.TryAdd(packetNonce, new CachedHandshakeInteraction(destNodeId));
     }
-    
+
     public byte[]? GetCachedHandshakeInteraction(byte[] packetNonce)
     {
         _cachedHandshakeInteractions.TryRemove(packetNonce, out var destNodeId);
-        
-        if(destNodeId == null)
+
+        if (destNodeId == null)
         {
             _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
             return null;
@@ -112,13 +112,13 @@ public class RequestManager(IRoutingTable routingTable,
     {
         return _cachedRequests.ContainsKey(requestId);
     }
-    
+
     public PendingRequest? GetPendingRequest(byte[] requestId)
     {
         _pendingRequests.TryGetValue(requestId, out var request);
         return request;
     }
-    
+
     public PendingRequest? GetPendingRequestByNodeId(byte[] nodeId)
     {
         return _pendingRequests.Values.FirstOrDefault(x => x.NodeId.SequenceEqual(nodeId));
@@ -132,12 +132,12 @@ public class RequestManager(IRoutingTable routingTable,
 
     public PendingRequest? MarkRequestAsFulfilled(byte[] requestId)
     {
-        if (!_pendingRequests.TryGetValue(requestId, out var request)) 
+        if (!_pendingRequests.TryGetValue(requestId, out var request))
             return null;
-        
+
         request.IsFulfilled = true;
         request.ResponsesCount++;
-        
+
         return request;
     }
 
@@ -148,7 +148,7 @@ public class RequestManager(IRoutingTable routingTable,
 
         return request;
     }
-    
+
     private async Task CheckAllRequests(CancellationToken token)
     {
         while (!token.IsCancellationRequested)
@@ -171,13 +171,13 @@ public class RequestManager(IRoutingTable routingTable,
         {
             HandlePendingRequest(pendingRequest);
         }
-        
+
         foreach (var cachedRequest in currentCachedRequests)
         {
             HandleCachedRequest(cachedRequest);
         }
     }
-    
+
     private void RemoveFulfilledRequests()
     {
         _logger.LogDebug("Removing fulfilled requests");
@@ -185,7 +185,7 @@ public class RequestManager(IRoutingTable routingTable,
         var completedTasks = _pendingRequests.Values
             .Where(x => x.IsFulfilled)
             .ToList();
-        
+
         foreach (var task in completedTasks)
         {
             if (task.Message.MessageType == MessageType.FindNode)
@@ -204,39 +204,39 @@ public class RequestManager(IRoutingTable routingTable,
 
     private void HandlePendingRequest(PendingRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs)
             return;
-        
+
         _logger.LogDebug("Pending request timed out for node {NodeId}", Convert.ToHexString(request.NodeId));
 
         _pendingRequests.TryRemove(request.Message.RequestId, out _);
-        
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(request.NodeId);
 
-        if (nodeEntry == null) 
+        if (nodeEntry == null)
             return;
-        
-        if(nodeEntry.FailureCounter >= tableOptions.MaxAllowedFailures)
+
+        if (nodeEntry.FailureCounter >= tableOptions.MaxAllowedFailures)
         {
             _logger.LogDebug("Node {NodeId} has reached max retries. Marking as dead", Convert.ToHexString(request.NodeId));
-           
+
         }
         else
         {
-            _logger.LogDebug("Increasing failure counter for Node {NodeId}",Convert.ToHexString(request.NodeId));
+            _logger.LogDebug("Increasing failure counter for Node {NodeId}", Convert.ToHexString(request.NodeId));
             routingTable.IncreaseFailureCounter(request.NodeId);
         }
     }
 
     private void HandleCachedRequest(CachedRequest request)
     {
-        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs) 
+        if (request.ElapsedTime.ElapsedMilliseconds <= connectionOptions.RequestTimeoutMs)
             return;
-        
-        _cachedRequests.TryRemove(request.NodeId, out _);  
-        
+
+        _cachedRequests.TryRemove(request.NodeId, out _);
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(request.NodeId);
-            
+
         if (nodeEntry == null)
         {
             _logger.LogDebug("Node {NodeId} not found in routing table", Convert.ToHexString(request.NodeId));

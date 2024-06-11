@@ -7,19 +7,19 @@ namespace Lantern.Discv5.WireProtocol.Session;
 public interface ISessionMain
 {
     bool IsEstablished { get; }
-    
+
     byte[] MessageCount { get; }
-    
+
     byte[] PublicKey { get; }
-    
+
     byte[] EphemeralPublicKey { get; }
-    
+
     void SetChallengeData(byte[] maskingIv, byte[] header);
-    
+
     byte[]? GenerateIdSignature(byte[] destNodeId);
-    
+
     bool VerifyIdSignature(HandshakePacketBase handshakePacket, byte[] publicKey, byte[] selfNodeId);
-    
+
     byte[]? EncryptMessageWithNewKeys(IEnr dest, StaticHeader header, byte[] selfNodeId, byte[] message,
         byte[] maskingIv);
 

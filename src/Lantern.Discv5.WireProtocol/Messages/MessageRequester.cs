@@ -8,7 +8,7 @@ namespace Lantern.Discv5.WireProtocol.Messages;
 
 public class MessageRequester(IIdentityManager identityManager, IRequestManager requestManager,
         ILoggerFactory loggerFactory)
-    : IMessageRequester 
+    : IMessageRequester
 {
     private readonly ILogger<MessageRequester> _logger = LoggerFactoryExtensions.CreateLogger<MessageRequester>(loggerFactory);
 
@@ -18,8 +18,8 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
         var pendingRequest = new PendingRequest(destNodeId, pingMessage);
         var result = requestManager.AddPendingRequest(pingMessage.RequestId, pendingRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(pingMessage.RequestId));
             return null;
@@ -35,22 +35,22 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
         var cachedRequest = new CachedRequest(destNodeId, pingMessage);
         var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
-        
+
         _logger.LogDebug("Ping message constructed: {PingMessage}", pingMessage.RequestId);
         return pingMessage.EncodeMessage();
     }
-    
+
     public byte[]? ConstructFindNodeMessage(byte[] destNodeId, bool isLookupRequest, byte[] targetNodeId)
     {
         var distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
         var distances = new[] { distance };
-        
+
         _logger.LogInformation("Constructing message of type {MessageType} at distances {Distances}", MessageType.FindNode, string.Join(", ", distances.Select(d => d.ToString())));
 
         var findNodesMessage = new FindNodeMessage(distances);
@@ -60,7 +60,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         };
         var result = requestManager.AddPendingRequest(findNodesMessage.RequestId, pendingRequest);
 
-        if(!result)
+        if (!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
@@ -69,12 +69,12 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         _logger.LogDebug("FindNode message constructed: {FindNodeMessage}", findNodesMessage.RequestId);
         return findNodesMessage.EncodeMessage();
     }
-    
+
     public byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, bool isLookupRequest, byte[] targetNodeId)
     {
         var distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
         var distances = new[] { distance };
-        
+
         _logger.LogInformation("Constructing message of type {MessageType} at distances {Distances}", MessageType.FindNode, string.Join(", ", distances.Select(d => d.ToString())));
 
         var findNodesMessage = new FindNodeMessage(distances);
@@ -83,8 +83,8 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
             IsLookupRequest = isLookupRequest
         };
         var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
@@ -101,8 +101,8 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         var talkReqMessage = new TalkReqMessage(protocol, request);
         var pendingRequest = new PendingRequest(destNodeId, talkReqMessage);
         var result = requestManager.AddPendingRequest(talkReqMessage.RequestId, pendingRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkReqMessage.RequestId));
             return null;
@@ -111,39 +111,39 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         _logger.LogDebug("TalkReq message constructed: {TalkReqMessage}", talkReqMessage.RequestId);
         return talkReqMessage.EncodeMessage();
     }
-    
+
     public byte[]? ConstructTalkRespMessage(byte[] destNodeId, byte[] response)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.TalkResp);
-        
+
         var talkRespMessage = new TalkRespMessage(response);
         var pendingRequest = new PendingRequest(destNodeId, talkRespMessage);
         var result = requestManager.AddPendingRequest(talkRespMessage.RequestId, pendingRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
             return null;
         }
-        
+
         _logger.LogDebug("TalkResp message constructed: {TalkRespMessage}", talkRespMessage.RequestId);
         return talkRespMessage.EncodeMessage();
     }
-    
+
     public byte[]? ConstructCachedTalkReqMessage(byte[] destNodeId, byte[] protocol, byte[] request)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.TalkReq);
-        
+
         var talkReqMessage = new TalkReqMessage(protocol, request);
         var cachedRequest = new CachedRequest(destNodeId, talkReqMessage);
         var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;
         }
-        
+
         _logger.LogDebug("TalkReq message constructed: {TalkReqMessage}", talkReqMessage.RequestId);
         return talkReqMessage.EncodeMessage();
     }
@@ -151,12 +151,12 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
     public byte[]? ConstructCachedTalkRespMessage(byte[] destNodeId, byte[] response)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.TalkResp);
-        
+
         var talkRespMessage = new TalkRespMessage(response);
         var cachedRequest = new CachedRequest(destNodeId, talkRespMessage);
         var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
-        
-        if(!result)
+
+        if (!result)
         {
             _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
             return null;

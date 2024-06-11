@@ -13,7 +13,7 @@ public class WhoAreYouPacketBase(byte[] idNonce, ulong enrSeq) : PacketBase(Prep
         var enrSeqArray = new byte[PacketConstants.EnrSeqSize];
         var enrSeqBytes = ByteArrayUtils.ToBigEndianBytesTrimmed(enrSeq);
         Array.Copy(enrSeqBytes, 0, enrSeqArray, PacketConstants.EnrSeqSize - enrSeqBytes.Length, enrSeqBytes.Length);
-        
+
         return ByteArrayUtils.JoinByteArrays(idNonce, enrSeqArray);
     }
 
@@ -22,7 +22,7 @@ public class WhoAreYouPacketBase(byte[] idNonce, ulong enrSeq) : PacketBase(Prep
         var index = 0;
         var idNonce = authData[..PacketConstants.IdNonceSize];
         index += PacketConstants.IdNonceSize;
-        
+
         var enrSeq = (ulong)RlpExtensions.ByteArrayToInt64(authData[index..PacketConstants.WhoAreYou]);
         return new WhoAreYouPacketBase(idNonce, enrSeq);
     }

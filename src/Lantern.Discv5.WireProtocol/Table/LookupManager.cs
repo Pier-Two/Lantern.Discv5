@@ -17,11 +17,11 @@ public class LookupManager(IRoutingTable routingTable,
     : ILookupManager
 {
     private readonly ILogger<LookupManager> _logger = loggerFactory.CreateLogger<LookupManager>();
-    
+
     private readonly ConcurrentBag<PathBucket> _pathBuckets = [];
-    
+
     private readonly SemaphoreSlim _lookupSemaphore = new(1, 1);
-    
+
     public bool IsLookupInProgress { get; private set; }
 
     public async Task<List<IEnr>?> LookupAsync(byte[] targetNodeId)
@@ -31,8 +31,8 @@ public class LookupManager(IRoutingTable routingTable,
             _logger.LogInformation("Lookup is currently in progress");
             return null;
         }
-        
-        if(routingTable.GetActiveNodesCount() == 0)
+
+        if (routingTable.GetActiveNodesCount() == 0)
         {
             _logger.LogInformation("No active nodes in routing table");
             return null;
@@ -46,14 +46,14 @@ public class LookupManager(IRoutingTable routingTable,
         await Task.WhenAny(allBucketsCompleteTask, delayTask);
 
         _logger.LogInformation("Lookup completed for target node {NodeID}", Convert.ToHexString(targetNodeId));
-        
+
         var nodes = _pathBuckets
             .SelectMany(bucket => bucket.DiscoveredNodes)
             .Distinct()
             .OrderBy(node => TableUtility.Log2Distance(node.Id, targetNodeId))
             .Take(tableOptions.MaxNodesCount)
             .ToList();
-        
+
         var result = nodes.Select(node => routingTable.GetNodeEntryForNodeId(node.Id)?.Record).ToList();
 
         foreach (var bucket in _pathBuckets)
@@ -113,10 +113,10 @@ public class LookupManager(IRoutingTable routingTable,
 
                 if (bucket.ExpectedResponses[senderNodeId] != 0)
                     return;
-                
+
                 if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 {
-                    _logger.LogDebug("Marking bucket {BucketIndex} as complete. Received responses from {Count} closest nodes", bucket.Index,bucket.ExpectedResponses.Count);
+                    _logger.LogDebug("Marking bucket {BucketIndex} as complete. Received responses from {Count} closest nodes", bucket.Index, bucket.ExpectedResponses.Count);
                     bucket.SetComplete();
                 }
                 else
@@ -147,7 +147,7 @@ public class LookupManager(IRoutingTable routingTable,
 
         bucket.Responses[senderNodeId].Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
             .CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
-        
+
         bucket.DiscoveredNodes.ToList().Sort((node1, node2) => TableUtility.Log2Distance(node1.Id, bucket.TargetNodeId)
                 .CompareTo(TableUtility.Log2Distance(node2.Id, bucket.TargetNodeId)));
     }
@@ -161,31 +161,31 @@ public class LookupManager(IRoutingTable routingTable,
 
         _logger.LogDebug("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
             bucket.Index);
-            
+
         bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
             connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
         bucket.PendingQueries.Add(node.Id);
-        
+
         await packetManager.SendPacket(node.Record, MessageType.FindNode, true, bucket.TargetNodeId);
     }
 
     private async Task QueryClosestNodes(PathBucket bucket, byte[] senderNodeId)
     {
         var queryCount = Math.Min(TableConstants.BucketSize - bucket.ExpectedResponses.Count, tableOptions.ConcurrencyParameter);
-        
+
         if (queryCount == 0)
             return;
-        
+
         var nodesToQuery = bucket.Responses[senderNodeId]
             .Where(node => routingTable.GetNodeEntryForNodeId(node.Id) != null)
             .Where(node => !_pathBuckets.Any(pathBucket => pathBucket.PendingQueries.Contains(node.Id, ByteArrayEqualityComparer.Instance)))
             .Where(node => !requestManager.ContainsCachedRequest(node.Id))
             .Take(queryCount)
             .ToList();
-        
-        if(nodesToQuery.Count == 0)
+
+        if (nodesToQuery.Count == 0)
             return;
-        
+
         _logger.LogDebug("Querying {NodesCount} nodes received from node {NodeId} in bucket {BucketIndex}",
             nodesToQuery.Count, Convert.ToHexString(senderNodeId), bucket.Index);
 
@@ -193,7 +193,7 @@ public class LookupManager(IRoutingTable routingTable,
         {
             if (bucket.ExpectedResponses.Count >= TableConstants.BucketSize)
                 return;
-            
+
             bucket.PendingTimers[node.Id] =
                 new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(node.Id);
@@ -206,9 +206,9 @@ public class LookupManager(IRoutingTable routingTable,
         try
         {
             await _lookupSemaphore.WaitAsync();
-            
+
             bucket.DisposeTimer(nodeId);
-            
+
             if (bucket.Completion.Task.IsCompleted || (bucket.Responses.ContainsKey(nodeId) && bucket.Responses[nodeId].Count > 0))
             {
                 _lookupSemaphore.Release();
@@ -226,14 +226,14 @@ public class LookupManager(IRoutingTable routingTable,
                 _logger.LogDebug("No replacement node found in bucket {BucketIndex}", bucket.Index);
                 return;
             }
-            
+
             bucket.PendingTimers[replacementNode.Id] = new Timer(_ => QueryTimeoutCallback(replacementNode.Id, bucket),
-                null, connectionOptions.RequestTimeoutMs,connectionOptions.ReceiveTimeoutMs);
+                null, connectionOptions.RequestTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(replacementNode.Id);
-            
+
             _logger.LogDebug("Querying a replaced node {NodeId} in bucket {BucketIndex}",
                 Convert.ToHexString(replacementNode.Id), bucket.Index);
-            
+
             await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, true, bucket.TargetNodeId);
             _lookupSemaphore.Release();
         }

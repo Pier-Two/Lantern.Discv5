@@ -17,9 +17,9 @@ public class EnrBuilder
 
     public EnrBuilder WithEntry(string key, IEntry? entry)
     {
-        if(entry != null)
+        if (entry != null)
             _entries[key] = entry;
-        
+
         return this;
     }
 
@@ -30,10 +30,10 @@ public class EnrBuilder
             throw new InvalidOperationException("Signer must be set before building the EnrRecord.");
         }
 
-        var enrRecord = new Enr(_entries,_verifier, _signer);
-        
+        var enrRecord = new Enr(_entries, _verifier, _signer);
+
         enrRecord.UpdateSignature();
-        
+
         return enrRecord;
     }
 }

@@ -14,7 +14,7 @@ public class RlpEncoderTests
         var rlpExpected = new byte[] { 128 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
-    
+
     [Test]
     public void Test_RlpEncoder_ShouldEncodeStringCorrectly()
     {
@@ -31,7 +31,7 @@ public class RlpEncoderTests
         var rlpExpected = new byte[] { 200, 131, 99, 97, 116, 131, 100, 111, 103 };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
-    
+
     [Test]
     public void Test_RlpEncoder_ShouldEncodeZeroHexCorrectly()
     {

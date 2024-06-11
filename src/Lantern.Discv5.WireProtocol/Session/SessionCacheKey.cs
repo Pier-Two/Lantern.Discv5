@@ -28,7 +28,7 @@ public sealed class SessionCacheKey : IEquatable<SessionCacheKey>
     public override int GetHashCode()
     {
         var hash = 17;
-        
+
         unchecked
         {
             hash = NodeId.Aggregate(hash, (current, b) => current * 31 + b.GetHashCode());

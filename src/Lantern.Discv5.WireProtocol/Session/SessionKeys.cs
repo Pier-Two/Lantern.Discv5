@@ -13,13 +13,13 @@ public class SessionKeys : ISessionKeys
         EphemeralPublicKey = CryptoContext.CreateECPrivKey(EphemeralPrivateKey).CreatePubKey().ToBytes();
     }
 
-    public byte[] PrivateKey { get; } 
-    
+    public byte[] PrivateKey { get; }
+
     public byte[] EphemeralPrivateKey { get; }
 
     public byte[] PublicKey { get; }
 
     public byte[] EphemeralPublicKey { get; }
-        
+
     public Context CryptoContext { get; } = Context.Instance;
 }

@@ -8,19 +8,19 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class SessionOptionsTests
 {
     private SessionOptions _sessionOptions = null!;
-    
+
     [Test]
     public void Test_SessionOptions_CreateDefault()
     {
         _sessionOptions = SessionOptions.Default;
-        
+
         Assert.NotNull(_sessionOptions);
         Assert.NotNull(_sessionOptions.Signer);
         Assert.NotNull(_sessionOptions.Verifier);
         Assert.NotNull(_sessionOptions.SessionKeys);
         Assert.AreEqual(1000, _sessionOptions.SessionCacheSize);
     }
-    
+
     [Test]
     public void Test_SessionOptions_Builder()
     {
@@ -36,7 +36,7 @@ public class SessionOptionsTests
             SessionKeys = sessionKeys,
             SessionCacheSize = 2000
         };
-        
+
         Assert.NotNull(_sessionOptions);
         Assert.NotNull(_sessionOptions.Signer);
         Assert.NotNull(_sessionOptions.Verifier);

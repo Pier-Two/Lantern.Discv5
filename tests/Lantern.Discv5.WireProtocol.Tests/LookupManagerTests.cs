@@ -31,7 +31,7 @@ public class LookupManagerTests
         connectionOptions = new ConnectionOptions();
         tableOptions = TableOptions.Default;
         mockRequestManager = new Mock<IRequestManager>();
-        mockLoggerFactory = new Mock<ILoggerFactory>(); 
+        mockLoggerFactory = new Mock<ILoggerFactory>();
         logger = new Mock<ILogger<LookupManager>>();
         mockLoggerFactory
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
@@ -48,7 +48,7 @@ public class LookupManagerTests
 
         mockRoutingTable
             .Setup(x => x.GetClosestNodes(It.IsAny<byte[]>()))
-            .Returns(new List<NodeTableEntry>{ nodeTableEntry });
+            .Returns(new List<NodeTableEntry> { nodeTableEntry });
 
         var lookupManager = new LookupManager(
             mockRoutingTable.Object,
@@ -62,7 +62,7 @@ public class LookupManagerTests
         var secondLookup = lookupManager.LookupAsync(targetNodeId);
         await Task.WhenAny(firstLookup, secondLookup);
 
-        Assert.IsNull(secondLookup.Result); 
+        Assert.IsNull(secondLookup.Result);
     }
 
 }
