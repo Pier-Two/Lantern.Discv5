@@ -20,7 +20,7 @@ public class NodesMessage : Message
     public int Total { get; }
 
     public IEnr[] Enrs { get; }
-    
+
     public override byte[] EncodeMessage()
     {
         var messageId = new[] { (byte)MessageType };
@@ -32,7 +32,7 @@ public class NodesMessage : Message
                 encodedEnrs));
         return ByteArrayUtils.Concatenate(messageId, encodedItems);
     }
-    
+
     private byte[] EncodeEnrs()
     {
         using var stream = new MemoryStream();

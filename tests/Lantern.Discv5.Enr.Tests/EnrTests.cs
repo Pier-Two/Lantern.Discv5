@@ -18,7 +18,7 @@ public class EnrTests
         var signature =
             Convert.FromHexString(
                 "7098ad865b00a582051940cb9cf36836572411a47278783077011599ed5cd16b76f2635f4e234738f30813a89eb9137e3e3df5266e3a1f11df72ecf1145ccb9c");
-        
+
         var id = new EntryId("v4");
         var ip = new EntryIp(new IPAddress(Convert.FromHexString("7f000001")));
         var pubKey =
@@ -33,8 +33,8 @@ public class EnrTests
             { EnrEntryKey.Udp, udp }
         };
 
-        var enr = new Enr(entries,new IdentityVerifierV4(),null, signature);
-        
+        var enr = new Enr(entries, new IdentityVerifierV4(), null, signature);
+
         Assert.AreEqual(enrString, enr.ToString());
     }
 
@@ -83,7 +83,7 @@ public class EnrTests
 
         var attnets = enr.GetEntry<EntryAttnets>(EnrEntryKey.Attnets).Value;
         Assert.AreEqual(Convert.FromHexString("0000000000000000"), attnets);
-        
+
         var syncnets = enr.GetEntry<EntrySyncnets>(EnrEntryKey.Syncnets).Value;
         Assert.AreEqual(Convert.FromHexString("00"), syncnets);
 
@@ -102,7 +102,7 @@ public class EnrTests
 
         var udp = enr.GetEntry<EntryUdp>(EnrEntryKey.Udp).Value;
         Assert.AreEqual(Convert.ToInt32("2328", 16), udp);
-        
+
         Assert.AreEqual(enrString, enr.ToString());
     }
 
@@ -149,10 +149,10 @@ public class EnrTests
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-Mq4QLyFLj2R0kwCmxNgO02F2JqHOUAT9CnqK9qHBwJWPlvNR36e9YydkUzFM69E0dzX7hrpOUAJVKsBLb3PysSz-IiGAY7D6Sg4h2F0dG5ldHOIAAAAAAAAAAaEZXRoMpBqlaGpBAAAAP__________gmlkgnY0gmlwhCJkw5SJc2VjcDI1NmsxoQMc6eWKtIsR4Ref474zOEeRKEuHzxrK_jffZrkzzYSuUYhzeW5jbmV0cwCDdGNwgjLIg3VkcILLBIR1ZHA2gi7g", new IdentityVerifierV4());
         var enode = "enode://bc852e3d91d24c029b13603b4d85d89a87394013f429ea2bda870702563e5bcd477e9ef58c9d914cc533af44d1dcd7ee1ae939400954ab012dbdcfcac4b3f888@34.100.195.148:13000?discport=51972";
-        
+
         Assert.AreEqual(enode, enr.ToEnode());
     }
-    
+
     [Test]
     public void Test_V4PeerIdGeneration_ShouldDerivePeerIdCorrectly()
     {
@@ -162,7 +162,7 @@ public class EnrTests
         var peerId = "16Uiu2HAmSH2XVgZqYHWucap5kuPzLnt2TsNQkoppVxB5eJGvaXwm";
 
         Assert.AreEqual(peerId, enr.ToPeerId());
-        
+
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enr2 = new EnrFactory(enrEntryRegistry2).CreateFromString("enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg", new IdentityVerifierV4());
         Console.WriteLine(enr2.ToPeerId());

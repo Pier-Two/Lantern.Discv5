@@ -10,16 +10,16 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
     private readonly object _lock = new();
 
     public event Action<NodeTableEntry> NodeAdded = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeRemoved = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeAddedToCache = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeRemovedFromCache = delegate { };
 
-    public IEnumerable<NodeTableEntry> Nodes 
+    public IEnumerable<NodeTableEntry> Nodes
     {
-        get 
+        get
         {
             lock (_lock)
             {
@@ -27,8 +27,8 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
             }
         }
     }
-    
-    public IEnumerable<NodeTableEntry> ReplacementCache 
+
+    public IEnumerable<NodeTableEntry> ReplacementCache
     {
         get
         {
@@ -38,7 +38,7 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
             }
         }
     }
-    
+
     public NodeTableEntry? GetNodeFromReplacementCache(byte[] nodeId)
     {
         lock (_lock)
@@ -55,7 +55,7 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
             return node ?? _replacementCache.FirstOrDefault(n => n.Id.SequenceEqual(nodeId));
         }
     }
-    
+
     public NodeTableEntry? GetLeastRecentlySeenNode()
     {
         lock (_lock)
@@ -81,7 +81,7 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
             else
             {
                 AddNewNode(nodeEntry);
-                NodeAdded.Invoke(nodeEntry); 
+                NodeAdded.Invoke(nodeEntry);
             }
         }
     }
@@ -92,42 +92,42 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
         {
             if (_replacementCache.Count == 0 || _replacementCache.First == null)
                 return;
-            
+
             _logger.LogInformation("Replacing dead node {NodeId} with node {ReplacementNodeId}", Convert.ToHexString(deadNodeEntry.Id), Convert.ToHexString(_replacementCache.First.Value.Id));
-        
+
             var replacementNode = _replacementCache.First.Value;
-            
+
             _replacementCache.RemoveFirst();
-            NodeRemovedFromCache.Invoke(replacementNode); 
-        
+            NodeRemovedFromCache.Invoke(replacementNode);
+
             var deadNode = _nodes.FirstOrDefault(node => node.Id.SequenceEqual(deadNodeEntry.Id));
-            
-            if(deadNode != null)
+
+            if (deadNode != null)
             {
                 _nodes.Remove(deadNode);
                 NodeRemoved.Invoke(deadNode);
             }
-        
+
             replacementNode.LastSeen = DateTime.UtcNow;
             _nodes.AddLast(replacementNode);
-            NodeAdded.Invoke(replacementNode); 
+            NodeAdded.Invoke(replacementNode);
         }
     }
-    
+
     public void AddToReplacementCache(NodeTableEntry nodeEntry)
     {
         if (_replacementCache.Count >= replacementCacheSize)
         {
             _logger.LogDebug("Replacement cache full. Removed first node from the bucket's replacement cache");
-            
+
             var nodeToRemove = _replacementCache.First.Value;
-            
+
             _replacementCache.RemoveFirst();
             NodeRemovedFromCache.Invoke(nodeToRemove);
         }
 
         _replacementCache.AddLast(nodeEntry);
-        NodeAddedToCache.Invoke(nodeEntry); 
+        NodeAddedToCache.Invoke(nodeEntry);
         _logger.LogDebug("Added node {NodeId} to replacement cache. There are {Count} nodes in the cache",
             Convert.ToHexString(nodeEntry.Id), _replacementCache.Count);
     }
@@ -146,7 +146,7 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
             ReplaceDeadNode(nodeEntry);
         }
     }
-    
+
     private void AddNewNode(NodeTableEntry nodeEntry)
     {
         nodeEntry.LastSeen = DateTime.UtcNow;
@@ -156,10 +156,10 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
     private void CheckLeastRecentlySeenNode(NodeTableEntry nodeEntry)
     {
         var leastRecentlySeenNode = GetLeastRecentlySeenNode();
-    
-        if(leastRecentlySeenNode == null)
+
+        if (leastRecentlySeenNode == null)
             return;
-    
+
         if (leastRecentlySeenNode.Status is NodeStatus.Live or NodeStatus.Pending)
         {
             AddToReplacementCache(nodeEntry);

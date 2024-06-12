@@ -26,7 +26,7 @@ public static class Discv5ProtocolServiceConfiguration
         ITalkReqAndRespHandler? talkResponder = null)
     {
         ValidateMandatoryConfigurations(tableOptions, connectionOptions, sessionOptions, enrEntryRegistry, enr, loggerFactory);
-        
+
         AddLoggerServices(services, loggerFactory);
         AddConnectionServices(services, connectionOptions, sessionOptions, tableOptions, talkResponder);
         AddIdentityServices(services, enrEntryRegistry, enr);
@@ -35,12 +35,12 @@ public static class Discv5ProtocolServiceConfiguration
         AddMessageServices(services);
         AddSessionServices(services);
         AddUtilityServices(services);
-        
+
         services.AddSingleton<IDiscv5Protocol, Discv5Protocol>();
-        
+
         return services;
     }
-    
+
     private static void ValidateMandatoryConfigurations(
         TableOptions tableOptions,
         ConnectionOptions connectionOptions,
@@ -65,7 +65,7 @@ public static class Discv5ProtocolServiceConfiguration
     {
         if (talkResponder != null)
             services.AddSingleton(talkResponder);
-        
+
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);

@@ -18,7 +18,7 @@ public class SessionMainTests
     private Mock<IAesCrypto> mockAesCrypto = null!;
     private Mock<ISessionCrypto> mockSessionCrypto = null!;
     private Mock<ILoggerFactory> mockLoggerFactory;
-    private Mock<ILogger<SessionMain>> logger; 
+    private Mock<ILogger<SessionMain>> logger;
 
     [SetUp]
     public void Setup()
@@ -42,7 +42,7 @@ public class SessionMainTests
         var result = sessionMain.GenerateIdSignature(new byte[32]);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public void Test_GenerateIdSignature_ShouldReturnGenerateIdSignature_WhenChallengeDataIsNotNull()
     {
@@ -50,20 +50,20 @@ public class SessionMainTests
         mockSessionCrypto
             .Setup(x => x.GenerateIdSignature(It.IsAny<ISessionKeys>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(signature);
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
-        
+
         var result = sessionMain.GenerateIdSignature(RandomUtility.GenerateRandomData(32));
         Assert.IsTrue(result.SequenceEqual(signature));
     }
-    
+
     [Test]
     public void Test_VerifyIdSignature_ShouldReturnFalse_WhenChallengeDataIsNull()
     {
         var handShakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
-        var result = sessionMain.VerifyIdSignature(handShakePacket,new byte[32], new byte[32]);
+        var result = sessionMain.VerifyIdSignature(handShakePacket, new byte[32], new byte[32]);
         Assert.IsFalse(result);
     }
 
@@ -74,14 +74,14 @@ public class SessionMainTests
             .Setup(x => x.VerifyIdSignature(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(),
                 It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<Context>()))
             .Returns(true);
-        
+
         var handShakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
-        var result = sessionMain.VerifyIdSignature(handShakePacket,new byte[32], new byte[32]);
+        var result = sessionMain.VerifyIdSignature(handShakePacket, new byte[32], new byte[32]);
         Assert.IsTrue(result);
     }
-    
+
     [Test]
     public void Test_EncryptMessageWithNewKeys_ShouldReturnNull_WhenChallengeDataIsNull()
     {
@@ -89,7 +89,7 @@ public class SessionMainTests
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
-        var result = sessionMain.EncryptMessageWithNewKeys(enrRecord,staticHeader, null, null,null);
+        var result = sessionMain.EncryptMessageWithNewKeys(enrRecord, staticHeader, null, null, null);
         Assert.IsNull(result);
     }
 
@@ -103,13 +103,13 @@ public class SessionMainTests
         mockAesCrypto
             .Setup(x => x.AesGcmEncrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(encryptedMessage);
-        
+
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
-        var result = sessionMain.EncryptMessageWithNewKeys(enrRecord, staticHeader, null, null,null);
+        var result = sessionMain.EncryptMessageWithNewKeys(enrRecord, staticHeader, null, null, null);
         Assert.IsTrue(result.SequenceEqual(encryptedMessage));
         Assert.AreEqual(BitConverter.GetBytes(1), sessionMain.MessageCount);
     }
@@ -122,7 +122,7 @@ public class SessionMainTests
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new SharedKeys(new byte[32]));
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.DecryptMessageWithNewKeys(staticHeader, null, null, handshakePacket, null);
         Assert.IsNull(result);
@@ -136,7 +136,7 @@ public class SessionMainTests
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new SharedKeys(new byte[32]));
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.DecryptMessageWithNewKeys(staticHeader, null, null, handshakePacket, null);
         Assert.IsNull(result);
@@ -148,14 +148,14 @@ public class SessionMainTests
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
-        
+
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new SharedKeys(new byte[32]));
         mockAesCrypto
             .Setup(x => x.AesGcmDecrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(decryptedMessage);
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
         var result = sessionMain.DecryptMessageWithNewKeys(staticHeader, null, null, handshakePacket, null);
@@ -171,7 +171,7 @@ public class SessionMainTests
         var result = sessionMain.EncryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public void Test_EncryptMessage_ShouldReturnEncryptedMessage_WhenSharedKeysAreSet()
     {
@@ -179,7 +179,7 @@ public class SessionMainTests
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
-        
+
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new SharedKeys(new byte[32]));
@@ -189,12 +189,12 @@ public class SessionMainTests
         mockAesCrypto
             .Setup(x => x.AesGcmDecrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(decryptedMessage);
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
-        
+
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
         sessionMain.DecryptMessageWithNewKeys(staticHeader, null, null, handshakePacket, null);
-        
+
         var result = sessionMain.EncryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsTrue(result.SequenceEqual(encryptedMessage));
         Assert.AreEqual(BitConverter.GetBytes(1), sessionMain.MessageCount);
@@ -208,7 +208,7 @@ public class SessionMainTests
         var result = sessionMain.DecryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public void Test_DecryptedMessage_ShouldReturnDecryptedMessage_WhenSharedKeysAreSet()
     {
@@ -216,7 +216,7 @@ public class SessionMainTests
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
         var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
-        
+
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new SharedKeys(new byte[32]));
@@ -226,17 +226,17 @@ public class SessionMainTests
         mockAesCrypto
             .Setup(x => x.AesGcmDecrypt(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(decryptedMessage);
-        
+
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
-        
+
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
         sessionMain.DecryptMessageWithNewKeys(staticHeader, null, null, handshakePacket, null);
-        
+
         var result = sessionMain.DecryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsTrue(result.SequenceEqual(decryptedMessage));
         Assert.AreEqual(BitConverter.GetBytes(0), sessionMain.MessageCount);
     }
 
 
-    
+
 }

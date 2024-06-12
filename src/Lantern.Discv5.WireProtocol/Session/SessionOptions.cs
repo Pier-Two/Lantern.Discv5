@@ -11,7 +11,7 @@ public class SessionOptions
     public ISessionKeys SessionKeys { get; set; }
     public int SessionCacheSize { get; set; } = 1000;
 
-    public static SessionOptions Default 
+    public static SessionOptions Default
     {
         get
         {

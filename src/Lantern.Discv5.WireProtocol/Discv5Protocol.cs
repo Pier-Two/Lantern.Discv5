@@ -22,22 +22,22 @@ public class Discv5Protocol(IConnectionManager connectionManager,
     ILogger<IDiscv5Protocol> logger) : IDiscv5Protocol
 {
     public int NodesCount => routingTable.GetNodesCount();
-    
+
     public int PeerCount => routingTable.GetActiveNodesCount();
-    
+
     public int ActiveSessionCount => sessionManager.TotalSessionCount;
-    
+
     public IEnr SelfEnr => identityManager.Record;
-    
+
     public IEnr? GetEnrForNodeId(byte[] nodeId)
-    { 
-       var entry = routingTable.GetNodeEntryForNodeId(nodeId);
-       
-       return entry?.Record;
-    } 
+    {
+        var entry = routingTable.GetNodeEntryForNodeId(nodeId);
+
+        return entry?.Record;
+    }
 
     public IEnumerable<IEnr> GetAllNodes => routingTable.GetAllNodes();
-    
+
     public IEnumerable<IEnr> GetActiveNodes => routingTable.GetActiveNodes();
 
     public event Action<NodeTableEntry> NodeAdded
@@ -45,13 +45,13 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         add => routingTable.NodeAdded += value;
         remove => routingTable.NodeAdded -= value;
     }
-    
+
     public event Action<NodeTableEntry> NodeRemoved
     {
         add => routingTable.NodeRemoved += value;
         remove => routingTable.NodeRemoved -= value;
     }
-    
+
     public event Action<NodeTableEntry> NodeAddedToCache
     {
         add => routingTable.NodeAddedToCache += value;
@@ -63,7 +63,7 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         add => routingTable.NodeRemovedFromCache += value;
         remove => routingTable.NodeRemovedFromCache -= value;
     }
-    
+
     public async Task<bool> InitAsync()
     {
         try
@@ -76,20 +76,20 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred in InitAsync. Cannot initialize Discv5 protocol");
-            return false; 
+            return false;
         }
     }
 
     public async Task<IEnumerable<IEnr>?> DiscoverAsync(byte[] targetNodeId)
     {
-        if (routingTable.GetActiveNodesCount() <= 0) 
+        if (routingTable.GetActiveNodesCount() <= 0)
             return null;
-        
+
         var closestNodes = await lookupManager.LookupAsync(targetNodeId);
 
         return closestNodes;
     }
-    
+
     public async Task<PongMessage?> SendPingAsync(IEnr destination)
     {
         try
@@ -117,12 +117,12 @@ public class Discv5Protocol(IConnectionManager connectionManager,
             return null;
         }
     }
-    
+
     public async Task<bool> SendTalkReqAsync(IEnr destination, byte[] protocol, byte[] request)
     {
         try
         {
-            await packetManager.SendPacket(destination, MessageType.TalkReq, false,protocol, request);
+            await packetManager.SendPacket(destination, MessageType.TalkReq, false, protocol, request);
             return true;
         }
         catch (Exception ex)
@@ -131,20 +131,20 @@ public class Discv5Protocol(IConnectionManager connectionManager,
             return false;
         }
     }
-    
+
     public bool IsNodeActive(byte[] nodeId)
     {
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
-        
+
         return nodeEntry?.Status == NodeStatus.Live;
     }
-    
+
     public async Task StopAsync()
     {
         var stopConnectionManagerTask = connectionManager.StopConnectionManagerAsync();
         var stopTableManagerTask = tableManager.StopTableManagerAsync();
         var stopRequestManagerTask = requestManager.StopRequestManagerAsync();
-        
+
         await Task.WhenAll(stopConnectionManagerTask, stopTableManagerTask, stopRequestManagerTask).ConfigureAwait(false);
     }
 }

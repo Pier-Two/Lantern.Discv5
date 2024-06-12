@@ -7,7 +7,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class ConnectionOptionsTests
 {
     private ConnectionOptions _connectionOptions = null!;
-    
+
     [Test]
     public void Test_ConnectionOptions_CreateDefault()
     {
@@ -20,7 +20,7 @@ public class ConnectionOptionsTests
         Assert.AreEqual(500, _connectionOptions.CheckPendingRequestsDelayMs);
         Assert.AreEqual(1000, _connectionOptions.RemoveCompletedRequestsDelayMs);
     }
-    
+
     [Test]
     public void Test_ConnectionOptions_DirectAssignment()
     {

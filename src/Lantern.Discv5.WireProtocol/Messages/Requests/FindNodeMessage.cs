@@ -15,11 +15,11 @@ public class FindNodeMessage(int[] distances) : Message(MessageType.FindNode)
             RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId, encodedDistances));
         return ByteArrayUtils.Concatenate(messageId, encodedMessage);
     }
-    
+
     private byte[] EncodeDistances()
     {
         using var stream = new MemoryStream();
-        foreach (var distance in Distances) 
+        foreach (var distance in Distances)
             stream.Write(RlpEncoder.EncodeInteger(distance));
         return RlpEncoder.EncodeCollectionOfBytes(stream.ToArray());
     }

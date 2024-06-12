@@ -28,10 +28,10 @@ public class KBucketTests
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey))
             .Build();
-        
-        _identityManager = new IdentityManager(sessionOptions, connectionOptions,enr, loggerFactory);
+
+        _identityManager = new IdentityManager(sessionOptions, connectionOptions, enr, loggerFactory);
     }
-    
+
     [Test]
     public void Test_KBucket_EmptyBucketAndCache()
     {
@@ -44,27 +44,27 @@ public class KBucketTests
         Assert.AreEqual(0, bucket.Nodes.Count());
         Assert.AreEqual(0, bucket.ReplacementCache.Count());
     }
-    
+
     [Test]
     public void Test_KBucket_NodeOrder()
     {
         var nodes = GenerateRandomNodeEntries(16);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
-        
-        for(var i = 0; i < 16; i++)
+
+        for (var i = 0; i < 16; i++)
         {
             bucket.Update(nodes[i]);
-            Thread.Sleep(100); 
+            Thread.Sleep(100);
         }
 
         var sortedNodes = bucket.Nodes.ToArray();
-        for(var i = 0; i < 15; i++)
+        for (var i = 0; i < 15; i++)
         {
             Assert.IsTrue(sortedNodes[i].LastSeen <= sortedNodes[i + 1].LastSeen);
         }
     }
-    
+
     [Test]
     public void Test_KBucket_AddingNodesToNonFullBucket()
     {
@@ -72,7 +72,7 @@ public class KBucketTests
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
 
         bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
-        
+
         for (var i = 0; i < 10; i++)
         {
             bucket.Update(nodes[i]);
@@ -87,92 +87,92 @@ public class KBucketTests
     {
         var nodes = GenerateRandomNodeEntries(20);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
-        
+
         bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
         bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
         bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
         bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
-        
-        for (var i = 0; i < 16; i++)
-        {
-            bucket.Update(nodes[i]);
-        }
-        
-        for (var i = 16; i < 20; i++)
-        {
-            bucket.Update(nodes[i]);
-        }
-        
-        Assert.AreEqual(16, bucket.Nodes.Count());
-        Assert.AreEqual(1, bucket.ReplacementCache.Count());
-    }
-    
-    [Test]
-    public void Test_KBucket_ShouldReplaceDeadNodesCorrectly()
-    {
-        var nodes = GenerateRandomNodeEntries(20);
-        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
-        
-        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
-        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
-        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
-        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
-        for (var i = 0; i < 16; i++)
-        {
-            bucket.Update(nodes[i]);
-        }
-        
-        for (var i = 16; i < 20; i++)
-        {
-            bucket.AddToReplacementCache(nodes[i]);
-        }
-        
-        nodes[0].Status = NodeStatus.Dead;
-        bucket.ReplaceDeadNode(nodes[0]);
-        
-        Assert.IsFalse(bucket.Nodes.Contains(nodes[0]));
-        Assert.AreEqual(16, bucket.Nodes.Count());
-        Assert.AreEqual(3, bucket.ReplacementCache.Count());
-        Assert.IsTrue(bucket.Nodes.Contains(nodes[16]));
-    }
-    
-    [Test]
-    public void Test_KBucket_LeastRecentlySeenNodeRevalidation()
-    {
-        var nodes = GenerateRandomNodeEntries(20);
-        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
-        
-        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
-        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
-        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
-        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
-        
+
         for (var i = 0; i < 16; i++)
         {
             bucket.Update(nodes[i]);
         }
 
-        nodes[17].Status = NodeStatus.Dead; 
+        for (var i = 16; i < 20; i++)
+        {
+            bucket.Update(nodes[i]);
+        }
+
+        Assert.AreEqual(16, bucket.Nodes.Count());
+        Assert.AreEqual(1, bucket.ReplacementCache.Count());
+    }
+
+    [Test]
+    public void Test_KBucket_ShouldReplaceDeadNodesCorrectly()
+    {
+        var nodes = GenerateRandomNodeEntries(20);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
+
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
+        for (var i = 0; i < 16; i++)
+        {
+            bucket.Update(nodes[i]);
+        }
+
+        for (var i = 16; i < 20; i++)
+        {
+            bucket.AddToReplacementCache(nodes[i]);
+        }
+
+        nodes[0].Status = NodeStatus.Dead;
+        bucket.ReplaceDeadNode(nodes[0]);
+
+        Assert.IsFalse(bucket.Nodes.Contains(nodes[0]));
+        Assert.AreEqual(16, bucket.Nodes.Count());
+        Assert.AreEqual(3, bucket.ReplacementCache.Count());
+        Assert.IsTrue(bucket.Nodes.Contains(nodes[16]));
+    }
+
+    [Test]
+    public void Test_KBucket_LeastRecentlySeenNodeRevalidation()
+    {
+        var nodes = GenerateRandomNodeEntries(20);
+        var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
+
+        bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
+        bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
+        bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
+        bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
+
+        for (var i = 0; i < 16; i++)
+        {
+            bucket.Update(nodes[i]);
+        }
+
+        nodes[17].Status = NodeStatus.Dead;
         bucket.Update(nodes[17]);
 
         Assert.AreEqual(16, bucket.Nodes.Count());
         Assert.AreEqual(1, bucket.ReplacementCache.Count());
         Assert.IsFalse(bucket.Nodes.Contains(nodes[17]));
     }
-    
+
     [Test]
     public void Test_KBucket_ConcurrentAccess()
     {
         var nodes = GenerateRandomNodeEntries(100);
         var bucket = new KBucket(LoggingOptions.Default, TableOptions.Default.ReplacementCacheSize);
         var tasks = new List<Task>();
-        
+
         bucket.NodeAdded += node => Assert.IsTrue(bucket.Nodes.Contains(node));
         bucket.NodeRemoved += node => Assert.IsFalse(bucket.Nodes.Contains(node));
         bucket.NodeAddedToCache += node => Assert.IsTrue(bucket.ReplacementCache.Contains(node));
         bucket.NodeRemovedFromCache += node => Assert.IsFalse(bucket.ReplacementCache.Contains(node));
 
-        for(var i = 0; i < 100; i++)
+        for (var i = 0; i < 100; i++)
         {
             var index = i;
             tasks.Add(Task.Run(() => bucket.Update(nodes[index])));
@@ -189,24 +189,24 @@ public class KBucketTests
     {
         var enrs = GenerateRandomEnrs(count);
         var nodeEntries = new NodeTableEntry[count];
-        
-        for(var i = 0; i < count; i++)
+
+        for (var i = 0; i < count; i++)
         {
             nodeEntries[i] = new NodeTableEntry(enrs[i], _identityManager.Verifier);
         }
 
         return nodeEntries;
     }
-    
+
     private static Enr.Enr[] GenerateRandomEnrs(int count)
     {
         var enrs = new Enr.Enr[count];
-        
-        for(var i = 0; i < count; i++)
+
+        for (var i = 0; i < count; i++)
         {
             var signer = new IdentitySignerV4(RandomUtility.GenerateRandomData(32));
             var ipAddress = new IPAddress(RandomUtility.GenerateRandomData(4));
-            
+
             enrs[i] = new EnrBuilder()
                 .WithIdentityScheme(_identityManager.Verifier, _identityManager.Signer)
                 .WithEntry(EnrEntryKey.Id, new EntryId("v4"))

@@ -24,7 +24,7 @@ public class IdentityVerifierV4 : IIdentityVerifier
         var publicKey = Context.Instance.CreatePubKey(publicKeyBytes);
         var xBytes = publicKey.Q.x.ToBytes();
         var yBytes = publicKey.Q.y.ToBytes();
-        var publicKeyUncompressed =  ByteArrayUtils.JoinByteArrays(xBytes, yBytes);
+        var publicKeyUncompressed = ByteArrayUtils.JoinByteArrays(xBytes, yBytes);
         return Keccak256.ComputeHash(publicKeyUncompressed);
     }
 }

@@ -22,7 +22,7 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         IPacketBuilder packetBuilder,
         IPacketProcessor packetProcessor,
         IEnrFactory enrFactory,
-        ILoggerFactory loggerFactory) 
+        ILoggerFactory loggerFactory)
     : PacketHandlerBase
 {
     private readonly ILogger<HandshakePacketHandler> _logger = loggerFactory.CreateLogger<HandshakePacketHandler>();
@@ -35,13 +35,13 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         var packet = returnedResult.Buffer;
         var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packetProcessor.GetStaticHeader(packet));
         var publicKey = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!);
-        
+
         if (publicKey == null)
         {
             _logger.LogWarning("Cannot obtain public key from record. Unable to verify ID signature from HANDSHAKE packet");
             return;
         }
-        
+
         var session = sessionManager.GetSession(handshakePacket.SrcId!, returnedResult.RemoteEndPoint);
 
         if (session == null)
@@ -49,7 +49,7 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
             _logger.LogWarning("Session not found. Cannot verify ID signature from HANDSHAKE packet");
             return;
         }
-        
+
         var idSignatureVerificationResult = session.VerifyIdSignature(handshakePacket, publicKey, identityManager.Record.NodeId);
 
         if (!idSignatureVerificationResult)
@@ -58,19 +58,19 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
             return;
         }
 
-        var decryptedMessage = session.DecryptMessageWithNewKeys(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), packetProcessor.GetEncryptedMessage(packet),handshakePacket, identityManager.Record.NodeId);
+        var decryptedMessage = session.DecryptMessageWithNewKeys(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), packetProcessor.GetEncryptedMessage(packet), handshakePacket, identityManager.Record.NodeId);
 
         if (decryptedMessage == null)
         {
             _logger.LogWarning("Cannot decrypt message in the HANDSHAKE packet");
             return;
         }
-        
+
         _logger.LogDebug("Successfully decrypted HANDSHAKE packet");
-        
+
         var replies = await PrepareMessageForHandshake(decryptedMessage, handshakePacket.SrcId!, session, returnedResult.RemoteEndPoint);
-        
-        if(replies == null || replies.Length == 0)
+
+        if (replies == null || replies.Length == 0)
             return;
 
         foreach (var reply in replies)
@@ -82,8 +82,8 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
 
     private byte[]? ObtainPublicKey(HandshakePacketBase handshakePacketBase, byte[]? senderNodeId)
     {
-        IEnr? senderRecord = null; 
-        
+        IEnr? senderRecord = null;
+
         if (handshakePacketBase.Record?.Length > 0)
         {
             senderRecord = enrFactory.CreateFromBytes(handshakePacketBase.Record, identityManager.Verifier);
@@ -91,7 +91,7 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         else if (senderNodeId != null)
         {
             var nodeEntry = routingTable.GetNodeEntryForNodeId(senderNodeId);
-            
+
             if (nodeEntry != null)
             {
                 senderRecord = nodeEntry.Record;
@@ -105,11 +105,11 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
         }
 
         routingTable.UpdateFromEnr(senderRecord);
-        
+
         return senderRecord.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
     }
-    
-    private async Task <byte[][]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint) 
+
+    private async Task<byte[][]?> PrepareMessageForHandshake(byte[] decryptedMessage, byte[] senderNodeId, ISessionMain sessionMain, IPEndPoint endPoint)
     {
         var responses = await messageResponder.HandleMessageAsync(decryptedMessage, endPoint);
 

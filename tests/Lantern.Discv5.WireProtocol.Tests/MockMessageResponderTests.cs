@@ -41,7 +41,7 @@ public class MockMessageResponderTests
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(logger.Object);
     }
-    
+
     [Test]
     public async Task Test_HandlePongMessage_ShouldReturnNull_WhenPendingRequestIsNotAvailable()
     {
@@ -57,7 +57,7 @@ public class MockMessageResponderTests
 
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Never);
         mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Never);
@@ -81,10 +81,10 @@ public class MockMessageResponderTests
         mockRequestManager
             .Setup(x => x.GetPendingRequest(It.IsAny<byte[]>()))
             .Returns(pendingRequest);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
@@ -100,7 +100,7 @@ public class MockMessageResponderTests
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentityVerifierV4());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(pongMessage);
@@ -115,10 +115,10 @@ public class MockMessageResponderTests
         mockIdentityManager
             .Setup(x => x.IsIpAddressAndPortSet())
             .Returns(true);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Exactly(2));
@@ -136,7 +136,7 @@ public class MockMessageResponderTests
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentityVerifierV4());
         var pendingRequest = new PendingRequest(new byte[32], pongMessage);
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(pongMessage);
@@ -150,11 +150,11 @@ public class MockMessageResponderTests
             .Returns(new NodeTableEntry(enr, new IdentityVerifierV4()));
         mockIdentityManager
             .Setup(x => x.IsIpAddressAndPortSet())
-            .Returns(false); 
-        
+            .Returns(false);
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(2));
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Exactly(2));
@@ -162,7 +162,7 @@ public class MockMessageResponderTests
         mockIdentityManager.Verify(x => x.UpdateIpAddressAndPort(It.IsAny<IPEndPoint>()), Times.Once);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Never);
     }
-    
+
     [Test]
     public async Task Test_HandlePongMessage_ShouldReturnNull_WhenNodeHasTheLatestSeqValue()
     {
@@ -175,7 +175,7 @@ public class MockMessageResponderTests
         var nodeEntry = new NodeTableEntry(enr, new IdentityVerifierV4());
 
         nodeEntry.Status = NodeStatus.Live;
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(pongMessage);
@@ -189,17 +189,17 @@ public class MockMessageResponderTests
             .Returns(nodeEntry);
         mockIdentityManager
             .Setup(x => x.IsIpAddressAndPortSet())
-            .Returns(false); 
-        
+            .Returns(false);
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(1));
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Never);
     }
-    
+
     [Test]
     public async Task Test_HandlePongMessage_ShouldReturnNull_WhenFailedToAddPendingRequest()
     {
@@ -231,17 +231,17 @@ public class MockMessageResponderTests
         mockRequestManager
             .Setup(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()))
             .Returns(false);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         var result = await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(1));
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Once);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public async Task Test_HandlePongMessage_ShouldReturnEncodedMessage_WhenPendingRequestIsAdded()
     {
@@ -254,7 +254,7 @@ public class MockMessageResponderTests
         var nodeEntry = new NodeTableEntry(enr, new IdentityVerifierV4());
 
         nodeEntry.Status = NodeStatus.Live;
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(pongMessage);
@@ -272,17 +272,17 @@ public class MockMessageResponderTests
         mockRequestManager
             .Setup(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()))
             .Returns(true);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         var result = await messageResponder.HandleMessageAsync(pongMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.MarkNodeAsLive(It.IsAny<byte[]>()), Times.Exactly(1));
         mockRoutingTable.Verify(x => x.MarkNodeAsResponded(It.IsAny<byte[]>()), Times.Once);
         mockRequestManager.Verify(x => x.AddPendingRequest(It.IsAny<byte[]>(), It.IsAny<PendingRequest>()), Times.Once);
         Assert.IsNotNull(result);
     }
-    
+
     [Test]
     public async Task Test_HandleNodesMessage_ShouldReturnNull_WhenPendingRequestIsNotAvailable()
     {
@@ -291,21 +291,21 @@ public class MockMessageResponderTests
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentityVerifierV4());
         var nodesMessage = new NodesMessage(1, new[] { enr });
-        
+
         mockRequestManager
             .Setup(x => x.MarkRequestAsFulfilled(It.IsAny<byte[]>()))
-            .Returns((PendingRequest?) null);
+            .Returns((PendingRequest?)null);
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(nodesMessage);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(nodesMessage.EncodeMessage(), sender);
-        
+
         mockRequestManager.Verify(x => x.MarkRequestAsFulfilled(It.IsAny<byte[]>()), Times.Once);
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
     }
-    
+
     [Test]
     public async Task Test_HandleNodesMessage_ShouldReturnNull_WhenReceivedMoreResponsesThanExpected()
     {
@@ -315,9 +315,9 @@ public class MockMessageResponderTests
             "enr:-JK4QJfxa51DquJ5N32adFyvFJC_8R5edMNmmOm_4W2y5GZ0B_kK6Q-jCbS87xWt1HD63-0NP7L9QRDP34iosikpG6EDgmlkgnY0g2lwNpAgAQ24haMAAAAAii4DcHM0iXNlY3AyNTZrMaEDfBECt-cliWdTBpsKMDXTNdTOnUvuOv_JT85v7T2Os-6EdWRwNoIE0g", new IdentityVerifierV4());
         var nodesMessage = new NodesMessage(5, new[] { enr });
         var pendingRequest = new PendingRequest(new byte[32], nodesMessage);
-        
+
         pendingRequest.ResponsesCount = 6;
-        
+
         mockRequestManager
             .Setup(x => x.MarkRequestAsFulfilled(It.IsAny<byte[]>()))
             .Returns(pendingRequest);
@@ -327,10 +327,10 @@ public class MockMessageResponderTests
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(nodesMessage);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(nodesMessage.EncodeMessage(), sender);
-        
+
         mockRequestManager.Verify(x => x.MarkRequestAsFulfilled(It.IsAny<byte[]>()), Times.Once);
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
     }
@@ -352,55 +352,55 @@ public class MockMessageResponderTests
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var talkReqMessage = new TalkReqMessage(new byte[32], new byte[32]);
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(talkReqMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[][]?)null);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkReqMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockTalkReqAndRespHandler.Verify(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public async Task Test_HandleTalkReqMessage_ShouldReturnMessage_WhenResultIsNotNull()
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var talkReqMessage = new TalkReqMessage(new byte[32], new byte[32]);
-        
+
         mockMessageDecoder
             .Setup(x => x.DecodeMessage(It.IsAny<byte[]>()))
             .Returns(talkReqMessage);
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new List<byte[]>().ToArray);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkReqMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockTalkReqAndRespHandler.Verify(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Once);
         Assert.IsNotNull(result);
     }
-    
+
     [Test]
     public async Task Test_HandleTalkRespMessage_ShouldReturnNull_WhenInterfaceIsNotSet()
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
-        var talkRespMessage= new TalkRespMessage(new byte[32], new byte[32]);
+        var talkRespMessage = new TalkRespMessage(new byte[32], new byte[32]);
 
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object);
         await messageResponder.HandleMessageAsync(talkRespMessage.EncodeMessage(), sender);
 
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Never);
     }
-    
+
     [Test]
     public async Task Test_HandleTalkRespMessage_ShouldReturnNull_WhenPendingRequestIsNull()
     {
@@ -416,22 +416,22 @@ public class MockMessageResponderTests
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[][]?)null);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkRespMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockTalkReqAndRespHandler.Verify(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()), Times.Never);
         Assert.IsNull(result);
     }
-    
+
     [Test]
     public async Task Test_HandleTalkRespMessage_ShouldHandleMessage_WhenPendingRequestIsNotNull()
     {
         var sender = new IPEndPoint(IPAddress.Any, 2020);
         var talkRespMessage = new TalkRespMessage(new byte[32], new byte[32]);
         var pendingRequest = new PendingRequest(new byte[32], talkRespMessage);
-        
+
         mockRequestManager
             .Setup(x => x.MarkRequestAsFulfilled(It.IsAny<byte[]>()))
             .Returns(pendingRequest);
@@ -444,14 +444,14 @@ public class MockMessageResponderTests
         mockTalkReqAndRespHandler
             .Setup(x => x.HandleRequest(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns((byte[][]?)null);
-        
+
         var messageResponder = new MessageResponder(mockIdentityManager.Object, mockRoutingTable.Object, mockPacketReceiver.Object, mockRequestManager.Object, mockLookupManager.Object, mockMessageDecoder.Object, mockLoggerFactory.Object, mockTalkReqAndRespHandler.Object);
         var result = await messageResponder.HandleMessageAsync(talkRespMessage.EncodeMessage(), sender);
-        
+
         mockMessageDecoder.Verify(x => x.DecodeMessage(It.IsAny<byte[]>()), Times.Once);
         mockTalkReqAndRespHandler.Verify(x => x.HandleResponse(It.IsAny<byte[]>()), Times.Once);
         Assert.IsNull(result);
     }
-    
-    
+
+
 }

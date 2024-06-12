@@ -39,29 +39,29 @@ public class StaticHeader
 
         return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
     }
-    
+
     public static StaticHeader DecodeFromBytes(byte[] decryptedData)
     {
         var index = 0;
         var protocolId = Encoding.ASCII.GetString(decryptedData[..PacketConstants.ProtocolIdSize]);
         index += PacketConstants.ProtocolIdSize;
-        
+
         var version = decryptedData[index..(index + PacketConstants.VersionSize)];
         index += PacketConstants.VersionSize;
-        
+
         var flag = decryptedData[index];
         index += 1;
-        
+
         var nonce = decryptedData[index..(index + PacketConstants.HeaderNonce)];
         index += PacketConstants.HeaderNonce;
-        
+
         var authDataSize = RlpExtensions.ByteArrayToInt32(decryptedData[index..(index + PacketConstants.AuthDataSizeBytesLength)]);
         index += PacketConstants.AuthDataSizeBytesLength;
-        
+
         // Based on the flag, it should retrieve the authdata correctly
         var authData = decryptedData[index..(index + authDataSize)];
         var encryptedMessage = decryptedData[(index + authDataSize)..];
-        
+
         return new StaticHeader(protocolId, version, authData, flag, nonce, encryptedMessage.Length);
     }
 }

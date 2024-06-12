@@ -23,13 +23,13 @@ public class RoutingTable : IRoutingTable
         TableOptions = options;
         ConfigureBucketEventHandlers();
     }
-    
+
     public event Action<NodeTableEntry> NodeAdded = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeRemoved = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeAddedToCache = delegate { };
-    
+
     public event Action<NodeTableEntry> NodeRemovedFromCache = delegate { };
 
     public TableOptions TableOptions { get; }
@@ -49,7 +49,7 @@ public class RoutingTable : IRoutingTable
             return _buckets.Sum(bucket => bucket.Nodes.Count(node => node.Status == NodeStatus.Live) + bucket.ReplacementCache.Count(node => node.Status == NodeStatus.Live));
         }
     }
-    
+
     public IEnumerable<IEnr> GetActiveNodes()
     {
         List<IEnr> activeNodes = new List<IEnr>();
@@ -71,7 +71,7 @@ public class RoutingTable : IRoutingTable
             yield return node;
         }
     }
-    
+
     public IEnumerable<IEnr> GetAllNodes()
     {
         lock (_buckets)
@@ -81,7 +81,7 @@ public class RoutingTable : IRoutingTable
             return allNodesInBuckets.Concat(allNodesInReplacementCache).SelectMany(x => x).Select(node => node.Record).ToArray();
         }
     }
-    
+
     public List<NodeTableEntry> GetClosestNodes(byte[] targetId)
     {
         lock (_buckets)
@@ -90,7 +90,7 @@ public class RoutingTable : IRoutingTable
                 .SelectMany(bucket => bucket.Nodes)
                 .Where(IsNodeConsideredLive)
                 .OrderBy(nodeEntry => TableUtility.Log2Distance(nodeEntry.Id, targetId))
-                .ToList(); 
+                .ToList();
         }
     }
 
@@ -103,11 +103,11 @@ public class RoutingTable : IRoutingTable
         {
             nodeEntry.Record = enr;
         }
-        else 
+        else
         {
             nodeEntry = new NodeTableEntry(enr, _identityManager.Verifier);
         }
-        
+
         var bucketIndex = GetBucketIndex(nodeEntry.Id);
 
         _buckets[bucketIndex].Update(nodeEntry);
@@ -155,17 +155,17 @@ public class RoutingTable : IRoutingTable
         var bucketIndex = GetBucketIndex(nodeId);
         var bucket = _buckets[bucketIndex];
         var nodeEntry = bucket.GetNodeById(nodeId);
-        
+
         if (nodeEntry == null)
         {
             nodeEntry = bucket.GetNodeFromReplacementCache(nodeId);
             if (nodeEntry == null)
-                return; 
+                return;
         }
-        
+
         if (nodeEntry.Status == NodeStatus.Live)
             return;
-        
+
         nodeEntry.Status = NodeStatus.Live;
         nodeEntry.FailureCounter = 0;
     }
@@ -204,7 +204,7 @@ public class RoutingTable : IRoutingTable
         var bootstrapEnrs = TableOptions.BootstrapEnrs
             .Select(enr => _enrFactory.CreateFromString(enr, _identityManager.Verifier))
             .ToArray();
-        
+
         foreach (var bootstrapEnr in bootstrapEnrs)
         {
             var bootstrapNodeId = _identityManager.Verifier.GetNodeIdFromRecord(bootstrapEnr);
@@ -239,10 +239,10 @@ public class RoutingTable : IRoutingTable
             else
             {
                 var nodesAtDistance = GetNodesAtDistance(distance);
-                
+
                 if (nodesAtDistance == null)
                     continue;
-                
+
                 enrRecords.AddRange(nodesAtDistance.Select(nodeAtDistance => nodeAtDistance.Record));
             }
         }
@@ -269,7 +269,7 @@ public class RoutingTable : IRoutingTable
             _logger.LogError("Distance should be between 0 and 256");
             return null;
         }
-        
+
         lock (_buckets)
         {
             var nodesAtDistance = new List<NodeTableEntry>();
@@ -295,7 +295,7 @@ public class RoutingTable : IRoutingTable
             return nodesAtDistance;
         }
     }
-    
+
     private void ConfigureBucketEventHandlers()
     {
         foreach (var bucket in _buckets)

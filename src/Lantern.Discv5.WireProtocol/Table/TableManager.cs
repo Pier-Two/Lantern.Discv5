@@ -26,42 +26,42 @@ public class TableManager(IPacketReceiver packetReceiver,
     public async Task InitAsync()
     {
         _logger.LogInformation("Starting TableManagerAsync");
-        
+
         await InitFromBootstrapNodesAsync();
-        
+
         _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
         _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
     }
-    
+
     public async Task StopTableManagerAsync()
     {
         _logger.LogInformation("Stopping TableManagerAsync");
         cts.Cancel();
 
         await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
-	
+
         if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("TableManagerAsync was canceled gracefully");
         }
     }
-    
+
     public async Task InitFromBootstrapNodesAsync()
     {
         if (routingTable.GetNodesCount() == 0)
         {
             _logger.LogInformation("Initialising from bootstrap ENRs");
-            
+
             var bootstrapEnrs = routingTable.TableOptions.BootstrapEnrs
                 .Select(enr => enrFactory.CreateFromString(enr, identityManager.Verifier))
                 .ToArray();
 
-            if(bootstrapEnrs.Length == 0)
+            if (bootstrapEnrs.Length == 0)
             {
                 _logger.LogWarning("No bootstrap ENRs found");
                 return;
             }
-            
+
             foreach (var bootstrapEnr in bootstrapEnrs)
             {
                 try
@@ -79,28 +79,28 @@ public class TableManager(IPacketReceiver packetReceiver,
     public async Task RefreshBucketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting RefreshBucketsAsync");
-    
+
         while (!token.IsCancellationRequested)
         {
             await Task.Delay(tableOptions.RefreshIntervalMilliseconds, token).ConfigureAwait(false);
             await RefreshBucket().ConfigureAwait(false);
         }
     }
-    
+
     public async Task PingNodeAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting PingNodeAsync");
-    
+
         while (!token.IsCancellationRequested)
         {
-            if (routingTable.GetNodesCount() <= 0) 
+            if (routingTable.GetNodesCount() <= 0)
                 continue;
-        
+
             await Task.Delay(tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
-        
+
             var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
             var nodeEntry = routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();
-        
+
             if (nodeEntry == null)
                 continue;
 
@@ -119,7 +119,7 @@ public class TableManager(IPacketReceiver packetReceiver,
 
         if (closestNodes != null)
         {
-            foreach(var node in closestNodes)
+            foreach (var node in closestNodes)
             {
                 routingTable.UpdateFromEnr(node);
             }

@@ -36,14 +36,14 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
             _semaphore.Release();
         }
     }
-    
+
     public async Task ListenAsync(CancellationToken token = default)
     {
         _logger.LogInformation("Starting ListenAsync");
-        
-        try 
+
+        try
         {
-            await taskRunner.RunWithGracefulCancellationAsync(async cancellationToken => 
+            await taskRunner.RunWithGracefulCancellationAsync(async cancellationToken =>
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
@@ -65,13 +65,13 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
             yield return message;
         }
     }
-    
+
     public void Close()
     {
         _logger.LogInformation("Closing UdpConnection");
         Dispose();
     }
-    
+
     public void Dispose()
     {
         _logger.LogInformation("Disposing UdpConnection");
@@ -80,15 +80,15 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
 
     private void Dispose(bool disposing)
     {
-        if (!disposing) 
+        if (!disposing)
             return;
-        
+
         _semaphore.Dispose();
         _udpClient.Close();
         _udpClient.Dispose();
         _messageChannel.Writer.TryComplete();
     }
-    
+
     public static void ValidatePacketSize(IReadOnlyCollection<byte> data)
     {
         switch (data.Count)
@@ -99,7 +99,7 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
                 throw new InvalidPacketException("Packet is too large");
         }
     }
-    
+
     private async Task<UdpReceiveResult> ReceiveAsync(CancellationToken token = default)
     {
         UdpReceiveResult receiveResult;

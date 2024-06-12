@@ -9,7 +9,7 @@ public static class IpUtility
     public static IPAddress GetLocalIpAddress()
     {
         var host = Dns.GetHostEntry(Dns.GetHostName());
-        
+
         foreach (var ip in host.AddressList)
         {
             if (ip.AddressFamily == AddressFamily.InterNetwork)

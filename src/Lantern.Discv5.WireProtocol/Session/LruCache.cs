@@ -12,12 +12,12 @@ public class LruCache<TKey, TValue>(int capacity)
 
     public TValue? Get(TKey key)
     {
-        if (!_cache.TryGetValue(key, out var node)) 
+        if (!_cache.TryGetValue(key, out var node))
             return default;
-        
+
         var value = node.Value.Value;
         RefreshNode(node);
-        
+
         return value;
     }
 
@@ -34,10 +34,10 @@ public class LruCache<TKey, TValue>(int capacity)
             {
                 RemoveFirst();
             }
-            
+
             var cacheItem = new CacheItem(key, value);
             var node = new LinkedListNode<CacheItem>(cacheItem);
-            
+
             _lruList.AddLast(node);
             _cache[key] = node;
         }
@@ -56,10 +56,10 @@ public class LruCache<TKey, TValue>(int capacity)
     {
         var node = _lruList.First;
         _lruList.RemoveFirst();
-        
-        if(node == null)
+
+        if (node == null)
             return;
-        
+
         _cache.TryRemove(node.Value.Key, out _);
     }
 

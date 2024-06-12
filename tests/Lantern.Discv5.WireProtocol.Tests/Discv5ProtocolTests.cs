@@ -14,7 +14,7 @@ public class Discv5ProtocolTests
 {
     private IDiscv5Protocol _discv5Protocol = null!;
     private ServiceProvider _serviceProvider = null!;
-    
+
     [SetUp]
     public void Setup()
     {
@@ -35,43 +35,43 @@ public class Discv5ProtocolTests
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
         var services = new ServiceCollection();
         var builder = new Discv5ProtocolBuilder(services);
-        
+
         _discv5Protocol = builder.WithConnectionOptions(connectionOptions)
             .WithTableOptions(tableOptions)
             .WithSessionOptions(sessionOptions)
             .WithEnrBuilder(enr)
             .Build();
     }
-    
+
     [Test]
     public async Task Test_Discv5Protocol_PerformLookupAsync()
     {
         await _discv5Protocol.InitAsync();
-    
+
         var randomNodeId = RandomUtility.GenerateRandomData(32);
-        
+
         await _discv5Protocol.DiscoverAsync(randomNodeId);
 
         var allNodes = _discv5Protocol.GetAllNodes;
         var activeNodes = _discv5Protocol.GetActiveNodes;
-        
+
         Console.WriteLine("There are {0} nodes in which {1} are active.", allNodes.Count(), activeNodes.Count());
-        
+
         foreach (var node in activeNodes)
         {
             var nodes = await _discv5Protocol.SendFindNodeAsync(node, randomNodeId);
-            
+
             if (nodes == null)
             {
                 continue;
             }
-        
+
             foreach (var enr in nodes)
             {
                 Console.WriteLine($"Found node with ENR: {enr}");
             }
         }
-        
+
         await _discv5Protocol.StopAsync();
     }
 }

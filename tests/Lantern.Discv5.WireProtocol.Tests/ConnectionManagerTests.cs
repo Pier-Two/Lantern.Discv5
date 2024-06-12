@@ -52,7 +52,7 @@ public class ConnectionManagerTests
     {
         _connectionManager.InitAsync();
         await _connectionManager.StopConnectionManagerAsync();
-        
+
         _udpConnectionMock.Verify(x => x.Close(), Times.Once);
         _cancellationTokenSourceMock.Verify(x => x.Cancel(), Times.Once);
     }

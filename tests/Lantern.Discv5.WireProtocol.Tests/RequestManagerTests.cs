@@ -167,7 +167,7 @@ public class RequestManagerTests
         var fulfilledRequest = _requestManager.MarkCachedRequestAsFulfilled(requestId);
         Assert.Null(fulfilledRequest);
     }
-    
+
     [Test]
     public void TestGetPendingRequest_Exists()
     {

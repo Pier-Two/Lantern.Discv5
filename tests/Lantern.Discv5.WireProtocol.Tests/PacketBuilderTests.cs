@@ -35,28 +35,28 @@ public class PacketBuilderTests
         _loggerFactoryMock
             .Setup(x => x.CreateLogger(It.IsAny<string>()))
             .Returns(_loggerMock.Object);
-        
+
         _identityVerifier = new IdentityVerifierV4();
     }
-    
+
     [Test]
     public void BuildRandomOrdinaryPacket_Should_Return_Valid_Packet()
     {
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
         var nodeId = _identityVerifier.GetNodeIdFromRecord(enrRecord);
-        
+
         _identityManagerMock
             .SetupGet(x => x.Record.NodeId)
             .Returns(nodeId);
 
         _packetBuilder = new PacketBuilder(_identityManagerMock.Object, new AesCrypto(), _requestManagerMock.Object, _loggerFactoryMock.Object);
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
-        
+
         var result = _packetBuilder.BuildRandomOrdinaryPacket(nodeId);
         var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
         var maskingIv = _packetProcessor.GetMaskingIv(result.Packet);
-        
+
         Assert.IsNotNull(result);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
@@ -66,7 +66,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(maskingIv.SequenceEqual(result.Packet[..16]));
-        
+
         Assert.IsTrue(result.Header.Nonce.Length == PacketConstants.NonceSize);
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.Ordinary);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.Ordinary);
@@ -74,7 +74,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIv.Length == PacketConstants.MaskingIvSize);
     }
-    
+
     [Test]
     public void BuildWhoAreYouPacketWithoutEnr_Should_Return_Valid_Packet()
     {
@@ -92,7 +92,7 @@ public class PacketBuilderTests
         var result = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(destNodeId, packetNonce, maskingIv);
         var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
-        
+
         Assert.IsNotNull(result);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
@@ -101,7 +101,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.ProtocolId.SequenceEqual(staticHeader.ProtocolId));
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Packet[..16]));
-        
+
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(result.Header.Nonce.Length == PacketConstants.NonceSize);
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.WhoAreYou);
@@ -110,7 +110,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);
     }
-    
+
     [Test]
     public void BuildWhoAreYouPacket_Should_Return_Valid_Packet()
     {
@@ -130,7 +130,7 @@ public class PacketBuilderTests
         var result = _packetBuilder.BuildWhoAreYouPacket(destNodeId, packetNonce, enrRecord, maskingIv);
         var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
-        
+
         Assert.IsNotNull(result);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
@@ -140,7 +140,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Packet[..16]));
-        
+
         Assert.IsTrue(result.Header.Nonce.Length == PacketConstants.NonceSize);
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.WhoAreYou);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.WhoAreYou);
@@ -148,7 +148,7 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);
     }
-    
+
     [Test]
     public void BuildHandshakePacket_Should_Return_Valid_Packet()
     {
@@ -162,11 +162,11 @@ public class PacketBuilderTests
         var destNodeId = Convert.FromHexString("F92B82F11AF5ED0959135CDE8E64B626CAC4F16D05E43087224DEED25D1DBD72");
         var maskingIv = Convert.FromHexString("13E5792577482999855F3C5BE73FC550");
         var messageCount = Convert.FromHexString("00000000");
-        
+
         _identityManagerMock
             .Setup(x => x.Record.EncodeRecord())
             .Returns(enrRecord.EncodeRecord);
-        
+
         _identityManagerMock
             .SetupGet(x => x.Record.NodeId)
             .Returns(destNodeId);
@@ -177,7 +177,7 @@ public class PacketBuilderTests
         var result = _packetBuilder.BuildHandshakePacket(idSignature, ephemeralPubKey, destNodeId, maskingIv, messageCount);
         var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
-        
+
         Assert.IsNotNull(result);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);

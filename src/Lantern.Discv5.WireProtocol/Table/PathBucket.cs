@@ -8,8 +8,8 @@ public class PathBucket(byte[] targetNodeId, int index) : IDisposable
     public int Index { get; } = index;
 
     public byte[] TargetNodeId { get; } = targetNodeId;
-    
-    public ConcurrentBag<byte[]> PendingQueries{ get; } = new();
+
+    public ConcurrentBag<byte[]> PendingQueries { get; } = new();
 
     public ConcurrentDictionary<byte[], Timer> PendingTimers { get; } = new(ByteArrayEqualityComparer.Instance);
 
@@ -20,15 +20,15 @@ public class PathBucket(byte[] targetNodeId, int index) : IDisposable
     public ConcurrentDictionary<byte[], int> ExpectedResponses { get; } = new();
 
     public TaskCompletionSource<bool> Completion { get; } = new();
-    
+
     public void SetComplete()
     {
-        if (Completion.Task.IsCompleted) 
+        if (Completion.Task.IsCompleted)
             return;
-        
+
         Completion.SetResult(true);
     }
-    
+
     public void DisposeTimer(byte[] nodeId)
     {
         if (PendingTimers.TryRemove(nodeId, out var timer))
@@ -43,7 +43,7 @@ public class PathBucket(byte[] targetNodeId, int index) : IDisposable
         {
             timer.Dispose();
         }
-        
+
         PendingTimers.Clear();
         PendingQueries.Clear();
         DiscoveredNodes.Clear();

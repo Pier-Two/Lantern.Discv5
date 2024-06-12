@@ -10,15 +10,15 @@ public class PacketProcessor(IIdentityManager identityManager, IAesCrypto aesCry
     {
         var decryptedPacket = aesCrypto.AesCtrDecrypt(identityManager.Record.NodeId[..16], rawPacket[..16], rawPacket[16..]);
         var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
-        
+
         return staticHeader;
     }
-    
+
     public byte[] GetMaskingIv(byte[] rawPacket)
     {
         return rawPacket.AsSpan()[..16].ToArray();
     }
-    
+
     public byte[] GetEncryptedMessage(byte[] rawPacket)
     {
         var staticHeader = GetStaticHeader(rawPacket);

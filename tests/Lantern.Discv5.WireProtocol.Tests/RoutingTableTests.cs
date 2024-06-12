@@ -132,12 +132,12 @@ public class RoutingTableTests
         foreach (var enr in enrs1)
         {
             routingTable.UpdateFromEnr(enr);
-            routingTable.MarkNodeAsLive(_identityManager.Verifier.GetNodeIdFromRecord(enr)); 
+            routingTable.MarkNodeAsLive(_identityManager.Verifier.GetNodeIdFromRecord(enr));
         }
-        
+
         Thread.Sleep(1000);
         var randomEnr = GenerateRandomEnrs(1)[0];
-        
+
         routingTable.UpdateFromEnr(randomEnr);
         routingTable.MarkNodeAsLive(_identityManager.Verifier.GetNodeIdFromRecord(randomEnr));
 
@@ -153,24 +153,24 @@ public class RoutingTableTests
         var enr = GenerateRandomEnrs(1)[0];
         routingTable.UpdateFromEnr(enr);
         var nodeId = _identityManager.Verifier.GetNodeIdFromRecord(enr);
-        
+
         routingTable.MarkNodeAsLive(nodeId);
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Live, nodeEntry.Status);
-        
+
         routingTable.MarkNodeAsDead(nodeId);
         nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Dead, nodeEntry.Status);
-        
+
         routingTable.MarkNodeAsPending(nodeId);
         nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.AreEqual(NodeStatus.Pending, nodeEntry.Status);
-        
+
         routingTable.MarkNodeAsResponded(nodeId);
         nodeEntry = routingTable.GetNodeEntryForNodeId(nodeId);
         Assert.IsTrue(nodeEntry.HasRespondedEver);
     }
-    
+
     [Test]
     public void Test_RoutingTable_GenerateErrorWhenGivenInvalidDistance()
     {
@@ -178,29 +178,29 @@ public class RoutingTableTests
             TableOptions.Default);
 
         var invalidDistance = -10;
-    
+
         var enrs = GenerateRandomEnrs(3);
 
         foreach (var enr in enrs)
         {
             routingTable.UpdateFromEnr(enr);
-            routingTable.MarkNodeAsLive(_identityManager.Verifier.GetNodeIdFromRecord(enr)); 
+            routingTable.MarkNodeAsLive(_identityManager.Verifier.GetNodeIdFromRecord(enr));
         }
 
         // Capture Log
         var logs = new List<string>();
-        logger.Setup(x => x.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), 
+        logger.Setup(x => x.Log(It.IsAny<LogLevel>(), It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()))
             .Callback(new InvocationAction(invocation =>
             {
                 logs.Add(invocation.Arguments[2].ToString());
             }));
 
-        routingTable.GetEnrRecordsAtDistances(new [] { invalidDistance });
+        routingTable.GetEnrRecordsAtDistances(new[] { invalidDistance });
 
         Assert.IsTrue(logs.Any(log => log.Contains("Distance should be between 0 and 256")));
     }
-    
+
     [Test]
     public void Test_RoutingTable_MarkNonExistentNodeAsLive()
     {
@@ -209,7 +209,7 @@ public class RoutingTableTests
 
         var nonExistentNode = new byte[] { 0, 1, 2, 3, 4, 5 };
         routingTable.MarkNodeAsLive(nonExistentNode);
-        
+
         var totalActiveNodesCount = routingTable.GetActiveNodesCount();
         Assert.AreEqual(0, totalActiveNodesCount);
     }
@@ -221,52 +221,52 @@ public class RoutingTableTests
             TableOptions.Default);
 
         var nonExistentNode = new byte[] { 0, 1, 2, 3, 4, 5 };
-        
+
         routingTable.IncreaseFailureCounter(nonExistentNode);
-        
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
 
     [Test]
     public void Test_RoutingTable_MarkNonExistentNodeAsDead()
-    {       
+    {
         var routingTable = new RoutingTable(_identityManager, mockEnrFactory.Object, mockLoggerFactory.Object,
             TableOptions.Default);
         var nonExistentNode = new byte[] { 0, 1, 2, 3, 4, 5 };
-        
-        routingTable.MarkNodeAsDead(nonExistentNode);       
+
+        routingTable.MarkNodeAsDead(nonExistentNode);
 
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
-    
+
     [Test]
     public void Test_RoutingTable_MarkNonExistentNodeAsPending()
     {
         var routingTable = new RoutingTable(_identityManager, mockEnrFactory.Object, mockLoggerFactory.Object,
             TableOptions.Default);
         var nonExistentNode = new byte[] { 0, 1, 2, 3, 4, 5 };
-        
+
         routingTable.MarkNodeAsPending(nonExistentNode);
-    
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
-    
+
     [Test]
     public void Test_RoutingTable_MarkNonExistentNodeAsResponded()
     {
         var routingTable = new RoutingTable(_identityManager, mockEnrFactory.Object, mockLoggerFactory.Object,
             TableOptions.Default);
         var nonExistentNode = new byte[] { 0, 1, 2, 3, 4, 5 };
-        
+
         routingTable.MarkNodeAsResponded(nonExistentNode);
-    
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(nonExistentNode);
         Assert.IsNull(nodeEntry);
     }
-    
+
     private Enr.Enr[] GenerateRandomEnrs(int count)
     {
         var enrs = new Enr.Enr[count];

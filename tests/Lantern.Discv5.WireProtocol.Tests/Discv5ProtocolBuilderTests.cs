@@ -16,7 +16,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class Discv5ProtocolBuilderTests
 {
     private IDiscv5ProtocolBuilder _builder = null!;
-    
+
     [Test]
     public void WithSessionOptions_ChainsCorrectly_ReturnsBuilderInstance()
     {
@@ -30,7 +30,7 @@ public class Discv5ProtocolBuilderTests
     {
         _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         var returnedBuilder = _builder.WithTableOptions(new TableOptions([]));
-        
+
         Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
 
@@ -47,7 +47,7 @@ public class Discv5ProtocolBuilderTests
     public void WithConnectionOptions_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
         _builder = new Discv5ProtocolBuilder(new ServiceCollection());
-        var returnedBuilder = _builder.WithConnectionOptions(options => 
+        var returnedBuilder = _builder.WithConnectionOptions(options =>
         {
             options.UdpPort = 30303;
         });
@@ -88,7 +88,7 @@ public class Discv5ProtocolBuilderTests
 
         Assert.AreSame(_builder, returnedBuilder, "Method chaining should return the same builder instance.");
     }
-    
+
     [Test]
     public void WithTableOptions_ActionOverload_ChainsCorrectly_ReturnsBuilderInstance()
     {
@@ -142,7 +142,7 @@ public class Discv5ProtocolBuilderTests
             .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
-        
+
         var discv5Protocol = discv5Builder.WithConnectionOptions(new ConnectionOptions
         {
             UdpPort = 30303
@@ -150,8 +150,8 @@ public class Discv5ProtocolBuilderTests
             .WithLoggerFactory(NullLoggerFactory.Instance)
             .WithEnrBuilder(enr)
             .Build();
-        
-        
+
+
         Assert.IsNotNull(discv5Protocol, "Expected to return a configured instance.");
     }
 

@@ -46,7 +46,7 @@ public class AesCrypto : IAesCrypto
 
         cipher.Init(false, parameters);
         byte[]? result;
-        
+
         try
         {
             result = cipher.DoFinal(maskedHeader);
@@ -58,7 +58,7 @@ public class AesCrypto : IAesCrypto
 
         return result;
     }
-    
+
     public byte[] AesGcmEncrypt(byte[] key, byte[] nonce, byte[] plaintext, byte[] ad)
     {
         var cipher = new GcmBlockCipher(new AesEngine());
@@ -73,7 +73,7 @@ public class AesCrypto : IAesCrypto
 
         return ciphertext;
     }
-    
+
     public byte[]? AesGcmDecrypt(byte[] key, byte[] nonce, byte[] ciphertext, byte[] ad)
     {
         var cipher = new GcmBlockCipher(new AesEngine());
@@ -92,10 +92,10 @@ public class AesCrypto : IAesCrypto
         {
             return null;
         }
-        
+
         return plaintext;
     }
-    
+
     private static ICipherParameters CreateAesCtrCipherParameters(byte[] maskingKey, byte[] maskingIv)
     {
         var keyParam = new KeyParameter(maskingKey);

@@ -7,7 +7,7 @@ public static class MessageUtility
     public static byte[] GenerateRequestId(int requestIdLength)
     {
         var requestId = new byte[requestIdLength];
-        var random = RandomNumberGenerator.Create(); 
+        var random = RandomNumberGenerator.Create();
         random.GetBytes(requestId);
         return requestId;
     }

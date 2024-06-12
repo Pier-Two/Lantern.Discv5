@@ -55,7 +55,7 @@ public static class RlpDecoder
 
         return list.Flatten();
     }
-    
+
     /// <summary>
     /// Decode a single byte item from the encoded data.
     /// </summary>
@@ -76,7 +76,7 @@ public static class RlpDecoder
     /// <returns>A byte array containing the decoded string item.</returns>
     private static byte[] DecodeString(byte[] encodedData, int index, int length)
     {
-        return encodedData[index..( index + length)];
+        return encodedData[index..(index + length)];
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public static class RlpDecoder
 
         if (index + count > byteArray.Length)
             throw new ArgumentException("The requested range is out of bounds of the byte array.");
-        
+
         return byteArray[index..(index + count)];
     }
 
@@ -119,7 +119,7 @@ public static class RlpDecoder
     private static List<byte[]> Flatten(this List<object> list)
     {
         var result = new List<byte[]>();
-        
+
         foreach (var item in list)
             switch (item)
             {

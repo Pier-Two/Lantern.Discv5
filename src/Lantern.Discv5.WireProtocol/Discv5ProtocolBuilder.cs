@@ -19,7 +19,7 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
     private ILoggerFactory _loggerFactory = LoggingOptions.Default;
     private ITalkReqAndRespHandler? _talkResponder;
     private IServiceProvider? _serviceProvider;
-    
+
     public IDiscv5ProtocolBuilder WithConnectionOptions(ConnectionOptions connectionOptions)
     {
         _connectionOptions = connectionOptions ?? throw new ArgumentNullException(nameof(connectionOptions));
@@ -37,7 +37,7 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
         _sessionOptions = sessionOptions ?? throw new ArgumentNullException(nameof(sessionOptions));
         return this;
     }
-    
+
     public IDiscv5ProtocolBuilder WithSessionOptions(Action<SessionOptions> configure)
     {
         configure(_sessionOptions);
@@ -49,7 +49,7 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
         _tableOptions = tableOptions ?? throw new ArgumentNullException(nameof(tableOptions));
         return this;
     }
-    
+
     public IDiscv5ProtocolBuilder WithTableOptions(Action<TableOptions> configure)
     {
         configure(_tableOptions);
@@ -61,7 +61,7 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
         _enrBuilder = enrBuilder ?? throw new ArgumentNullException(nameof(enrBuilder));
         return this;
     }
-    
+
     public IDiscv5ProtocolBuilder WithEnrBuilder(Action<EnrBuilder> configure)
     {
         configure(_enrBuilder);
@@ -97,12 +97,12 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         return this;
     }
-    
+
     public IServiceProvider GetServiceProvider()
     {
         return _serviceProvider ?? throw new InvalidOperationException("Build() must be called before accessing the service provider.");
     }
-    
+
     public IDiscv5Protocol Build()
     {
         services.AddDiscv5(_tableOptions, _connectionOptions, _sessionOptions, _entryRegistry, _enrBuilder.Build(), _loggerFactory, _talkResponder);

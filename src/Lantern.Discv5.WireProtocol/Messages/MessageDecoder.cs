@@ -12,7 +12,7 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     public Message DecodeMessage(byte[] message)
     {
         var messageType = (MessageType)message[0];
-        
+
         return messageType switch
         {
             MessageType.Ping => DecodePingMessage(message),
@@ -28,7 +28,7 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             _ => throw new ArgumentOutOfRangeException()
         };
     }
-    
+
     private static PingMessage DecodePingMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
@@ -37,14 +37,14 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             RequestId = decodedMessage[0]
         };
     }
-    
+
     private static PongMessage DecodePongMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new PongMessage(decodedMessage[0], (int)RlpExtensions.ByteArrayToInt64(decodedMessage[1]),
             new IPAddress(decodedMessage[2]), RlpExtensions.ByteArrayToInt32(decodedMessage[3]));
     }
-    
+
     private static FindNodeMessage DecodeFindNodeMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
@@ -69,7 +69,7 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             identityManager.Verifier);
         return new NodesMessage(requestId, total, enrs);
     }
-    
+
     private static TalkReqMessage DecodeTalkReqMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
@@ -78,13 +78,13 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             RequestId = decodedMessage[0]
         };
     }
-    
+
     private static TalkRespMessage DecodeTalkRespMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TalkRespMessage(decodedMessage[0], decodedMessage[1]);
     }
-    
+
     private RegTopicMessage DecodeRegTopicMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
@@ -97,20 +97,20 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             RequestId = decodedMessage[0]
         };
     }
-    
+
     private static RegConfirmationMessage DecodeRegConfirmationMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new RegConfirmationMessage(decodedMessage[0], decodedMessage[1]);
     }
-    
+
     private static TicketMessage DecodeTicketMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
         return new TicketMessage(decodedMessage[0], decodedMessage[1],
             RlpExtensions.ByteArrayToInt32(decodedMessage[2]));
-    } 
-    
+    }
+
     private static TopicQueryMessage DecodeTopicQueryMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
@@ -119,7 +119,7 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
             RequestId = decodedMessage[0]
         };
     }
-    
+
     private static IEnumerable<List<byte[]>> ExtractEnrRecord(IReadOnlyList<byte[]> data, int total)
     {
         var list = new List<List<byte[]>>(total);

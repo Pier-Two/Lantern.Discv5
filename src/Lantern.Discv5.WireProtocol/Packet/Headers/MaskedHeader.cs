@@ -5,14 +5,14 @@ namespace Lantern.Discv5.WireProtocol.Packet.Headers;
 public class MaskedHeader
 {
     private const int MaskingKeyLength = 16;
-    
+
     public MaskedHeader(byte[] destNodeId, byte[]? maskingIv = default)
     {
         if (destNodeId.Length < MaskingKeyLength)
         {
             throw new ArgumentException($"destNodeId must be at least {MaskingKeyLength} bytes long.", nameof(destNodeId));
         }
-        
+
         MaskingKey = destNodeId[..MaskingKeyLength];
         MaskingIv = maskingIv ?? new byte[MaskingKeyLength];
     }

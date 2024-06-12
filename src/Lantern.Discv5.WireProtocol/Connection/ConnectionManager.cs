@@ -15,7 +15,7 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
     public void InitAsync()
     {
         _logger.LogInformation("Starting ConnectionManagerAsync");
-    
+
         _listenTask = taskRunner.RunWithGracefulCancellationAsync(connection.ListenAsync, "Listen", cts.GetToken());
         _handleTask = taskRunner.RunWithGracefulCancellationAsync(HandleIncomingPacketsAsync, "HandleIncomingPackets", cts.GetToken());
     }
@@ -29,7 +29,7 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
         {
             if (_listenTask != null && _handleTask != null)
             {
-                await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false); 
+                await Task.WhenAll(_listenTask, _handleTask).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
@@ -37,23 +37,23 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
             _logger.LogError(ex, "Error while waiting for tasks in StopConnectionManagerAsync: {Message}", ex.Message);
             throw;
         }
-    
+
         if (cts.IsCancellationRequested())
         {
             _logger.LogInformation("ConnectionManagerAsync was canceled gracefully");
         }
-    
+
         try
         {
-            connection.Close(); 
-        }  
+            connection.Close();
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while closing the connection: {Message}", ex.Message);
             throw;
-        }           
+        }
     }
-    
+
     public async Task HandleIncomingPacketsAsync(CancellationToken token)
     {
         _logger.LogInformation("Starting HandleIncomingPacketsAsync");
@@ -62,13 +62,13 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
         {
             await foreach (var packet in connection.ReadMessagesAsync(token).ConfigureAwait(false))
             {
-                try 
+                try
                 {
                     await packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
                 }
                 catch (Exception ex)
-                {         
-                    _logger.LogError(ex, "Failed to handle incoming packet: {Packet}. Error: {Message}", packet, ex.Message);    
+                {
+                    _logger.LogError(ex, "Failed to handle incoming packet: {Packet}. Error: {Message}", packet, ex.Message);
                 }
             }
         }
@@ -79,7 +79,7 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in HandleIncomingPacketsAsync: {Message}", ex.Message);
-            throw; 
+            throw;
         }
     }
 }
