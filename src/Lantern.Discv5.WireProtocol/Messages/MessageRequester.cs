@@ -46,11 +46,8 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         return pingMessage.EncodeMessage();
     }
 
-    public byte[]? ConstructFindNodeMessage(byte[] destNodeId, bool isLookupRequest, byte[] targetNodeId)
+    public byte[]? ConstructFindNodeMessage(byte[] destNodeId, bool isLookupRequest, int[] distances)
     {
-        var distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
-        var distances = new[] { distance };
-
         _logger.LogInformation("Constructing message of type {MessageType} at distances {Distances}", MessageType.FindNode, string.Join(", ", distances.Select(d => d.ToString())));
 
         var findNodesMessage = new FindNodeMessage(distances);
@@ -70,11 +67,8 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
         return findNodesMessage.EncodeMessage();
     }
 
-    public byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, bool isLookupRequest, byte[] targetNodeId)
+    public byte[]? ConstructCachedFindNodeMessage(byte[] destNodeId, bool isLookupRequest, int[] distances)
     {
-        var distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
-        var distances = new[] { distance };
-
         _logger.LogInformation("Constructing message of type {MessageType} at distances {Distances}", MessageType.FindNode, string.Join(", ", distances.Select(d => d.ToString())));
 
         var findNodesMessage = new FindNodeMessage(distances);

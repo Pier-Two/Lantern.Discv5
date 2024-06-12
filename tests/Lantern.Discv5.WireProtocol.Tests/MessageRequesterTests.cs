@@ -89,15 +89,17 @@ public class MessageRequesterTests
     {
         var destNodeId = RandomUtility.GenerateRandomData(32);
         var targetNodeId = RandomUtility.GenerateRandomData(32);
-        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, false, targetNodeId)!;
-        var cachedFindNodeMessage = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, false, targetNodeId)!;
+
+        int distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
+        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, false, [distance])!;
+        var cachedFindNodeMessage = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, false, [distance])!;
         var decodedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(findNodeMessage);
         var decodedCachedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(cachedFindNodeMessage);
 
         Assert.AreEqual(MessageType.FindNode, decodedFindNodeMessage.MessageType);
-        Assert.AreEqual(TableUtility.Log2Distance(targetNodeId, destNodeId), decodedFindNodeMessage.Distances.First());
+        Assert.AreEqual(distance, decodedFindNodeMessage.Distances.First());
         Assert.AreEqual(MessageType.FindNode, decodedCachedFindNodeMessage.MessageType);
-        Assert.AreEqual(TableUtility.Log2Distance(targetNodeId, destNodeId), decodedCachedFindNodeMessage.Distances.First());
+        Assert.AreEqual(distance, decodedCachedFindNodeMessage.Distances.First());
     }
 
     [Test]
@@ -155,8 +157,8 @@ public class MessageRequesterTests
         var destNodeId = RandomUtility.GenerateRandomData(32);
         var pingResult = messageRequester.ConstructPingMessage(destNodeId);
         var cachedPingResult = messageRequester.ConstructCachedPingMessage(destNodeId);
-        var findNodeResult = messageRequester.ConstructFindNodeMessage(destNodeId, false, destNodeId);
-        var cachedFindNodeResult = messageRequester.ConstructCachedFindNodeMessage(destNodeId, false, destNodeId);
+        var findNodeResult = messageRequester.ConstructFindNodeMessage(destNodeId, false, [0]);
+        var cachedFindNodeResult = messageRequester.ConstructCachedFindNodeMessage(destNodeId, false, [0]);
         var talkRequestResult = messageRequester.ConstructTalkReqMessage(destNodeId, "discv5"u8.ToArray(), "ping"u8.ToArray());
         var cachedTalkRequestResult = messageRequester.ConstructCachedTalkReqMessage(destNodeId, "discv5"u8.ToArray(), "ping"u8.ToArray());
         var talkResponseResult = messageRequester.ConstructTalkRespMessage(destNodeId, "response"u8.ToArray());
