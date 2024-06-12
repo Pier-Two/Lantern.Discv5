@@ -197,7 +197,7 @@ public class LookupManager(IRoutingTable routingTable,
             bucket.PendingTimers[node.Id] =
                 new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(node.Id);
-            await packetManager.SendPacket(node.Record, MessageType.FindNode, true, bucket.TargetNodeId);
+            await packetManager.SendPacket(node.Record, MessageType.FindNode, true, TableUtility.Log2Distance(node.Record.NodeId, bucket.TargetNodeId));
         }
     }
 
@@ -234,7 +234,7 @@ public class LookupManager(IRoutingTable routingTable,
             _logger.LogDebug("Querying a replaced node {NodeId} in bucket {BucketIndex}",
                 Convert.ToHexString(replacementNode.Id), bucket.Index);
 
-            await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, true, bucket.TargetNodeId);
+            await packetManager.SendPacket(replacementNode.Record, MessageType.FindNode, true, TableUtility.Log2Distance(replacementNode.Record.NodeId, bucket.TargetNodeId));
             _lookupSemaphore.Release();
         }
         catch (Exception e)

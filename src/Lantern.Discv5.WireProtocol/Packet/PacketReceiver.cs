@@ -57,7 +57,7 @@ public class PacketReceiver(IPacketManager packetManager,
 
     public async Task<IEnr[]?> SendFindNodeAsync(IEnr dest, int[] distances)
     {
-        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, false, distances);
+        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, false, distances.Cast<object>().ToArray());
 
         if (payload is null)
         {
