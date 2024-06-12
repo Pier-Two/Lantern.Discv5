@@ -10,31 +10,54 @@ on:
   pull_request:
     branches: 
       - "*"
+  workflow_dispatch:
+    inputs:
+      publish:
+        default: false
+        description: Publish package
+        required: false
+        type: boolean
 
 jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    env:
+      BUILD_CONFIG: release
     steps:
       - name: Setup .NET for Testing
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: 8
           
       - name: Checkout branch 
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: src
+        run: dotnet restore
       
       - name: Build Project_Enr
-        run: dotnet build src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj
+        working-directory: src/Lantern.Discv5.Enr
+        run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
 
       - name: Build Project_Rlp
-        run: dotnet build src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj
+        working-directory: src/Lantern.Discv5.Rlp
+        run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
       
       - name: Build Project_WriteProtocol
-        run: dotnet build src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj
+        working-directory: src/Lantern.Discv5.WireProtocol
+        run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
 
       - name: Run tests for the Projects
-        run: dotnet test --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test -c ${{ env.BUILD_CONFIG }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
+
+      - name: Publish package
+        if: ${{ inputs.publish }}
+        working-directory: src/Lantern.Discv5.WireProtocol
+        run: |
+          dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build
+          dotnet nuget push bin/${{ env.BUILD_CONFIG }}/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
   sonar:
     name: Build and analyze SonarCloud
@@ -42,15 +65,15 @@ jobs:
     needs: build-and-test
     steps:
       - name: Setup .NET for SonarCloud
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: 8
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: 17
           distribution: 'zulu' # Alternative distribution options are available.
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages
