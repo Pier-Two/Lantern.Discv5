@@ -34,7 +34,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        working-directory: src
         run: dotnet restore
       
       - name: Build Project_Enr
