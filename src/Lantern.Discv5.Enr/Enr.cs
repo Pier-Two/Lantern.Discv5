@@ -11,6 +11,7 @@ public class Enr : IEnr, IEquatable<IEnr>
     private readonly IDictionary<string, IEntry> _entries;
     private readonly IIdentitySigner? _signer;
     private readonly IIdentityVerifier? _verifier;
+    private byte[]? _cachedNodeId;
 
     public Enr(
         IDictionary<string, IEntry> initialEntries, 
@@ -35,7 +36,8 @@ public class Enr : IEnr, IEquatable<IEnr>
         {
             throw new ArgumentNullException($"You must provide either {nameof(signer)} or {nameof(signature)}");
         }        
-
+        
+        _ = NodeId;
         SequenceNumber = sequenceNumber;
     }
     
@@ -43,7 +45,10 @@ public class Enr : IEnr, IEquatable<IEnr>
     
     public ulong SequenceNumber { get; private set; }
     
-    public byte[] NodeId => _verifier!.GetNodeIdFromRecord(this);
+    public byte[] NodeId 
+    {
+        get { return _cachedNodeId ??= _verifier!.GetNodeIdFromRecord(this); }
+    }
     
     public T GetEntry<T>(string key, T defaultValue = default!) where T : IEntry
     {
