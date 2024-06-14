@@ -21,7 +21,6 @@
         <PackageReference Include="Multiformats.Hash" />
         <PackageReference Include="NUnit" />
         <PackageReference Include="NUnit3TestAdapter" />
-        <PackageReference Include="Open.Nat" />
     </ItemGroup>
 
 </Project>

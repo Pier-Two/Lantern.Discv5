@@ -6,7 +6,7 @@ namespace Lantern.Discv5.WireProtocol.Packet;
 
 public interface IPacketManager
 {
-    Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, bool isLookup, params byte[][] args);
+    Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, bool isLookup, params object[] args);
 
     Task HandleReceivedPacket(UdpReceiveResult returnedResult);
 }

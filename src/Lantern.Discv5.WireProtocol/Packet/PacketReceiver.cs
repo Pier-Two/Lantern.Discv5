@@ -2,6 +2,7 @@ using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
+using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
@@ -51,9 +52,12 @@ public class PacketReceiver(IPacketManager packetManager,
         }
     }
 
-    public async Task<IEnr[]?> SendFindNodeAsync(IEnr dest, byte[] targetNodeId)
+    public Task<IEnr[]?> SendFindNodeAsync(IEnr dest, byte[] targetNodeId)
+        => SendFindNodeAsync(dest, [TableUtility.Log2Distance(dest.NodeId, targetNodeId)]);
+
+    public async Task<IEnr[]?> SendFindNodeAsync(IEnr dest, int[] distances)
     {
-        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, false, targetNodeId);
+        var payload = await packetManager.SendPacket(dest, MessageType.FindNode, false, distances.Cast<object>().ToArray());
 
         if (payload is null)
         {
@@ -72,7 +76,7 @@ public class PacketReceiver(IPacketManager packetManager,
         if (completedTask != delayTask)
             return await tcs.Task;
 
-        _logger.LogWarning("FINDNODE request to {NodeId} timed out", Convert.ToHexString(targetNodeId));
+        _logger.LogWarning("FINDNODE request to {NodeId} timed out", Convert.ToHexString(dest.NodeId));
         NodesResponseReceived -= HandleNodesResponse;
         return null;
 

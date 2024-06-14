@@ -118,6 +118,20 @@ public class Discv5Protocol(IConnectionManager connectionManager,
         }
     }
 
+    public async Task<IEnumerable<IEnr>?> SendFindNodeAsync(IEnr destination, int[] distances)
+    {
+        try
+        {
+            var response = await packetReceiver.SendFindNodeAsync(destination, distances);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred in SendFindNodeAsync. Cannot send FINDNODE to {Record}", destination);
+            return null;
+        }
+    }
+
     public async Task<bool> SendTalkReqAsync(IEnr destination, byte[] protocol, byte[] request)
     {
         try

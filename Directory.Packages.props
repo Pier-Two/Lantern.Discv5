@@ -11,7 +11,6 @@
     <PackageVersion Include="Multiformats.Hash" Version="1.5.0" />
     <PackageVersion Include="NBitcoin.Secp256k1" Version="3.1.5" />
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.4.0" />
-    <PackageVersion Include="Open.Nat" Version="2.1.0" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />

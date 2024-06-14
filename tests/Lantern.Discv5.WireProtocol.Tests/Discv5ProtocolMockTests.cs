@@ -228,6 +228,25 @@ public class Discv5ProtocolMockTests
         Assert.IsNotNull(result);
     }
 
+    [TestCase([0])]
+    [TestCase([256])]
+    [TestCase([254, 255, 256])]
+    public async Task SendFindNodeAsync_ShouldSendDistances(params int[] distances)
+    {
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
+
+        mockPacketReceiver
+            .Setup(x => x.SendFindNodeAsync(It.IsAny<Enr.Enr>(), It.IsAny<int[]>()))
+            .Returns(Task.FromResult(new IEnr[] { enrRecord })!);
+
+        SetupServices();
+
+        var result = await _discv5Protocol.SendFindNodeAsync(enrRecord, distances);
+
+        mockPacketReceiver.Verify(x => x.SendFindNodeAsync(enrRecord, distances), Times.Once);
+    }
+
     [Test]
     public async Task SendFindNodeAsync_ShouldReturnFalse_WhenExceptionIsThrown()
     {
@@ -255,12 +274,12 @@ public class Discv5ProtocolMockTests
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
 
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<bool>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<bool>(), It.IsAny<object[]>()))
             .Returns(Task.FromResult(new byte[0]));
 
         SetupServices();
         var result = await _discv5Protocol.SendTalkReqAsync(enrRecord, RandomUtility.GenerateRandomData(32), RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<bool>(), It.IsAny<byte[][]>()), Times.Once);
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<bool>(), It.IsAny<object[]>()), Times.Once);
         Assert.IsTrue(result);
     }
 
@@ -272,13 +291,13 @@ public class Discv5ProtocolMockTests
         var exceptionToThrow = new Exception("Test exception");
 
         mockPacketManager
-            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<bool>(), It.IsAny<byte[][]>()))
+            .Setup(x => x.SendPacket(It.IsAny<Enr.Enr>(), It.IsAny<MessageType>(), It.IsAny<bool>(), It.IsAny<object[]>()))
             .ThrowsAsync(exceptionToThrow);
 
         SetupServices();
 
         var result = await _discv5Protocol.SendTalkReqAsync(enrRecord, RandomUtility.GenerateRandomData(32), RandomUtility.GenerateRandomData(32));
-        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<bool>(), It.IsAny<byte[][]>()), Times.Once);
+        mockPacketManager.Verify(x => x.SendPacket(enrRecord, MessageType.TalkReq, It.IsAny<bool>(), It.IsAny<object[]>()), Times.Once);
         Assert.IsFalse(result);
     }
 

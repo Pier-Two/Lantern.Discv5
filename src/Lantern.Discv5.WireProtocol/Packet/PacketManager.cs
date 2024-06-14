@@ -26,7 +26,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
 {
     private readonly ILogger<PacketManager> _logger = loggerFactory.CreateLogger<PacketManager>();
 
-    public async Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, bool isLookupPacket, params byte[][] args)
+    public async Task<byte[]?> SendPacket(IEnr dest, MessageType messageType, bool isLookup, params object[] args)
     {
         var destNodeId = identityManager.Verifier.GetNodeIdFromRecord(dest);
         var destIpKey = dest.GetEntry<EntryIp>(EnrEntryKey.Ip);
@@ -41,7 +41,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         var destEndPoint = new IPEndPoint(destIpKey.Value, destUdpKey.Value);
         var cryptoSession = sessionManager.GetSession(destNodeId, destEndPoint);
         var sessionEstablished = cryptoSession is { IsEstablished: true };
-        var message = ConstructMessage(sessionEstablished, messageType, destNodeId, isLookupPacket, args);
+        var message = ConstructMessage(sessionEstablished, messageType, destNodeId, isLookup, args);
 
         if (message == null)
         {
@@ -58,7 +58,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         return message;
     }
 
-    private byte[]? ConstructMessage(bool sessionEstablished, MessageType messageType, byte[] destNodeId, bool isLookupPacket, byte[][] args)
+    private byte[]? ConstructMessage(bool sessionEstablished, MessageType messageType, byte[] destNodeId, bool isLookupPacket, object[] args)
     {
         return messageType switch
         {
@@ -66,14 +66,14 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
                 ? messageRequester.ConstructPingMessage(destNodeId)
                 : messageRequester.ConstructCachedPingMessage(destNodeId),
             MessageType.FindNode => sessionEstablished
-                ? messageRequester.ConstructFindNodeMessage(destNodeId, isLookupPacket, args[0])
-                : messageRequester.ConstructCachedFindNodeMessage(destNodeId, isLookupPacket, args[0]),
+                ? messageRequester.ConstructFindNodeMessage(destNodeId, isLookupPacket, args.Cast<int>().ToArray())
+                : messageRequester.ConstructCachedFindNodeMessage(destNodeId, isLookupPacket, args.Cast<int>().ToArray()),
             MessageType.TalkReq => sessionEstablished
-                ? messageRequester.ConstructTalkReqMessage(destNodeId, args[0], args[1])
-                : messageRequester.ConstructCachedTalkReqMessage(destNodeId, args[0], args[1]),
+                ? messageRequester.ConstructTalkReqMessage(destNodeId, (byte[])args[0], (byte[])args[1])
+                : messageRequester.ConstructCachedTalkReqMessage(destNodeId, (byte[])args[0], (byte[])args[1]),
             MessageType.TalkResp => sessionEstablished
-                ? messageRequester.ConstructTalkRespMessage(destNodeId, args[0])
-                : messageRequester.ConstructCachedTalkRespMessage(destNodeId, args[0]),
+                ? messageRequester.ConstructTalkRespMessage(destNodeId, (byte[])args[0])
+                : messageRequester.ConstructCachedTalkRespMessage(destNodeId, (byte[])args[0]),
             _ => null
         };
     }
