@@ -10,7 +10,7 @@
 		<Description>C# implementation of the Discv5 protocol.</Description>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols>true</IncludeSymbols>
-		<PackageId>Lantern.Discv5</PackageId>
+		<PackageId>Pier-Two.Lantern.Discv5</PackageId>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://piertwo.com</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

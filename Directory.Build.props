@@ -5,8 +5,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<Authors>PierTwo</Authors>
-		<Copyright>Pier Two Pty Ltd</Copyright>
+		<Authors>Pier Two</Authors>
+		<Copyright>Pier Two Services Pty Ltd</Copyright>
 		<VersionPrefix>1.0.0</VersionPrefix>
 		<VersionSuffix>preview.1</VersionSuffix>
 	</PropertyGroup>
