@@ -1,7 +1,4 @@
-
-<div align="center">
-  <h1 align="center">Lantern.Discv5</h1>
-</div>
+# <center>Lantern.Discv5</center>
 
 Lantern.Discv5, written in C#, is a library that provides an implementation of the [Node Discovery V5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md) protocol. 
 

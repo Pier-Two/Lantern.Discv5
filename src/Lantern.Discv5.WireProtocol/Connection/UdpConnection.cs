@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
@@ -41,21 +41,22 @@ public sealed class UdpConnection(ConnectionOptions options, ILoggerFactory logg
     {
         _logger.LogInformation("Starting ListenAsync");
 
-        try
+        await taskRunner.RunWithGracefulCancellationAsync(async cancellationToken =>
         {
-            await taskRunner.RunWithGracefulCancellationAsync(async cancellationToken =>
+            while (!cancellationToken.IsCancellationRequested)
             {
-                while (!cancellationToken.IsCancellationRequested)
+                try
                 {
                     var returnedResult = await ReceiveAsync(cancellationToken).ConfigureAwait(false);
                     _messageChannel.Writer.TryWrite(returnedResult);
+
                 }
-            }, "Listen", token);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error occurred in ListenAsync");
-        }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error occurred during an attempt to ReceiveAsync");
+                }
+            }
+        }, "Listen", token);
     }
 
     public async IAsyncEnumerable<UdpReceiveResult> ReadMessagesAsync([EnumeratorCancellation] CancellationToken token = default)
