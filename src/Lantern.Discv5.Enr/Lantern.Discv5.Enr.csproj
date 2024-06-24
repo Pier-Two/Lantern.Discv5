@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -6,18 +6,24 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+	<PropertyGroup>
+		<Description>Ethereum Node Records (ENR) implementation for the Node Discovery Protocol v5.</Description>
+		<PackageId>PierTwo.Lantern.Discv5.Enr</PackageId>
+	</PropertyGroup>
+
     <ItemGroup>
-        <PackageReference Include="Keccak256"/>
-        <PackageReference Include="Multiformats.Base"/>
-        <PackageReference Include="Multiformats.Hash"/>
-        <PackageReference Include="NBitcoin.Secp256k1"/>
+        <PackageReference Include="Keccak256" />
+        <PackageReference Include="Multiformats.Base" />
+        <PackageReference Include="Multiformats.Hash" />
+        <PackageReference Include="NBitcoin.Secp256k1" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Lantern.Discv5.Rlp\Lantern.Discv5.Rlp.csproj" />
     </ItemGroup>
 
-
-
+	<ItemGroup>
+		<None Include="../../README.md" Pack="true" PackagePath="/" />
+	</ItemGroup>
 
 </Project>

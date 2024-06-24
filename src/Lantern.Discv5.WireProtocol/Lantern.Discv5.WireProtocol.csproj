@@ -7,17 +7,8 @@
     </PropertyGroup>
 
 	<PropertyGroup>
-		<Description>C# implementation of the Discv5 protocol.</Description>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<IncludeSymbols>true</IncludeSymbols>
-		<PackageId>PierTwo.Lantern.Discv5</PackageId>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://piertwo.com</PackageProjectUrl>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageTags>network p2p discv5</PackageTags>
-		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://github.com/Pier-Two/Lantern.Discv5</RepositoryUrl>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Description>C# implementation of the Node Discovery Protocol v5.</Description>
+		<PackageId>PierTwo.Lantern.Discv5.WireProtocol</PackageId>
 	</PropertyGroup>
 
     <ItemGroup>
