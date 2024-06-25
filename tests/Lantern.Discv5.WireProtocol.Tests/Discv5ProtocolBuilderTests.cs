@@ -148,9 +148,9 @@ public class Discv5ProtocolBuilderTests
         var discv5Builder = new Discv5ProtocolBuilder(services);
 
         var serviceOverride = Mock.Of<IConnectionManager>();
-        services.AddSingleton(serviceOverride);
-
-        AddMandatoryConfigurations(discv5Builder, 30304).Build();
+        AddMandatoryConfigurations(discv5Builder, 30304)
+            .WithServices(s => s.AddSingleton(serviceOverride))
+            .Build();
 
         var serviceProvider = discv5Builder.GetServiceProvider();
         var serviceResolved = serviceProvider.GetRequiredService<IConnectionManager>();
