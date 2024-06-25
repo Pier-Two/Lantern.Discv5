@@ -134,25 +134,28 @@ public class Discv5ProtocolBuilderTests
     [Test]
     public void Build_WithConfigurations_ReturnsConfiguredInstance()
     {
-        string[] bootstrapEnrs = ["enr:-example"];
         var services = new ServiceCollection();
         var discv5Builder = new Discv5ProtocolBuilder(services);
-        var sessionOptions = SessionOptions.Default;
-        var enr = new EnrBuilder()
-            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
-            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
-            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
-
-        var discv5Protocol = discv5Builder.WithConnectionOptions(new ConnectionOptions
-        {
-            UdpPort = 30303
-        }).WithTableOptions(new TableOptions(bootstrapEnrs))
-            .WithLoggerFactory(NullLoggerFactory.Instance)
-            .WithEnrBuilder(enr)
-            .Build();
-
+        var discv5Protocol = AddMandatoryConfigurations(discv5Builder).Build();
 
         Assert.IsNotNull(discv5Protocol, "Expected to return a configured instance.");
+    }
+
+    [Test]
+    public void Build_WithServiceOverrides_UsesOverrides()
+    {
+        var services = new ServiceCollection();
+        var discv5Builder = new Discv5ProtocolBuilder(services);
+
+        var serviceOverride = Mock.Of<IConnectionManager>();
+        services.AddSingleton(serviceOverride);
+
+        AddMandatoryConfigurations(discv5Builder, 30304).Build();
+
+        var serviceProvider = discv5Builder.GetServiceProvider();
+        var serviceResolved = serviceProvider.GetRequiredService<IConnectionManager>();
+
+        Assert.AreSame(serviceOverride, serviceResolved, "Expected to return overriden service.");
     }
 
     [Test]
@@ -160,5 +163,21 @@ public class Discv5ProtocolBuilderTests
     {
         _builder = new Discv5ProtocolBuilder(new ServiceCollection());
         Assert.Throws<InvalidOperationException>(() => _builder.Build(), "Expected to throw due to missing configurations.");
+    }
+
+    private static IDiscv5ProtocolBuilder AddMandatoryConfigurations(IDiscv5ProtocolBuilder discv5Builder, int udpPort = 30303)
+    {
+        string[] bootstrapEnrs = ["enr:-example"];
+        var sessionOptions = SessionOptions.Default;
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(sessionOptions.Verifier, sessionOptions.Signer)
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(sessionOptions.Signer.PublicKey));
+
+        return discv5Builder
+            .WithConnectionOptions(new ConnectionOptions { UdpPort = udpPort })
+            .WithTableOptions(new TableOptions(bootstrapEnrs))
+            .WithLoggerFactory(NullLoggerFactory.Instance)
+            .WithEnrBuilder(enr);
     }
 }

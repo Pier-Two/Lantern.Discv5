@@ -8,8 +8,8 @@ using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Lantern.Discv5.WireProtocol;
 
@@ -64,61 +64,61 @@ public static class Discv5ProtocolServiceConfiguration
     private static void AddConnectionServices(IServiceCollection services, ConnectionOptions connectionOptions, SessionOptions sessionOptions, TableOptions tableOptions, ITalkReqAndRespHandler? talkResponder)
     {
         if (talkResponder != null)
-            services.AddSingleton(talkResponder);
+            services.TryAddSingleton(talkResponder);
 
         services.AddSingleton(connectionOptions);
         services.AddSingleton(sessionOptions);
         services.AddSingleton(tableOptions);
-        services.AddSingleton<IConnectionManager, ConnectionManager>();
-        services.AddSingleton<IUdpConnection, UdpConnection>();
+        services.TryAddSingleton<IConnectionManager, ConnectionManager>();
+        services.TryAddSingleton<IUdpConnection, UdpConnection>();
     }
 
     private static void AddIdentityServices(IServiceCollection services, IEnrEntryRegistry enrEntryRegistry, IEnr enr)
     {
         services.AddSingleton(enrEntryRegistry);
         services.AddSingleton(enr);
-        services.AddSingleton<IEnrFactory, EnrFactory>();
-        services.AddSingleton<IIdentityManager, IdentityManager>();
+        services.TryAddSingleton<IEnrFactory, EnrFactory>();
+        services.TryAddSingleton<IIdentityManager, IdentityManager>();
     }
 
     private static void AddTableServices(IServiceCollection services)
     {
-        services.AddSingleton<IRoutingTable, RoutingTable>();
-        services.AddSingleton<ITableManager, TableManager>();
-        services.AddSingleton<ILookupManager, LookupManager>();
+        services.TryAddSingleton<IRoutingTable, RoutingTable>();
+        services.TryAddSingleton<ITableManager, TableManager>();
+        services.TryAddSingleton<ILookupManager, LookupManager>();
     }
 
     private static void AddPacketServices(IServiceCollection services)
     {
-        services.AddSingleton<IPacketManager, PacketManager>();
-        services.AddSingleton<IPacketBuilder, PacketBuilder>();
-        services.AddSingleton<IPacketProcessor, PacketProcessor>();
-        services.AddSingleton<IPacketReceiver, PacketReceiver>();
-        services.AddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
-        services.AddTransient<OrdinaryPacketHandler>();
-        services.AddTransient<WhoAreYouPacketHandler>();
-        services.AddTransient<HandshakePacketHandler>();
+        services.TryAddSingleton<IPacketManager, PacketManager>();
+        services.TryAddSingleton<IPacketBuilder, PacketBuilder>();
+        services.TryAddSingleton<IPacketProcessor, PacketProcessor>();
+        services.TryAddSingleton<IPacketReceiver, PacketReceiver>();
+        services.TryAddSingleton<IPacketHandlerFactory, PacketHandlerFactory>();
+        services.TryAddTransient<OrdinaryPacketHandler>();
+        services.TryAddTransient<WhoAreYouPacketHandler>();
+        services.TryAddTransient<HandshakePacketHandler>();
     }
 
     private static void AddMessageServices(IServiceCollection services)
     {
-        services.AddSingleton<IMessageDecoder, MessageDecoder>();
-        services.AddSingleton<IMessageRequester, MessageRequester>();
-        services.AddSingleton<IMessageResponder, MessageResponder>();
-        services.AddSingleton<IRequestManager, RequestManager>();
+        services.TryAddSingleton<IMessageDecoder, MessageDecoder>();
+        services.TryAddSingleton<IMessageRequester, MessageRequester>();
+        services.TryAddSingleton<IMessageResponder, MessageResponder>();
+        services.TryAddSingleton<IRequestManager, RequestManager>();
     }
 
     private static void AddSessionServices(IServiceCollection services)
     {
-        services.AddSingleton<IAesCrypto, AesCrypto>();
-        services.AddSingleton<ISessionCrypto, SessionCrypto>();
-        services.AddSingleton<ISessionManager, SessionManager>();
+        services.TryAddSingleton<IAesCrypto, AesCrypto>();
+        services.TryAddSingleton<ISessionCrypto, SessionCrypto>();
+        services.TryAddSingleton<ISessionManager, SessionManager>();
     }
 
     private static void AddUtilityServices(IServiceCollection services)
     {
-        services.AddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
-        services.AddTransient<ICancellationTokenSourceWrapper, CancellationTokenSourceWrapper>();
-        services.AddSingleton<IRoutingTable, RoutingTable>();
+        services.TryAddSingleton<IGracefulTaskRunner, GracefulTaskRunner>();
+        services.TryAddTransient<ICancellationTokenSourceWrapper, CancellationTokenSourceWrapper>();
+        services.TryAddSingleton<IRoutingTable, RoutingTable>();
     }
 }
