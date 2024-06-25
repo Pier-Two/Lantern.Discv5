@@ -53,10 +53,9 @@ jobs:
 
       - name: Publish package
         if: ${{ inputs.publish }}
-        working-directory: src/Lantern.Discv5.WireProtocol
         run: |
           dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build
-          dotnet nuget push bin/${{ env.BUILD_CONFIG }}/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
   sonar:
     name: Build and analyze SonarCloud
