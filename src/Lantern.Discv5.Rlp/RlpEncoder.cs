@@ -149,7 +149,7 @@ public static class RlpEncoder
             return array;
         }
 
-        return length < Constants.SizeThreshold
+        return length <= Constants.SizeThreshold
             ? ByteArrayUtils.JoinByteArrays(new[] { (byte)(shortOffset + length) }, array)
             : EncodeLargePrefix(array, largeOffset);
     }
