@@ -1,5 +1,4 @@
 using System.Text;
-using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 
@@ -40,7 +39,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
         var signature = items[0];
         var entries = new Dictionary<string, IEntry>();
 
-        for (var i = 2; i < items.Count - 1; i++)
+        for (var i = 2; i < items.Count - 1; i += 2)
         {
             var key = Encoding.ASCII.GetString(items[i]);
             var entry = entryRegistry.GetEnrEntry(key, items[i + 1]);

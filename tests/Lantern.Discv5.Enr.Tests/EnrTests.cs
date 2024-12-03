@@ -1,8 +1,6 @@
 ﻿using System.Net;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
-using Multiformats.Base;
-using Multiformats.Hash;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.Enr.Tests;
@@ -10,6 +8,30 @@ namespace Lantern.Discv5.Enr.Tests;
 [TestFixture]
 public class EnrTests
 {
+    [Test]
+    public void Test_EnrRecord_Roundtrip()
+    {
+        var privateKey = Convert.FromHexString("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291");
+        var signer = new IdentitySignerV4(privateKey);
+        var verifier = new IdentityVerifierV4();
+        var enrEntryRegistry = new EnrEntryRegistry();
+
+        var enr = new EnrBuilder()
+            .WithIdentityScheme(new IdentityVerifierV4(), signer)
+            .WithEntry("optimism", new UnrecognizedEntry("optimism", [1, 2]))
+            .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
+            .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
+            .Build();
+
+        var unsortedEnr = "enr:-IG4QLjQ5iEbWM74FYhmUjqjgY__v5MsK7cdoSItTYIetaaRPIlhNMsSh5OZpkjcdLf5SZvWxqizFRR_gr4webdECsABiG9wdGltaXNtggECgmlkgnY0iXNlY3AyNTZrMaEDymNMrg1JrLQB2KTGtv6MVbcNEVv0AHacwUAPMljNMTg";
+
+        var enrBytes = enr.EncodeRecord();
+        var decodedEnr = new EnrFactory(enrEntryRegistry).CreateFromBytes(enrBytes, verifier);
+
+        Assert.That(enr.ToString(), Is.EqualTo(unsortedEnr));
+        Assert.That(enr.ToString(), Is.EqualTo(decodedEnr.ToString()));
+    }
+
     [Test]
     public void Test_ConvertEnrRecordToEnrString_ShouldConvertCorrectly()
     {
