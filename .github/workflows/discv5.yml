@@ -1,12 +1,17 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
 name: .NET
 
 on:
   push:
     tags:
-      - 'v*'
-  pull_request:
+      - "v*"
     branches:
-      - '*'
+      - "*"
+  pull_request:
+    branches: 
+      - "*"
   workflow_dispatch:
     inputs:
       publish:
@@ -27,13 +32,13 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8
-
-      - name: Checkout branch
+          
+      - name: Checkout branch 
         uses: actions/checkout@v4
 
       - name: Install dependencies
         run: dotnet restore
-
+      
       - name: Build Project_Enr
         working-directory: src/Lantern.Discv5.Enr
         run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
@@ -41,8 +46,8 @@ jobs:
       - name: Build Project_Rlp
         working-directory: src/Lantern.Discv5.Rlp
         run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
-
-      - name: Build Project_WireProtocol
+      
+      - name: Build Project_WriteProtocol
         working-directory: src/Lantern.Discv5.WireProtocol
         run: dotnet build -c ${{ env.BUILD_CONFIG }} --no-restore
 
@@ -50,36 +55,17 @@ jobs:
         run: dotnet test -c ${{ env.BUILD_CONFIG }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
 
       - name: Publish package
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.publish
         env:
           PACKAGE_VERSION: ${{ github.ref_name }}
         run: |
           VERSION=${PACKAGE_VERSION#v}
           echo "Using dynamic package version: $VERSION"
-
-          dotnet pack src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
-
-          dotnet pack src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
-
-          dotnet pack src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
-
-          echo "Listing generated package files:"
-          find . -name "*${VERSION}.nupkg" -print
-
-          # Collect package files
-          PACKAGES=$(find . -name "*${VERSION}.nupkg")
-          if [ -z "$PACKAGES" ]; then
-            echo "No package files found for version $VERSION."
-            exit 1
-          fi
-
-          # Publish packages
-          for file in $PACKAGES; do
+          dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
+          
+          for file in $(find . -name "*.${VERSION}.nupkg"); do
             echo "Publishing package: $file"
-            dotnet nuget push "$file" -k "${{ secrets.NUGET_API_KEY }}" -s https://api.nuget.org/v3/index.json
+            dotnet nuget push "$file" -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
           done
 
   sonar:
@@ -95,10 +81,10 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 17
-          distribution: 'zulu'
+          distribution: 'zulu' # Alternative distribution options are available.
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
         with:
