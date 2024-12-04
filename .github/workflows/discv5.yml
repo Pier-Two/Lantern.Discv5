@@ -5,6 +5,8 @@ name: .NET
 
 on:
   push:
+    tags:
+      - "v*"
     branches:
       - "*"
   pull_request:
@@ -24,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUILD_CONFIG: release
+      PACKAGE_VERSION: ${{ github.ref_name }}
     steps:
       - name: Setup .NET for Testing
         uses: actions/setup-dotnet@v4
@@ -52,10 +55,14 @@ jobs:
         run: dotnet test -c ${{ env.BUILD_CONFIG }} --no-restore --verbosity normal --collect:"XPlat Code Coverage"
 
       - name: Publish package
-        if: ${{ inputs.publish }}
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.publish
+        env:
+          PACKAGE_VERSION: ${{ github.ref_name }}
         run: |
-          dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build
-          dotnet nuget push **/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+          VERSION=${PACKAGE_VERSION#v}
+          echo "Using dynamic package version: $VERSION"
+          dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
+          dotnet nuget push **/$VERSION.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
   sonar:
     name: Build and analyze SonarCloud
