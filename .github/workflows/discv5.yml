@@ -56,24 +56,30 @@ jobs:
         run: |
           VERSION=${PACKAGE_VERSION#v}
           echo "Using dynamic package version: $VERSION"
-          mkdir -p ./artifacts
 
           dotnet pack src/Lantern.Discv5.Enr/Lantern.Discv5.Enr.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION -o ./artifacts
+            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
 
           dotnet pack src/Lantern.Discv5.Rlp/Lantern.Discv5.Rlp.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION -o ./artifacts
+            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
 
           dotnet pack src/Lantern.Discv5.WireProtocol/Lantern.Discv5.WireProtocol.csproj \
-            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION -o ./artifacts
+            -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
 
-          for file in ./artifacts/*.${VERSION}.nupkg; do
-            if [ -f "$file" ]; then
-              echo "Publishing package: $file"
-              dotnet nuget push "$file" -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-            else
-              echo "No package files found for version $VERSION."
-            fi
+          echo "Listing generated package files:"
+          find . -name "*${VERSION}.nupkg" -print
+
+          # Collect package files
+          PACKAGES=$(find . -name "*${VERSION}.nupkg")
+          if [ -z "$PACKAGES" ]; then
+            echo "No package files found for version $VERSION."
+            exit 1
+          fi
+
+          # Publish packages
+          for file in $PACKAGES; do
+            echo "Publishing package: $file"
+            dotnet nuget push "$file" -k "${{ secrets.NUGET_API_KEY }}" -s https://api.nuget.org/v3/index.json
           done
 
   sonar:
