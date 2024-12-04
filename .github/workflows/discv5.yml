@@ -62,7 +62,11 @@ jobs:
           VERSION=${PACKAGE_VERSION#v}
           echo "Using dynamic package version: $VERSION"
           dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build -p:PackageVersion=$VERSION
-          dotnet nuget push **/$VERSION.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+          
+          for file in $(find . -name "*.${VERSION}.nupkg"); do
+            echo "Publishing package: $file"
+            dotnet nuget push "$file" -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+          done
 
   sonar:
     name: Build and analyze SonarCloud
