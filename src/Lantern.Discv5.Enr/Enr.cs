@@ -14,10 +14,10 @@ public class Enr : IEnr, IEquatable<IEnr>
     private byte[]? _cachedNodeId;
 
     public Enr(
-        IDictionary<string, IEntry> initialEntries, 
-        IIdentityVerifier verifier, 
-        IIdentitySigner? signer = null, 
-        byte[]? signature = null, 
+        IDictionary<string, IEntry> initialEntries,
+        IIdentityVerifier verifier,
+        IIdentitySigner? signer = null,
+        byte[]? signature = null,
         ulong sequenceNumber = 1)
     {
         _entries = initialEntries;
@@ -35,47 +35,47 @@ public class Enr : IEnr, IEquatable<IEnr>
         else
         {
             throw new ArgumentNullException($"You must provide either {nameof(signer)} or {nameof(signature)}");
-        }        
-        
+        }
+
         _ = NodeId;
         SequenceNumber = sequenceNumber;
     }
-    
+
     public byte[]? Signature { get; private set; }
-    
+
     public ulong SequenceNumber { get; private set; }
-    
-    public byte[] NodeId 
+
+    public byte[] NodeId
     {
         get { return _cachedNodeId ??= _verifier!.GetNodeIdFromRecord(this); }
     }
-    
+
     public T GetEntry<T>(string key, T defaultValue = default!) where T : IEntry
     {
         var entry = _entries.Values.FirstOrDefault(e => e.Key == key);
 
         return entry is T result ? result : defaultValue;
     }
-    
+
     public void UpdateEntry<T>(T value) where T : class, IEntry
     {
         foreach (var existingKey in _entries.Where(entry => entry.Value.Key.Equals(value.Key)).ToList())
         {
             _entries.Remove(existingKey.Key);
         }
-        
+
         _entries[value.Key] = value;
         IncrementSequenceNumber();
     }
-    
+
     public bool HasKey(string key)
     {
         return _entries.ContainsKey(key);
     }
-    
+
     public void UpdateSignature()
     {
-        if(_signer != null)
+        if (_signer != null)
             Signature = _signer.SignRecord(this);
     }
 
@@ -111,12 +111,12 @@ public class Enr : IEnr, IEquatable<IEnr>
 
     public string ToEnode()
     {
-        if(Signature == null)
+        if (Signature == null)
             throw new InvalidOperationException("Signature must be set before encoding.");
-        
+
         if (!HasKey(EnrEntryKey.Tcp))
             return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
-        
+
         return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}:{GetEntry<EntryTcp>(EnrEntryKey.Tcp).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
     }
 
@@ -125,10 +125,10 @@ public class Enr : IEnr, IEquatable<IEnr>
         var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var publicKeyProto = ByteArrayUtils.Concatenate(EnrConstants.ProtoBufferPrefix, publicKey);
         var multiHash = publicKeyProto.Length <= 42 ? Multihash.Encode(publicKeyProto, HashType.ID) : Multihash.Encode(publicKeyProto, HashType.SHA2_256);
-    
+
         return Multibase.Encode(MultibaseEncoding.Base58Btc, multiHash).Remove(0, 1);
     }
-    
+
     private void IncrementSequenceNumber()
     {
         SequenceNumber++;
@@ -140,7 +140,6 @@ public class Enr : IEnr, IEquatable<IEnr>
     private byte[] EncodeEnrContent()
     {
         return _entries
-            .OrderBy(e => e.Key)
             .SelectMany(e => e.Value.EncodeEntry())
             .ToArray();
     }
