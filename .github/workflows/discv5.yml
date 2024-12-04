@@ -55,7 +55,7 @@ jobs:
         if: ${{ inputs.publish }}
         run: |
           dotnet pack -c ${{ env.BUILD_CONFIG }} --no-build
-          dotnet nuget push **/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+          dotnet nuget push **/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
 
   sonar:
     name: Build and analyze SonarCloud
