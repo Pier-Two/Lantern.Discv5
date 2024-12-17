@@ -9,8 +9,9 @@ public static class RlpDecoder
     /// Decode RLP encoded input into a list of byte arrays.
     /// </summary>
     /// <param name="input">The RLP encoded input byte array.</param>
+    /// <param name="depth">Max levels that will be flatten, fully flatten by default.</param>
     /// <returns>A list of byte arrays containing the decoded data.</returns>
-    public static List<byte[]> Decode(byte[] input)
+    public static List<byte[]> Decode(byte[] input, int? depth = null)
     {
         var list = new List<object>();
         var index = 0;
@@ -41,14 +42,28 @@ public static class RlpDecoder
             else if (currentByte <= Constants.LargeCollectionOffset)
             {
                 length = currentByte - Constants.ShortCollectionOffset;
-                list.Add(DecodeList(input, index + 1, length));
+                if (depth is 0)
+                {
+                    list.Add(DecodeString(input, index + 1, length));
+                }
+                else
+                {
+                    list.Add(DecodeList(input, index + 1, length, depth is null ? null : depth - 1));
+                }
                 index += 1 + length;
             }
             else
             {
                 lengthOfLength = currentByte - Constants.LargeCollectionOffset;
                 length = RlpExtensions.ByteArrayToInt32(GetNextBytes(input, index + 1, lengthOfLength));
-                list.AddRange(DecodeList(input, index + 1 + lengthOfLength, length));
+                if (depth is 0)
+                {
+                    list.Add(DecodeString(input, index + 1 + lengthOfLength, length));
+                }
+                else
+                {
+                    list.AddRange(DecodeList(input, index + 1 + lengthOfLength, length, depth is null ? null : depth - 1));
+                }
                 index += 1 + lengthOfLength + length;
             }
         }
@@ -86,9 +101,9 @@ public static class RlpDecoder
     /// <param name="index">The starting index of the list item in the encoded data.</param>
     /// <param name="length">The length of the list item to decode.</param>
     /// <returns>A list of byte arrays containing the decoded list items.</returns>
-    private static List<byte[]> DecodeList(byte[] encodedData, int index, int length)
+    private static List<byte[]> DecodeList(byte[] encodedData, int index, int length, int? depth = null)
     {
-        return Decode(encodedData[index..(index + length)]);
+        return Decode(encodedData[index..(index + length)], depth);
     }
 
     /// <summary>

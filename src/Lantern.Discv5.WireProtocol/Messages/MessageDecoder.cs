@@ -62,11 +62,11 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private NodesMessage DecodeNodesMessage(byte[] message)
     {
         var rawMessage = message[1..];
-        var decodedMessage = RlpDecoder.Decode(rawMessage);
+        var decodedMessage = RlpDecoder.Decode(rawMessage, 1);
         var requestId = decodedMessage[0];
         var total = RlpExtensions.ByteArrayToInt32(decodedMessage[1]);
-        var enrs = enrFactory.CreateFromMultipleEnrList(ExtractEnrRecord(decodedMessage.Skip(2).ToList(), total),
-            identityManager.Verifier);
+        var enrsRlps = RlpDecoder.Decode(decodedMessage[2], 0);
+        var enrs = enrFactory.CreateFromMultipleEnrList(enrsRlps.Select(b => RlpDecoder.Decode(b, 0)), identityManager.Verifier);
         return new NodesMessage(requestId, total, enrs);
     }
 

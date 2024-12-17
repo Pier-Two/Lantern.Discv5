@@ -37,6 +37,33 @@ public class RlpDecoderTests
     }
 
     [Test]
+    public void Test_RlpDecoder_ShouldDecodeWithoutFlattening()
+    {
+        var rawValue = "f8b188b47225c9674f99d306f8a5f8a3b840df79b4ffe6fe452449180234ff8e1509237b6decc6d054dc34cbba5f7dcf036a3f067a213dc9944aa5c761ffe450fc9ad032a050a2fb4467198bc3f0d6ac0eb68601926acf868083657468c7c6849b192ad080826964827634826970843b1fcea189736563703235366b31a102ee59efb761353ad2e7458f2e127cb110a5571beeff0d25e95de840331e5725ce84736e6170c08374637082765f8375647082765f";
+        var value = Convert.FromHexString(rawValue);
+        var enrArray = RlpDecoder.Decode(value, 1);
+        var enrsRlps = RlpDecoder.Decode(enrArray[2], 0);
+        var enrs = enrsRlps.Select(b => RlpDecoder.Decode(b, 0)).ToList();
+
+        Assert.AreEqual(enrs.Count, 1);
+        Assert.AreEqual(enrs[0].Count, 16);
+    }
+
+    [Test]
+    public void Test_RlpDecoder_ShouldDecodeWithoutFlatteningB()
+    {
+        var rawValue = "f9015788b47225c9674f99d306f9014af8a3b840df79b4ffe6fe452449180234ff8e1509237b6decc6d054dc34cbba5f7dcf036a3f067a213dc9944aa5c761ffe450fc9ad032a050a2fb4467198bc3f0d6ac0eb68601926acf868083657468c7c6849b192ad080826964827634826970843b1fcea189736563703235366b31a102ee59efb761353ad2e7458f2e127cb110a5571beeff0d25e95de840331e5725ce84736e6170c08374637082765f8375647082765ff8a3b840df79b4ffe6fe452449180234ff8e1509237b6decc6d054dc34cbba5f7dcf036a3f067a213dc9944aa5c761ffe450fc9ad032a050a2fb4467198bc3f0d6ac0eb68601926acf868083657468c7c6849b192ad080826964827634826970843b1fcea189736563703235366b31a102ee59efb761353ad2e7458f2e127cb110a5571beeff0d25e95de840331e5725ce84736e6170c08374637082765f8375647082765f";
+        var value = Convert.FromHexString(rawValue);
+        var enrArray = RlpDecoder.Decode(value, 1);
+        var enrsRlps = RlpDecoder.Decode(enrArray[2], 0);
+        var enrs = enrsRlps.Select(b => RlpDecoder.Decode(b, 0)).ToList();
+
+        Assert.AreEqual(enrs.Count, 2);
+        Assert.AreEqual(enrs[0].Count, 16);
+        Assert.AreEqual(enrs[1].Count, 16);
+    }
+
+    [Test]
     public void Test_RlpDecoder_ShouldDecodeSmallIntegerCorrectly()
     {
         var rawValue = 23;
