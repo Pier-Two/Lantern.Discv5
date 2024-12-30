@@ -30,7 +30,10 @@ public class TableManager(IPacketReceiver packetReceiver,
         await InitFromBootstrapNodesAsync();
 
         _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
-        _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
+        _pingTask = Task.Run(async () =>
+        {
+            await taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
+        });
     }
 
     public async Task StopTableManagerAsync()

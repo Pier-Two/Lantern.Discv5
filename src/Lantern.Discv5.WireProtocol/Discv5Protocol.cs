@@ -94,6 +94,7 @@ public class Discv5Protocol(IConnectionManager connectionManager,
     {
         try
         {
+            routingTable.UpdateFromEnr(destination);
             var response = await packetReceiver.SendPingAsync(destination);
             return response;
         }

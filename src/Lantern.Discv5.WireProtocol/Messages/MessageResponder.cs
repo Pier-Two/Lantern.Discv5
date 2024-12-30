@@ -1,5 +1,4 @@
 using System.Net;
-using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
@@ -45,7 +44,7 @@ public class MessageResponder(IIdentityManager identityManager,
         _logger.LogInformation("Received message type => {MessageType}", MessageType.Ping);
         var decodedMessage = messageDecoder.DecodeMessage(message);
         var localEnrSeq = identityManager.Record.SequenceNumber;
-        var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
+        var pongMessage = new PongMessage(decodedMessage.RequestId, localEnrSeq, endPoint.Address, endPoint.Port);
         var responseMessage = new List<byte[]> { pongMessage.EncodeMessage() };
 
         return responseMessage.ToArray();
@@ -89,7 +88,7 @@ public class MessageResponder(IIdentityManager identityManager,
             return null;
         }
 
-        if (decodedMessage.EnrSeq <= (int)nodeEntry.Record.SequenceNumber)
+        if (decodedMessage.EnrSeq <= nodeEntry.Record.SequenceNumber)
         {
             return null;
         }

@@ -1,4 +1,4 @@
-﻿using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
@@ -59,7 +59,7 @@ public class Enr : IEnr, IEquatable<IEnr>
 
     public void UpdateEntry<T>(T value) where T : class, IEntry
     {
-        foreach (var existingKey in _entries.Where(entry => entry.Value.Key.Equals(value.Key)).ToList())
+        foreach (var existingKey in _entries.OrderBy(e => e.Key).Where(entry => entry.Value.Key.Equals(value.Key)).ToList())
         {
             _entries.Remove(existingKey.Key);
         }
@@ -140,7 +140,9 @@ public class Enr : IEnr, IEquatable<IEnr>
     private byte[] EncodeEnrContent()
     {
         return _entries
+            .OrderBy(x => x.Key)
             .SelectMany(e => e.Value.EncodeEntry())
             .ToArray();
+
     }
 }

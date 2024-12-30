@@ -31,8 +31,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
 
     private static PingMessage DecodePingMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
-        return new PingMessage(RlpExtensions.ByteArrayToInt32(decodedMessage[1]))
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
+        return new PingMessage(RlpExtensions.ByteArrayToUInt64(decodedMessage[1]))
         {
             RequestId = decodedMessage[0]
         };
@@ -40,8 +40,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
 
     private static PongMessage DecodePongMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
-        return new PongMessage(decodedMessage[0], (int)RlpExtensions.ByteArrayToInt64(decodedMessage[1]),
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
+        return new PongMessage(decodedMessage[0], RlpExtensions.ByteArrayToUInt64(decodedMessage[1]),
             new IPAddress(decodedMessage[2]), RlpExtensions.ByteArrayToInt32(decodedMessage[3]));
     }
 
@@ -72,7 +72,7 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
 
     private static TalkReqMessage DecodeTalkReqMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
         return new TalkReqMessage(decodedMessage[1], decodedMessage[2])
         {
             RequestId = decodedMessage[0]
@@ -81,17 +81,17 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
 
     private static TalkRespMessage DecodeTalkRespMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
         return new TalkRespMessage(decodedMessage[0], decodedMessage[1]);
     }
 
     private RegTopicMessage DecodeRegTopicMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
+        // var requestId = decodedMessage[0];
         var decodedTopic = decodedMessage[1];
-        var decodedEnr = decodedMessage.GetRange(2, decodedMessage.Count - 2).SkipLast(1).ToList();
-        var enr = enrFactory.CreateFromDecoded(decodedEnr.ToList(), identityManager.Verifier);
-        var decodedTicket = decodedMessage.Last();
+        var enr = enrFactory.CreateFromBytes(decodedMessage[2], identityManager.Verifier);
+        var decodedTicket = decodedMessage[31];
         return new RegTopicMessage(decodedTopic, enr, decodedTicket)
         {
             RequestId = decodedMessage[0]
@@ -100,20 +100,20 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
 
     private static RegConfirmationMessage DecodeRegConfirmationMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
         return new RegConfirmationMessage(decodedMessage[0], decodedMessage[1]);
     }
 
     private static TicketMessage DecodeTicketMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
         return new TicketMessage(decodedMessage[0], decodedMessage[1],
             RlpExtensions.ByteArrayToInt32(decodedMessage[2]));
     }
 
     private static TopicQueryMessage DecodeTopicQueryMessage(byte[] message)
     {
-        var decodedMessage = RlpDecoder.Decode(message[1..]);
+        var decodedMessage = RlpDecoder.Decode(message[1..], 1);
         return new TopicQueryMessage(decodedMessage[1])
         {
             RequestId = decodedMessage[0]

@@ -9,6 +9,4 @@ public interface IEnrFactory
     Enr CreateFromBytes(byte[] bytes, IIdentityVerifier verifier);
 
     Enr[] CreateFromMultipleEnrList(IEnumerable<IEnumerable<byte[]>> enrs, IIdentityVerifier verifier);
-
-    Enr CreateFromDecoded(IReadOnlyList<byte[]> items, IIdentityVerifier verifier);
 }

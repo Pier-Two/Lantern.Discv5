@@ -1,7 +1,6 @@
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
-using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Messages;
@@ -15,7 +14,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
     public byte[]? ConstructPingMessage(byte[] destNodeId)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.Ping);
-        var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
+        var pingMessage = new PingMessage(identityManager.Record.SequenceNumber);
         var pendingRequest = new PendingRequest(destNodeId, pingMessage);
         var result = requestManager.AddPendingRequest(pingMessage.RequestId, pendingRequest);
 
@@ -32,7 +31,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
     public byte[]? ConstructCachedPingMessage(byte[] destNodeId)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.Ping);
-        var pingMessage = new PingMessage((int)identityManager.Record.SequenceNumber);
+        var pingMessage = new PingMessage(identityManager.Record.SequenceNumber);
         var cachedRequest = new CachedRequest(destNodeId, pingMessage);
         var result = requestManager.AddCachedRequest(destNodeId, cachedRequest);
 

@@ -21,7 +21,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
     {
         if (bytes == null) throw new ArgumentNullException(nameof(bytes));
 
-        var items = RlpDecoder.Decode(bytes);
+        var items = RlpDecoder.Decode(bytes, 1);
         return CreateFromDecoded(items, verifier);
     }
 
@@ -32,11 +32,12 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
         return enrs.Select(enr => CreateFromDecoded(enr.ToArray(), verifier)).ToArray();
     }
 
-    public Enr CreateFromDecoded(IReadOnlyList<byte[]> items, IIdentityVerifier verifier)
+    private Enr CreateFromDecoded(IReadOnlyList<byte[]> items, IIdentityVerifier verifier)
     {
         if (items == null) throw new ArgumentNullException(nameof(items));
 
         var signature = items[0];
+        //var seq = items[1];
         var entries = new Dictionary<string, IEntry>();
 
         for (var i = 2; i < items.Count - 1; i += 2)

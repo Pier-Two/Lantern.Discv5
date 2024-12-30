@@ -5,14 +5,14 @@ namespace Lantern.Discv5.WireProtocol.Messages.Responses;
 
 public class PongMessage : Message
 {
-    public PongMessage(int enrSeq, IPAddress recipientIp, int recipientPort) : base(MessageType.Pong)
+    public PongMessage(ulong enrSeq, IPAddress recipientIp, int recipientPort) : base(MessageType.Pong)
     {
         EnrSeq = enrSeq;
         RecipientIp = recipientIp;
         RecipientPort = recipientPort;
     }
 
-    public PongMessage(byte[] requestId, int enrSeq, IPAddress recipientIp, int recipientPort) : base(
+    public PongMessage(byte[] requestId, ulong enrSeq, IPAddress recipientIp, int recipientPort) : base(
         MessageType.Pong, requestId)
     {
         EnrSeq = enrSeq;
@@ -20,7 +20,7 @@ public class PongMessage : Message
         RecipientPort = recipientPort;
     }
 
-    public int EnrSeq { get; }
+    public ulong EnrSeq { get; }
 
     public IPAddress RecipientIp { get; }
 
@@ -30,7 +30,7 @@ public class PongMessage : Message
     {
         var messageId = new[] { (byte)MessageType };
         var encodedRequestId = RlpEncoder.EncodeBytes(RequestId);
-        var encodedEnrSeq = RlpEncoder.EncodeInteger(EnrSeq);
+        var encodedEnrSeq = RlpEncoder.EncodeUlong(EnrSeq);
         var encodedRecipientIp = RlpEncoder.EncodeBytes(RecipientIp.GetAddressBytes());
         var encodedRecipientPort = RlpEncoder.EncodeInteger(RecipientPort);
         var encodedMessage = RlpEncoder.EncodeCollectionOfBytes(ByteArrayUtils.Concatenate(encodedRequestId,
