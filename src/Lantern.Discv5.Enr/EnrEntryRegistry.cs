@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Rlp;
+using static Lantern.Discv5.Rlp.RlpDecoder;
 
 namespace Lantern.Discv5.Enr;
 
@@ -32,9 +33,9 @@ public sealed class EnrEntryRegistry : IEnrEntryRegistry
         _registeredEntries.Remove(key);
     }
 
-    public IEntry? GetEnrEntry(string stringKey, byte[] value)
+    public IEntry? GetEnrEntry(string stringKey, RlpStruct value)
     {
-        return _registeredEntries.TryGetValue(stringKey, out var createEntryFunc) ? createEntryFunc(value) : new UnrecognizedEntry(stringKey, value);
+        return _registeredEntries.TryGetValue(stringKey, out var createEntryFunc) ? createEntryFunc(value.GetData()) : new UnrecognizedEntry(stringKey, value);
     }
 
     private void RegisterDefaultEntries()

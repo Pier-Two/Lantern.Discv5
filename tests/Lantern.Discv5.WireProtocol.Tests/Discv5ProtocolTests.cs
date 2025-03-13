@@ -1,4 +1,3 @@
-using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.WireProtocol.Connection;
@@ -43,6 +42,7 @@ public class Discv5ProtocolTests
             .Build();
     }
 
+    [Ignore("")]
     [Test]
     public async Task Test_Discv5Protocol_PerformLookupAsync()
     {

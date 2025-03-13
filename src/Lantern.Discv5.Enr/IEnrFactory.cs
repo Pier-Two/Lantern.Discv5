@@ -1,4 +1,5 @@
 using Lantern.Discv5.Enr.Identity;
+using static Lantern.Discv5.Rlp.RlpDecoder;
 
 namespace Lantern.Discv5.Enr;
 
@@ -8,7 +9,7 @@ public interface IEnrFactory
 
     Enr CreateFromBytes(byte[] bytes, IIdentityVerifier verifier);
 
-    Enr[] CreateFromMultipleEnrList(IEnumerable<IEnumerable<byte[]>> enrs, IIdentityVerifier verifier);
+    Enr[] CreateFromMultipleEnrList(ReadOnlySpan<RlpStruct> enrs, IIdentityVerifier verifier);
 
-    Enr CreateFromDecoded(IReadOnlyList<byte[]> items, IIdentityVerifier verifier);
+    Enr CreateFromRlp(RlpStruct enrRlp, IIdentityVerifier verifier);
 }
