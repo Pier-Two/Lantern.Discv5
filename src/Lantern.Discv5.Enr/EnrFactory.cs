@@ -40,13 +40,13 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
 
     public Enr CreateFromRlp(Rlp.Rlp enrRlp, IIdentityVerifier verifier)
     {
-        var items = RlpDecoder.Decode(enrRlp.InnerSpan);
-        var signature = items[0].GetData();
+        var items = RlpDecoder.Decode(enrRlp);
+        var signature = items[0];
         var entries = new Dictionary<string, IEntry>();
 
         for (var i = 2; i < items.Length - 1; i += 2)
         {
-            var key = Encoding.ASCII.GetString(items[i].InnerSpan.Span);
+            var key = Encoding.ASCII.GetString(items[i]);
             var entry = entryRegistry.GetEnrEntry(key, items[i + 1]);
 
             if (entry == null)
@@ -55,7 +55,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
             entries.Add(key, entry);
         }
 
-        var enrRecord = new Enr(entries, verifier, null, signature, RlpExtensions.ByteArrayToUInt64(items[1].GetData()));
+        var enrRecord = new Enr(entries, verifier, null, signature, RlpExtensions.ByteArrayToUInt64(items[1]));
 
         return enrRecord;
     }

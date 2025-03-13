@@ -42,7 +42,6 @@ public class Discv5ProtocolTests
             .Build();
     }
 
-    [Ignore("")]
     [Test]
     public async Task Test_Discv5Protocol_PerformLookupAsync()
     {

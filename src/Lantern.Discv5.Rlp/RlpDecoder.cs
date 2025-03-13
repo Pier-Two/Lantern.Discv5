@@ -5,8 +5,6 @@ namespace Lantern.Discv5.Rlp;
 /// </summary>
 public static partial class RlpDecoder
 {
-    public static ReadOnlySpan<Rlp> Decode(byte[] input) => Decode(new ReadOnlyMemory<byte>(input));
-
     /// <summary>
     /// Decodes RLP
     /// </summary>
@@ -31,7 +29,7 @@ public static partial class RlpDecoder
             else if (currentByte <= Constants.LargeItemOffset)
             {
                 length = currentByte - Constants.ShortItemOffset;
-                list.Add(new Rlp(input.Slice(index, length), 1));
+                list.Add(new Rlp(input.Slice(index, 1 + length), 1));
                 index += 1 + length;
             }
             else if (currentByte <= Constants.ShortCollectionOffset - 1)
@@ -51,7 +49,7 @@ public static partial class RlpDecoder
             {
                 lengthOfLength = currentByte - Constants.LargeCollectionOffset;
                 length = RlpExtensions.ByteArrayToInt32(input.Slice(index + 1, lengthOfLength).ToArray());
-                list.Add(new Rlp(input.Slice(index, 1 + lengthOfLength + length), length));
+                list.Add(new Rlp(input.Slice(index, 1 + lengthOfLength + length), 1 + lengthOfLength));
                 index += 1 + lengthOfLength + length;
             }
         }

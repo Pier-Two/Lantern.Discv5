@@ -34,7 +34,7 @@ public sealed class EnrEntryRegistry : IEnrEntryRegistry
 
     public IEntry? GetEnrEntry(string stringKey, Rlp.Rlp value)
     {
-        return _registeredEntries.TryGetValue(stringKey, out var createEntryFunc) ? createEntryFunc(value.GetData()) : new UnrecognizedEntry(stringKey, value);
+        return _registeredEntries.TryGetValue(stringKey, out var createEntryFunc) ? createEntryFunc(value) : new UnrecognizedEntry(stringKey, value);
     }
 
     private void RegisterDefaultEntries()
