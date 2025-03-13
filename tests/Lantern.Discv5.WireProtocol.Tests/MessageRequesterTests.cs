@@ -7,13 +7,11 @@ using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
-using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 

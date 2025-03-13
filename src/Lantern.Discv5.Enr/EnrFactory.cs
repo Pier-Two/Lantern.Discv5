@@ -1,7 +1,6 @@
 using System.Text;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
-using static Lantern.Discv5.Rlp.RlpDecoder;
 
 namespace Lantern.Discv5.Enr;
 
@@ -22,10 +21,10 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
     {
         if (bytes == null) throw new ArgumentNullException(nameof(bytes));
 
-        return CreateFromRlp(RlpDecoder.Decode(bytes.AsSpan())[0], verifier);
+        return CreateFromRlp(RlpDecoder.Decode(bytes)[0], verifier);
     }
 
-    public Enr[] CreateFromMultipleEnrList(ReadOnlySpan<RlpStruct> enrs, IIdentityVerifier verifier)
+    public Enr[] CreateFromMultipleEnrList(ReadOnlySpan<Rlp.Rlp> enrs, IIdentityVerifier verifier)
     {
         if (enrs == null) throw new ArgumentNullException(nameof(enrs));
 
@@ -39,7 +38,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
         return result;
     }
 
-    public Enr CreateFromRlp(RlpStruct enrRlp, IIdentityVerifier verifier)
+    public Enr CreateFromRlp(Rlp.Rlp enrRlp, IIdentityVerifier verifier)
     {
         var items = RlpDecoder.Decode(enrRlp.InnerSpan);
         var signature = items[0].GetData();
@@ -47,7 +46,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
 
         for (var i = 2; i < items.Length - 1; i += 2)
         {
-            var key = Encoding.ASCII.GetString(items[i].InnerSpan);
+            var key = Encoding.ASCII.GetString(items[i].InnerSpan.Span);
             var entry = entryRegistry.GetEnrEntry(key, items[i + 1]);
 
             if (entry == null)

@@ -1,10 +1,9 @@
 using System.Text;
 using Lantern.Discv5.Rlp;
-using static Lantern.Discv5.Rlp.RlpDecoder;
 
 namespace Lantern.Discv5.Enr.Entries;
 
-public class UnrecognizedEntry(string key, RlpStruct valueRlp) : IEntry
+public class UnrecognizedEntry(string key, Rlp.Rlp valueRlp) : IEntry
 {
     public string Key { get; } = key;
     public byte[] Value { get; } = valueRlp.GetData();

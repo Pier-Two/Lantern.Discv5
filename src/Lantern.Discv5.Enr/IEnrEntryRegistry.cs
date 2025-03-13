@@ -1,5 +1,3 @@
-using static Lantern.Discv5.Rlp.RlpDecoder;
-
 namespace Lantern.Discv5.Enr;
 
 public interface IEnrEntryRegistry
@@ -8,5 +6,5 @@ public interface IEnrEntryRegistry
 
     void UnregisterEntry(string key);
 
-    IEntry? GetEnrEntry(string stringKey, RlpStruct value);
+    IEntry? GetEnrEntry(string stringKey, Rlp.Rlp value);
 }

@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Logging.Exceptions;
 using Lantern.Discv5.WireProtocol.Packet;

@@ -1,6 +1,5 @@
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
-using Lantern.Discv5.WireProtocol.Table;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 

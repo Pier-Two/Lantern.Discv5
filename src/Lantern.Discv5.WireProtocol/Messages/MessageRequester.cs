@@ -1,7 +1,6 @@
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
-using Lantern.Discv5.WireProtocol.Table;
 using Microsoft.Extensions.Logging;
 
 namespace Lantern.Discv5.WireProtocol.Messages;
