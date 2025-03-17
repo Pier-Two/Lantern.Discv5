@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Lantern.Discv5.Rlp;
 
@@ -46,36 +47,42 @@ public class StaticHeader
         return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
     }
 
-    public static StaticHeader DecodeFromBytes(byte[] decryptedData)
+    public static bool TryDecodeFromBytes(byte[] decryptedData, [NotNullWhen(true)] out StaticHeader? staticHeader)
     {
         int authDataSize = 0;
-        try
+        var index = 0;
+        var protocolId = Encoding.ASCII.GetString(decryptedData[..PacketConstants.ProtocolIdSize]);
+        index += PacketConstants.ProtocolIdSize;
+
+        if (protocolId != "discv5")
         {
-            var index = 0;
-            var protocolId = Encoding.ASCII.GetString(decryptedData[..PacketConstants.ProtocolIdSize]);
-            index += PacketConstants.ProtocolIdSize;
-
-            var version = decryptedData[index..(index + PacketConstants.VersionSize)];
-            index += PacketConstants.VersionSize;
-
-            var flag = decryptedData[index];
-            index += 1;
-
-            var nonce = decryptedData[index..(index + PacketConstants.HeaderNonce)];
-            index += PacketConstants.HeaderNonce;
-
-            authDataSize = RlpExtensions.ByteArrayToInt32(decryptedData[index..(index + PacketConstants.AuthDataSizeBytesLength)]);
-            index += PacketConstants.AuthDataSizeBytesLength;
-
-            // Based on the flag, it should retrieve the authdata correctly
-            var authData = decryptedData[index..(index + authDataSize)];
-            var encryptedMessage = decryptedData[(index + authDataSize)..];
-
-            return new StaticHeader(protocolId, version, authData, flag, nonce, encryptedMessage.Length);
+            staticHeader = null;
+            return false;
         }
-        catch (Exception e)
+
+        var version = decryptedData[index..(index + PacketConstants.VersionSize)];
+        index += PacketConstants.VersionSize;
+
+        var flag = decryptedData[index];
+        index += 1;
+
+        var nonce = decryptedData[index..(index + PacketConstants.HeaderNonce)];
+        index += PacketConstants.HeaderNonce;
+
+        authDataSize = RlpExtensions.ByteArrayToInt32(decryptedData[index..(index + PacketConstants.AuthDataSizeBytesLength)]);
+        index += PacketConstants.AuthDataSizeBytesLength;
+
+        if (decryptedData.Length < index + authDataSize)
         {
-            throw new Exception(e.Message + $": authDataSize={authDataSize} " + Convert.ToHexString(decryptedData));
+            staticHeader = null;
+            return false;
         }
+
+        // Based on the flag, it should retrieve the authdata correctly
+        var authData = decryptedData[index..(index + authDataSize)];
+        var encryptedMessage = decryptedData[(index + authDataSize)..];
+
+        staticHeader = new StaticHeader(protocolId, version, authData, flag, nonce, encryptedMessage.Length);
+        return true;
     }
 }

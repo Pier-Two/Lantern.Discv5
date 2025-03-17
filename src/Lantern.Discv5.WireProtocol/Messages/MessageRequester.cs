@@ -2,6 +2,7 @@ using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Lantern.Discv5.WireProtocol.Messages;
 
@@ -24,7 +25,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
             return null;
         }
 
-        _logger.LogDebug("Ping message constructed: {PingMessage}", pingMessage.RequestId);
+        _logger.LogDebug("Ping message constructed: {PingMessage}", Convert.ToHexString(pingMessage.RequestId).ToLower());
         return pingMessage.EncodeMessage();
     }
 
@@ -41,7 +42,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
             return null;
         }
 
-        _logger.LogDebug("Ping message constructed: {PingMessage}", pingMessage.RequestId);
+        _logger.LogDebug("Ping message constructed: {PingMessage}", Convert.ToHexString(pingMessage.RequestId).ToLower());
         return pingMessage.EncodeMessage();
     }
 
@@ -115,7 +116,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
+            _logger.LogWarning("Failed to add pending request. Request id: {RequestId} {a}", Convert.ToHexString(talkRespMessage.RequestId), new StackTrace());
             return null;
         }
 
@@ -133,7 +134,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
+            _logger.LogWarning("Failed to add cached request. Request id: {RequestId} {a}", Convert.ToHexString(destNodeId), new StackTrace());
             return null;
         }
 

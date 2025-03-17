@@ -6,6 +6,7 @@ using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
@@ -33,7 +34,14 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
     {
         _logger.LogInformation("Received HANDSHAKE packet from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
         var packet = returnedResult.Buffer;
-        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(packetProcessor.GetStaticHeader(packet));
+
+        if (!packetProcessor.TryGetStaticHeader(packet, out StaticHeader? staticHeader))
+        {
+            _logger.LogInformation("Could not decode header from {addr}", returnedResult.RemoteEndPoint.Address);
+            return;
+        }
+
+        var handshakePacket = HandshakePacketBase.CreateFromStaticHeader(staticHeader);
         var publicKey = ObtainPublicKey(handshakePacket, handshakePacket.SrcId!);
 
         if (publicKey == null)
@@ -58,7 +66,7 @@ public class HandshakePacketHandler(IIdentityManager identityManager,
             return;
         }
 
-        var decryptedMessage = session.DecryptMessageWithNewKeys(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), packetProcessor.GetEncryptedMessage(packet), handshakePacket, identityManager.Record.NodeId);
+        var decryptedMessage = session.DecryptMessageWithNewKeys(staticHeader, packetProcessor.GetMaskingIv(packet), packetProcessor.GetEncryptedMessage(packet), handshakePacket, identityManager.Record.NodeId);
 
         if (decryptedMessage == null)
         {

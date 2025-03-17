@@ -1,12 +1,13 @@
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
+using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
 using Multiformats.Hash;
 
 namespace Lantern.Discv5.Enr;
 
-public class Enr : IEnr, IEquatable<IEnr>
+public class Enr : IEnr, IEquatable<IEnr>, IFormattable
 {
     private readonly IDictionary<string, IEntry> _entries;
     private readonly IIdentitySigner? _signer;
@@ -109,6 +110,14 @@ public class Enr : IEnr, IEquatable<IEnr>
         return $"enr:{Base64Url.ToString(EncodeRecord())}";
     }
 
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return format is { Length: 0 } or null ? ToString() : format
+            .Replace("e", ToString())
+            .Replace("a", $"{GetEntry<EntryIp>(EnrEntryKey.Ip)?.Value}:{GetEntry<EntryUdp>(EnrEntryKey.Udp)?.Value}")
+            .Replace("i", Convert.ToHexString(new IdentityVerifierV4().GetNodeIdFromRecord(this))?.ToLowerInvariant());
+    }
+
     public string ToEnode()
     {
         if (Signature == null)
@@ -144,5 +153,20 @@ public class Enr : IEnr, IEquatable<IEnr>
             .SelectMany(e => e.Value.EncodeEntry())
             .ToArray();
 
+    }
+
+    public override int GetHashCode()
+    {
+        int hc = NodeId.Length;
+        foreach (int val in NodeId)
+        {
+            hc = unchecked(hc * 314159 + val);
+        }
+        return hc;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Enr enr && Enumerable.SequenceEqual(NodeId, enr.NodeId);
     }
 }

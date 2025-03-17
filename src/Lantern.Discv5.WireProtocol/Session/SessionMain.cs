@@ -16,6 +16,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
     private byte[]? _challengeData;
     private SharedKeys? _currentSharedKeys;
     private int _messageCount;
+    private byte[] _destNodeId;
 
     public bool IsEstablished { get; private set; }
 
@@ -56,6 +57,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
     {
         var publicKey = dest.GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
         var destNodeId = new IdentityVerifierV4().GetNodeIdFromRecord(dest);
+        _destNodeId = destNodeId;
         var sharedSecret = sessionCrypto.GenerateSharedSecret(sessionKeys.EphemeralPrivateKey, publicKey, sessionKeys.CryptoContext);
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
 
@@ -106,14 +108,14 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
     {
         if (_currentSharedKeys == null)
         {
-            _logger.LogError("Session keys are not available. Cannot encrypt message");
+            _logger.LogError($"Session keys are not available. Cannot encrypt message");
             return null;
         }
 
         var encryptionKey = sessionType == SessionType.Initiator ? _currentSharedKeys.InitiatorKey : _currentSharedKeys.RecipientKey;
         var messageAd = ByteArrayUtils.JoinByteArrays(maskingIv, header.GetHeader());
 
-        _logger.LogDebug("Encrypting message");
+        _logger.LogDebug($"Encrypting message with {sessionType} {Convert.ToHexString(encryptionKey ?? []).ToLower()}, {Convert.ToHexString(messageAd).ToLower()}");
         var encryptedMessage = aesCrypto.AesGcmEncrypt(encryptionKey, header.Nonce, rawMessage, messageAd);
 
         _messageCount++;
@@ -137,7 +139,7 @@ public class SessionMain(ISessionKeys sessionKeys, IAesCrypto aesCrypto, ISessio
         if (!IsEstablished && decryptedMessage != null)
         {
             IsEstablished = true;
-            _logger.LogDebug("Session established");
+            _logger.LogDebug("Session established {}", Convert.ToHexString(_destNodeId ?? []));
         }
 
         return decryptedMessage;

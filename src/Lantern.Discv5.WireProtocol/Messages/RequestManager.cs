@@ -84,7 +84,7 @@ public class RequestManager(IRoutingTable routingTable,
         if (_cachedHandshakeInteractions.Count >= 500)
         {
             // If we have more than 500 cached handshake interactions, remove 250 oldest ones
-            var oldestInteractions = _cachedHandshakeInteractions.OrderBy(x => x.Value.ElapsedTime.Elapsed).Take(400).ToList();
+            var oldestInteractions = _cachedHandshakeInteractions.OrderBy(x => x.Value?.ElapsedTime?.Elapsed).Take(400).ToList();
 
             foreach (var interaction in oldestInteractions)
             {

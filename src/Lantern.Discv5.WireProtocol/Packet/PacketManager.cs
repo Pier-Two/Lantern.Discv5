@@ -54,6 +54,8 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
             return message;
         }
 
+        _logger.LogWarning($"No session for {destEndPoint} {Convert.ToHexString(destNodeId).ToLower()}");
+
         await SendRandomOrdinaryPacketAsync(destEndPoint, destNodeId);
         return message;
     }
@@ -82,9 +84,15 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
     {
         try
         {
+            if (!packetProcessor.TryGetStaticHeader(returnedResult.Buffer, out var staticHeader))
+            {
+                _logger.LogInformation("Could not decode header from {addr}", returnedResult.RemoteEndPoint.Address);
+                return;
+            }
+
             var packetHandler =
                 packetHandlerFactory.GetPacketHandler(
-                    (PacketType)packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
+                    (PacketType)staticHeader.Flag);
             await packetHandler.HandlePacket(returnedResult);
         }
         catch (Exception e)
@@ -103,7 +111,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         var finalPacket = ByteArrayUtils.JoinByteArrays(ordinaryPacket.Packet, encryptedMessage);
 
         await udpConnection.SendAsync(finalPacket, destEndPoint);
-        _logger.LogInformation("Sent ORDINARY packet to {Destination} at {IpAddress}", Convert.ToHexString(destNodeId), destEndPoint.Address);
+        _logger.LogInformation("Sent ORDINARY packet to {Destination} at {IpAddress}:{port}", Convert.ToHexString(destNodeId).ToLower(), destEndPoint.Address, destEndPoint.Port);
     }
 
     private async Task SendRandomOrdinaryPacketAsync(IPEndPoint destEndPoint, byte[] destNodeId)

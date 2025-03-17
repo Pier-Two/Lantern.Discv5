@@ -30,7 +30,12 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
     {
         _logger.LogInformation("Received ORDINARY packet from {Address}", returnedResult.RemoteEndPoint.Address);
 
-        var staticHeader = packetProcessor.GetStaticHeader(returnedResult.Buffer);
+        if (!packetProcessor.TryGetStaticHeader(returnedResult.Buffer, out StaticHeader? staticHeader))
+        {
+            _logger.LogInformation("Could not decode header from {addr}", returnedResult.RemoteEndPoint.Address);
+            return;
+        }
+
         var maskingIv = packetProcessor.GetMaskingIv(returnedResult.Buffer);
         var encryptedMessage = packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
         var nodeEntry = routingTable.GetNodeEntryForNodeId(staticHeader.AuthData);

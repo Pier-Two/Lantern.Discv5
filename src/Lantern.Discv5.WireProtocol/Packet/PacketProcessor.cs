@@ -1,17 +1,23 @@
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Session;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
 
 public class PacketProcessor(IIdentityManager identityManager, IAesCrypto aesCrypto) : IPacketProcessor
 {
-    public StaticHeader GetStaticHeader(byte[] rawPacket)
+    public bool TryGetStaticHeader(byte[] rawPacket, [NotNullWhen(true)] out StaticHeader? staticHeader)
     {
         var decryptedPacket = aesCrypto.AesCtrDecrypt(identityManager.Record.NodeId[..16], rawPacket[..16], rawPacket[16..]);
-        var staticHeader = StaticHeader.DecodeFromBytes(decryptedPacket);
 
-        return staticHeader;
+        if (decryptedPacket is null)
+        {
+            staticHeader = null;
+            return false;
+        }
+
+        return StaticHeader.TryDecodeFromBytes(decryptedPacket, out staticHeader);
     }
 
     public byte[] GetMaskingIv(byte[] rawPacket)
@@ -19,9 +25,8 @@ public class PacketProcessor(IIdentityManager identityManager, IAesCrypto aesCry
         return rawPacket.AsSpan()[..16].ToArray();
     }
 
-    public byte[] GetEncryptedMessage(byte[] rawPacket)
+    public byte[]? GetEncryptedMessage(byte[] rawPacket)
     {
-        var staticHeader = GetStaticHeader(rawPacket);
-        return rawPacket[^staticHeader.EncryptedMessageLength..];
+        return !TryGetStaticHeader(rawPacket, out StaticHeader? staticHeader) ? null : rawPacket[^staticHeader.EncryptedMessageLength..];
     }
 }
