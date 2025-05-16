@@ -1,4 +1,4 @@
-﻿using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
@@ -140,6 +140,7 @@ public class Enr : IEnr, IEquatable<IEnr>
     private byte[] EncodeEnrContent()
     {
         return _entries
+            .OrderBy(r=>r.Key)
             .SelectMany(e => e.Value.EncodeEntry())
             .ToArray();
     }

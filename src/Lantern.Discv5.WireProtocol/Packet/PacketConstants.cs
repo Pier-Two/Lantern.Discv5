@@ -19,4 +19,5 @@ public static class PacketConstants
     public const int MaskingIvSize = 16;
     public const int NonceSize = 12;
     public const int RandomDataSize = 40;
+    internal const int MaxRequestIdSize = 8;
 }

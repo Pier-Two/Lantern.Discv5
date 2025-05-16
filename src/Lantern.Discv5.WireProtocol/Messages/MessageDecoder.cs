@@ -1,9 +1,12 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Rlp;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
+using Lantern.Discv5.WireProtocol.Packet;
 
 namespace Lantern.Discv5.WireProtocol.Messages;
 
@@ -32,10 +35,19 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private static PingMessage DecodePingMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
+        ValidateItemSize(decodedMessage[0], PacketConstants.MaxRequestIdSize);
+
         return new PingMessage(RlpExtensions.ByteArrayToInt32(decodedMessage[1]))
         {
             RequestId = decodedMessage[0]
         };
+    }
+
+    private static void ValidateItemSize(byte[] typeBytes, int maxSize, int minSize = -1)
+    {
+        if (typeBytes.Length >= minSize && typeBytes.Length <= maxSize) 
+            return;
+        throw new InvalidOperationException($"Invalid item size in packet.");
     }
 
     private static PongMessage DecodePongMessage(byte[] message)
@@ -48,6 +60,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private static FindNodeMessage DecodeFindNodeMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
+        ValidateItemSize(decodedMessage[0], PacketConstants.MaxRequestIdSize);
+
         var distances = new List<int>(decodedMessage.Count - 1);
 
         for (var i = 1; i < decodedMessage.Count; i++)
@@ -73,6 +87,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private static TalkReqMessage DecodeTalkReqMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
+        ValidateItemSize(decodedMessage[0], PacketConstants.MaxRequestIdSize);
+
         return new TalkReqMessage(decodedMessage[1], decodedMessage[2])
         {
             RequestId = decodedMessage[0]
@@ -88,6 +104,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private RegTopicMessage DecodeRegTopicMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
+        ValidateItemSize(decodedMessage[0], PacketConstants.MaxRequestIdSize);
+        
         var decodedTopic = decodedMessage[1];
         var decodedEnr = decodedMessage.GetRange(2, decodedMessage.Count - 2).SkipLast(1).ToList();
         var enr = enrFactory.CreateFromDecoded(decodedEnr.ToList(), identityManager.Verifier);
@@ -107,6 +125,8 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
     private static TicketMessage DecodeTicketMessage(byte[] message)
     {
         var decodedMessage = RlpDecoder.Decode(message[1..]);
+        ValidateItemSize(decodedMessage[0], PacketConstants.MaxRequestIdSize);
+
         return new TicketMessage(decodedMessage[0], decodedMessage[1],
             RlpExtensions.ByteArrayToInt32(decodedMessage[2]));
     }
