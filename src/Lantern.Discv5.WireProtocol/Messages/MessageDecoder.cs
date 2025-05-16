@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Lantern.Discv5.Enr;
 using Lantern.Discv5.Rlp;
