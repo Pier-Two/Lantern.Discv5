@@ -32,7 +32,7 @@ public sealed class EnrEntryRegistry : IEnrEntryRegistry
         _registeredEntries.Remove(key);
     }
 
-    public IEntry? GetEnrEntry(string stringKey, byte[] value)
+    public IEntry? GetEnrEntry(string stringKey, Rlp.Rlp value)
     {
         return _registeredEntries.TryGetValue(stringKey, out var createEntryFunc) ? createEntryFunc(value) : new UnrecognizedEntry(stringKey, value);
     }

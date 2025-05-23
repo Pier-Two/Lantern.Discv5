@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
+using Lantern.Discv5.Rlp;
 using NUnit.Framework;
 
 namespace Lantern.Discv5.Enr.Tests;
@@ -18,7 +19,7 @@ public class EnrTests
 
         var enr = new EnrBuilder()
             .WithIdentityScheme(new IdentityVerifierV4(), signer)
-            .WithEntry("optimism", new UnrecognizedEntry("optimism", [1, 2]))
+            .WithEntry("optimism", new UnrecognizedEntry("optimism", RlpDecoder.Decode(RlpEncoder.EncodeBytes([1, 2]))[0]))
             .WithEntry(EnrEntryKey.Id, new EntryId("v4"))
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
             .Build();

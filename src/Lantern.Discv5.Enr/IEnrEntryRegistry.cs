@@ -6,5 +6,5 @@ public interface IEnrEntryRegistry
 
     void UnregisterEntry(string key);
 
-    IEntry? GetEnrEntry(string stringKey, byte[] value);
+    IEntry? GetEnrEntry(string stringKey, Rlp.Rlp value);
 }

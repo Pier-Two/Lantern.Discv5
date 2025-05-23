@@ -118,7 +118,7 @@ public class RlpEncoderTests
         };
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
-    
+
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionOfThresholdSize_Correctly()
     {
@@ -127,7 +127,7 @@ public class RlpEncoderTests
         var rlpExpected = new byte[] { 192 + 55 }.Concat(bytes).ToArray();
         Assert.IsTrue(rlpEncoded.SequenceEqual(rlpExpected));
     }
-    
+
     [Test]
     public void Test_RlpEncoder_ShouldEncodeCollectionOfMoreThanThresholdSize_Correctly()
     {

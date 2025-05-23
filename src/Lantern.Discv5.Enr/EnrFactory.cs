@@ -21,25 +21,30 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
     {
         if (bytes == null) throw new ArgumentNullException(nameof(bytes));
 
-        var items = RlpDecoder.Decode(bytes);
-        return CreateFromDecoded(items, verifier);
+        return CreateFromRlp(RlpDecoder.Decode(bytes)[0], verifier);
     }
 
-    public Enr[] CreateFromMultipleEnrList(IEnumerable<IEnumerable<byte[]>> enrs, IIdentityVerifier verifier)
+    public Enr[] CreateFromMultipleEnrList(ReadOnlySpan<Rlp.Rlp> enrs, IIdentityVerifier verifier)
     {
         if (enrs == null) throw new ArgumentNullException(nameof(enrs));
 
-        return enrs.Select(enr => CreateFromDecoded(enr.ToArray(), verifier)).ToArray();
+        Enr[] result = new Enr[enrs.Length];
+
+        for (int i = 0; i < enrs.Length; i++)
+        {
+            result[i] = CreateFromRlp(enrs[i], verifier);
+        }
+
+        return result;
     }
 
-    public Enr CreateFromDecoded(IReadOnlyList<byte[]> items, IIdentityVerifier verifier)
+    public Enr CreateFromRlp(Rlp.Rlp enrRlp, IIdentityVerifier verifier)
     {
-        if (items == null) throw new ArgumentNullException(nameof(items));
-
+        var items = RlpDecoder.Decode(enrRlp);
         var signature = items[0];
         var entries = new Dictionary<string, IEntry>();
 
-        for (var i = 2; i < items.Count - 1; i += 2)
+        for (var i = 2; i < items.Length - 1; i += 2)
         {
             var key = Encoding.ASCII.GetString(items[i]);
             var entry = entryRegistry.GetEnrEntry(key, items[i + 1]);

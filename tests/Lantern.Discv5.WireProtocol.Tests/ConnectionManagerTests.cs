@@ -1,10 +1,5 @@
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using Lantern.Discv5.WireProtocol.Connection;
-using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Packet;
-using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -7,13 +7,11 @@ using Lantern.Discv5.WireProtocol.Logging;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Messages.Requests;
 using Lantern.Discv5.WireProtocol.Messages.Responses;
-using Lantern.Discv5.WireProtocol.Packet;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Table;
 using Lantern.Discv5.WireProtocol.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 
@@ -91,7 +89,7 @@ public class MessageRequesterTests
         var targetNodeId = RandomUtility.GenerateRandomData(32);
 
         int distance = TableUtility.Log2Distance(destNodeId, targetNodeId);
-        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, false, [distance])!;
+        var findNodeMessage = _messageRequester.ConstructFindNodeMessage(destNodeId, false, [distance, distance - 1])!;
         var cachedFindNodeMessage = _messageRequester.ConstructCachedFindNodeMessage(destNodeId, false, [distance])!;
         var decodedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(findNodeMessage);
         var decodedCachedFindNodeMessage = (FindNodeMessage)new MessageDecoder(_identityManager, _enrFactory).DecodeMessage(cachedFindNodeMessage);

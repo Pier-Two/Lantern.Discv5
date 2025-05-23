@@ -1,5 +1,4 @@
 using Lantern.Discv5.Enr;
-using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 
 namespace Lantern.Discv5.WireProtocol.Packet;
