@@ -7,7 +7,7 @@ public class SessionManager(SessionOptions options, IAesCrypto aesCrypto, ISessi
         ILoggerFactory loggerFactory)
     : ISessionManager
 {
-    private readonly ISessionKeys _sessionKeys = options.SessionKeys;
+    private readonly ISessionKeys _sessionKeys = options.SessionKeys!;
 
     private readonly LruCache<SessionCacheKey, ISessionMain> _sessions = new(options.SessionCacheSize);
 

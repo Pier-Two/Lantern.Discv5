@@ -32,7 +32,14 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
         _logger.LogInformation("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
 
         var packet = returnedResult.Buffer;
-        var destNodeId = requestManager.GetCachedHandshakeInteraction(packetProcessor.GetStaticHeader(packet).Nonce);
+
+        if (!packetProcessor.TryGetStaticHeader(packet, out StaticHeader? staticHeader))
+        {
+            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            return;
+        }
+
+        var destNodeId = requestManager.GetCachedHandshakeInteraction(staticHeader.Nonce);
 
         if (destNodeId == null)
         {
@@ -48,7 +55,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
             return;
         }
 
-        var session = GenerateOrUpdateSession(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
+        var session = GenerateOrUpdateSession(staticHeader, packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
 
         if (session == null)
         {

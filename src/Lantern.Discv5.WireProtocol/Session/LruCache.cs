@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace Lantern.Discv5.WireProtocol.Session;
 
-public class LruCache<TKey, TValue>(int capacity)
+public class LruCache<TKey, TValue>(int capacity) where TKey : notnull
 {
     private readonly ConcurrentDictionary<TKey, LinkedListNode<CacheItem>> _cache = new(capacity, capacity);
     private readonly LinkedList<CacheItem> _lruList = new();
@@ -63,15 +63,9 @@ public class LruCache<TKey, TValue>(int capacity)
         _cache.TryRemove(node.Value.Key, out _);
     }
 
-    private sealed class CacheItem
+    private sealed class CacheItem(TKey k, TValue v)
     {
-        public CacheItem(TKey k, TValue v)
-        {
-            Key = k;
-            Value = v;
-        }
-
-        public TKey Key { get; }
-        public TValue Value { get; set; }
+        public TKey Key { get; } = k;
+        public TValue Value { get; set; } = v;
     }
 }

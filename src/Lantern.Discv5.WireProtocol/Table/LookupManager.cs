@@ -64,7 +64,7 @@ public class LookupManager(IRoutingTable routingTable,
         _pathBuckets.Clear();
         IsLookupInProgress = false;
 
-        return result;
+        return result!;
     }
 
     public async Task StartLookupAsync(byte[] targetNodeId)
@@ -162,7 +162,7 @@ public class LookupManager(IRoutingTable routingTable,
         _logger.LogDebug("Querying self node {NodeId} in bucket {BucketIndex}", Convert.ToHexString(node.Id),
             bucket.Index);
 
-        bucket.PendingTimers[node.Id] = new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null,
+        bucket.PendingTimers[node.Id] = new Timer(_ => _ = QueryTimeoutCallback(node.Id, bucket), null,
             connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
         bucket.PendingQueries.Add(node.Id);
 
@@ -195,7 +195,7 @@ public class LookupManager(IRoutingTable routingTable,
                 return;
 
             bucket.PendingTimers[node.Id] =
-                new Timer(_ => QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
+                new Timer(_ => _ = QueryTimeoutCallback(node.Id, bucket), null, connectionOptions.ReceiveTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(node.Id);
             await packetManager.SendPacket(node.Record, MessageType.FindNode, true, TableUtility.Log2Distance(node.Record.NodeId, bucket.TargetNodeId));
         }
@@ -227,7 +227,7 @@ public class LookupManager(IRoutingTable routingTable,
                 return;
             }
 
-            bucket.PendingTimers[replacementNode.Id] = new Timer(_ => QueryTimeoutCallback(replacementNode.Id, bucket),
+            bucket.PendingTimers[replacementNode.Id] = new Timer(_ => _ = QueryTimeoutCallback(replacementNode.Id, bucket),
                 null, connectionOptions.RequestTimeoutMs, connectionOptions.ReceiveTimeoutMs);
             bucket.PendingQueries.Add(replacementNode.Id);
 

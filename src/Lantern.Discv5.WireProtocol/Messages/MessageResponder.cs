@@ -112,7 +112,7 @@ public class MessageResponder(IIdentityManager identityManager,
     {
         _logger.LogInformation("Received message type => {MessageType}", MessageType.FindNode);
         var decodedMessage = (FindNodeMessage)messageDecoder.DecodeMessage(message);
-        var closestNodes = routingTable.GetEnrRecordsAtDistances(decodedMessage.Distances).Take(RecordLimit).ToArray();
+        var closestNodes = routingTable.GetEnrRecordsAtDistances(decodedMessage.Distances)!.Take(RecordLimit).ToArray();
         var chunkedRecords = SplitIntoChunks(closestNodes, MaxRecordsPerMessage);
         var responses = chunkedRecords.Select(chunk => new NodesMessage(decodedMessage.RequestId, chunk.Length, chunk)).Select(nodesMessage => nodesMessage.EncodeMessage()).ToArray();
 

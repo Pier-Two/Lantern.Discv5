@@ -77,7 +77,7 @@ public class Discv5ProtocolBuilder(IServiceCollection services) : IDiscv5Protoco
 
     public IDiscv5ProtocolBuilder WithTalkResponder(Action<ITalkReqAndRespHandler> configure)
     {
-        configure(_talkResponder);
+        configure(_talkResponder!);
         return this;
     }
 

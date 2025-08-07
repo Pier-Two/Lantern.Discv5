@@ -95,12 +95,12 @@ public class PacketReceiver(IPacketManager packetManager,
         }
     }
 
-    public async Task SendTalkReqAsync(IEnr dest, byte[] topic, byte[] message)
+    public Task SendTalkReqAsync(IEnr dest, byte[] topic, byte[] message)
     {
         throw new NotImplementedException();
     }
 
-    public async Task SendTalkRespAsync(IEnr dest, byte[] requestId, byte[] message)
+    public Task SendTalkRespAsync(IEnr dest, byte[] requestId, byte[] message)
     {
         throw new NotImplementedException();
     }

@@ -11,6 +11,15 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 {
     private readonly ILogger<MessageRequester> _logger = LoggerFactoryExtensions.CreateLogger<MessageRequester>(loggerFactory);
 
+    private static void ReportRequestAddedFailure(ILogger<MessageRequester> _logger, bool isCached, MessageType messageType, byte[] requestId, byte[] destNodeId)
+    {
+        if (_logger.IsEnabled(LogLevel.Warning)) _logger.LogWarning("Failed to add {Type} {MessageType} request. Id: {RequestId}, dst: {DestNodeId}",
+                                                                    isCached ? "cached" : "pending",
+                                                                    messageType,
+                                                                    Convert.ToHexString(requestId),
+                                                                    Convert.ToHexString(destNodeId));
+    }
+
     public byte[]? ConstructPingMessage(byte[] destNodeId)
     {
         _logger.LogInformation("Constructing message of type {MessageType}", MessageType.Ping);
@@ -20,7 +29,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(pingMessage.RequestId));
+            ReportRequestAddedFailure(_logger, false, MessageType.Ping, pingMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -37,7 +46,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
+            ReportRequestAddedFailure(_logger, true, MessageType.Ping, pingMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -58,7 +67,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
+            ReportRequestAddedFailure(_logger, false, MessageType.FindNode, findNodesMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -79,7 +88,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
+            ReportRequestAddedFailure(_logger, true, MessageType.FindNode, findNodesMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -97,7 +106,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkReqMessage.RequestId));
+            ReportRequestAddedFailure(_logger, false, MessageType.TalkReq, talkReqMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -115,7 +124,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(talkRespMessage.RequestId));
+            ReportRequestAddedFailure(_logger, false, MessageType.TalkResp, talkRespMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -133,7 +142,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
+            ReportRequestAddedFailure(_logger, true, MessageType.TalkReq, talkReqMessage.RequestId, destNodeId);
             return null;
         }
 
@@ -151,7 +160,7 @@ public class MessageRequester(IIdentityManager identityManager, IRequestManager 
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add cached request. Request id: {RequestId}", Convert.ToHexString(destNodeId));
+            ReportRequestAddedFailure(_logger, true, MessageType.FindNode, talkRespMessage.RequestId, destNodeId);
             return null;
         }
 

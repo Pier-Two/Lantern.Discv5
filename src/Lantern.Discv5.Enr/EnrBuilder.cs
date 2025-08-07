@@ -4,9 +4,9 @@ namespace Lantern.Discv5.Enr;
 
 public class EnrBuilder
 {
-    private readonly Dictionary<string, IEntry> _entries = new();
-    private IIdentityVerifier _verifier;
-    private IIdentitySigner _signer;
+    private readonly Dictionary<string, IEntry> _entries = [];
+    private IIdentityVerifier? _verifier;
+    private IIdentitySigner? _signer;
 
     public EnrBuilder WithIdentityScheme(IIdentityVerifier verifier, IIdentitySigner signer)
     {
@@ -25,9 +25,9 @@ public class EnrBuilder
 
     public Enr Build()
     {
-        if (_signer == null)
+        if (_verifier == null)
         {
-            throw new InvalidOperationException("Signer must be set before building the EnrRecord.");
+            throw new InvalidOperationException("Verifier must be set before building the EnrRecord.");
         }
 
         var enrRecord = new Enr(_entries, _verifier, _signer);

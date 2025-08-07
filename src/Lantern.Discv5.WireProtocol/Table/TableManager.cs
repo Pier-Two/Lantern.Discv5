@@ -15,7 +15,6 @@ public class TableManager(IPacketReceiver packetReceiver,
         IEnrFactory enrFactory,
         ILoggerFactory loggerFactory,
         ICancellationTokenSourceWrapper cts,
-        IGracefulTaskRunner taskRunner,
         TableOptions tableOptions)
     : ITableManager
 {
@@ -29,8 +28,8 @@ public class TableManager(IPacketReceiver packetReceiver,
 
         await InitFromBootstrapNodesAsync();
 
-        _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
-        _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
+        _refreshTask = RefreshBucketsAsync(default);
+        _pingTask = PingNodeAsync(default);
     }
 
     public async Task StopTableManagerAsync()
@@ -38,7 +37,7 @@ public class TableManager(IPacketReceiver packetReceiver,
         _logger.LogInformation("Stopping TableManagerAsync");
         cts.Cancel();
 
-        await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
+        await Task.WhenAll(_refreshTask!, _pingTask!).ConfigureAwait(false);
 
         if (cts.IsCancellationRequested())
         {
@@ -93,10 +92,12 @@ public class TableManager(IPacketReceiver packetReceiver,
 
         while (!token.IsCancellationRequested)
         {
-            if (routingTable.GetNodesCount() <= 0)
-                continue;
-
             await Task.Delay(tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
+
+            if (routingTable.GetNodesCount() <= 0)
+            {
+                continue;
+            }
 
             var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
             var nodeEntry = routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();

@@ -1,13 +1,12 @@
-using System.Text;
 using Lantern.Discv5.Rlp;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Lantern.Discv5.WireProtocol.Packet.Headers;
 
 public class StaticHeader
 {
-    public StaticHeader(string protocolId, byte[] version, byte[] authData, byte flag, byte[] nonce, int encryptedMessageLength = 0)
+    public StaticHeader(byte[] version, byte[] authData, byte flag, byte[] nonce, int encryptedMessageLength = 0)
     {
-        ProtocolId = protocolId;
         Version = version;
         AuthData = authData;
         AuthDataSize = AuthData.Length;
@@ -15,8 +14,6 @@ public class StaticHeader
         Nonce = nonce;
         EncryptedMessageLength = encryptedMessageLength;
     }
-
-    public string ProtocolId { get; }
 
     public byte[] Version { get; }
 
@@ -32,7 +29,7 @@ public class StaticHeader
 
     public byte[] GetHeader()
     {
-        var protocolId = Encoding.ASCII.GetBytes(ProtocolId);
+        var protocolId = ProtocolConstants.ProtocolIdBytes;
         var authDataSize = ByteArrayUtils.ToBigEndianBytesTrimmed(AuthDataSize);
         var authDataBytes = new byte[PacketConstants.AuthDataSizeBytesLength];
         Array.Copy(authDataSize, 0, authDataBytes, PacketConstants.AuthDataSizeBytesLength - authDataSize.Length, authDataSize.Length);
@@ -40,10 +37,22 @@ public class StaticHeader
         return ByteArrayUtils.Concatenate(protocolId, Version, new[] { Flag }, Nonce, authDataBytes, AuthData);
     }
 
-    public static StaticHeader DecodeFromBytes(byte[] decryptedData)
+    public static bool TryDecodeFromBytes(byte[] decryptedData, [NotNullWhen(true)] out StaticHeader? staticHeader)
     {
+        if (decryptedData.Length < PacketConstants.MimimalPacketSize)
+        {
+            staticHeader = null;
+            return false;
+        }
+
         var index = 0;
-        var protocolId = Encoding.ASCII.GetString(decryptedData[..PacketConstants.ProtocolIdSize]);
+
+        if (!ProtocolConstants.ProtocolIdBytes.AsSpan().SequenceEqual(decryptedData.AsSpan(0, PacketConstants.ProtocolIdSize)))
+        {
+            staticHeader = null;
+            return false;
+        }
+
         index += PacketConstants.ProtocolIdSize;
 
         var version = decryptedData[index..(index + PacketConstants.VersionSize)];
@@ -58,10 +67,17 @@ public class StaticHeader
         var authDataSize = RlpExtensions.ByteArrayToInt32(decryptedData[index..(index + PacketConstants.AuthDataSizeBytesLength)]);
         index += PacketConstants.AuthDataSizeBytesLength;
 
+        if (decryptedData.Length < index + authDataSize)
+        {
+            staticHeader = null;
+            return false;
+        }
+
         // Based on the flag, it should retrieve the authdata correctly
         var authData = decryptedData[index..(index + authDataSize)];
         var encryptedMessage = decryptedData[(index + authDataSize)..];
 
-        return new StaticHeader(protocolId, version, authData, flag, nonce, encryptedMessage.Length);
+        staticHeader = new StaticHeader(version, authData, flag, nonce, encryptedMessage.Length);
+        return true;
     }
 }

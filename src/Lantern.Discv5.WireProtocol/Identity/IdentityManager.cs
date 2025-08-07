@@ -13,9 +13,9 @@ public class IdentityManager(SessionOptions sessionOptions, ConnectionOptions co
 {
     private readonly ILogger<IdentityManager> _logger = loggerFactory.CreateLogger<IdentityManager>();
 
-    public IIdentityVerifier Verifier => sessionOptions.Verifier;
+    public IIdentityVerifier Verifier => sessionOptions.Verifier!;
 
-    public IIdentitySigner Signer => sessionOptions.Signer;
+    public IIdentitySigner Signer => sessionOptions.Signer!;
 
     public IEnr Record => enr;
 

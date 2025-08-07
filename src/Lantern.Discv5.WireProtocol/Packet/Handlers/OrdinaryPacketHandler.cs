@@ -30,9 +30,22 @@ public class OrdinaryPacketHandler(ISessionManager sessionManager,
     {
         _logger.LogInformation("Received ORDINARY packet from {Address}", returnedResult.RemoteEndPoint.Address);
 
-        var staticHeader = packetProcessor.GetStaticHeader(returnedResult.Buffer);
+        if (!packetProcessor.TryGetStaticHeader(returnedResult.Buffer, out StaticHeader? staticHeader))
+        {
+            _logger.LogInformation("Could not decode static header for a node with {IpAddress}", returnedResult.RemoteEndPoint.Address);
+            return;
+        }
+
         var maskingIv = packetProcessor.GetMaskingIv(returnedResult.Buffer);
         var encryptedMessage = packetProcessor.GetEncryptedMessage(returnedResult.Buffer);
+
+        if (encryptedMessage is null)
+        {
+            _logger.LogInformation("Could not find record in the table for node {NodeId} with {IpAddress}", Convert.ToHexString(staticHeader.AuthData), returnedResult.RemoteEndPoint.Address);
+            await SendWhoAreYouPacketWithoutEnrAsync(staticHeader, returnedResult.RemoteEndPoint, udpConnection);
+            return;
+        }
+
         var nodeEntry = routingTable.GetNodeEntryForNodeId(staticHeader.AuthData);
 
         _logger.LogInformation("Received ORDINARY packet from {NodeId}", Convert.ToHexString(staticHeader.AuthData));
