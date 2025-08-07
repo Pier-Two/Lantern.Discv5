@@ -64,15 +64,19 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenDestNodeIdIsNull()
     {
         // Test data
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
             .Setup(x => x.GetCachedHandshakeInteraction(It.IsAny<byte[]>()))
             .Returns((byte[]?)null);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -92,7 +96,7 @@ public class WhoAreYouPacketHandlerTests
     public async Task Test_HandlePacket_ShouldReturn_WhenNodeEntryIsNull()
     {
         // Test data
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -102,8 +106,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns((NodeTableEntry?)null);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -127,7 +135,7 @@ public class WhoAreYouPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -143,8 +151,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.CreateSession(It.IsAny<SessionType>(), It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns((ISessionMain?)null);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -172,7 +184,7 @@ public class WhoAreYouPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -194,8 +206,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -227,7 +243,7 @@ public class WhoAreYouPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -259,8 +275,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -294,7 +314,7 @@ public class WhoAreYouPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -320,8 +340,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,
@@ -354,7 +378,7 @@ public class WhoAreYouPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockRequestManager
@@ -386,8 +410,12 @@ public class WhoAreYouPacketHandlerTests
             .Setup(x => x.GetSession(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(mockSessionMain.Object);
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
 
         var handler = new WhoAreYouPacketHandler(mockIdentityManager.Object, mockSessionManager.Object, mockRoutingTable.Object,
             mockRequestManager.Object, mockUdpConnection.Object, mockPacketBuilder.Object,

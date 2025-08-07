@@ -101,7 +101,7 @@ public class RequestManager(IRoutingTable routingTable,
 
         if (destNodeId == null)
         {
-            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            _logger.LogDebug("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
             return null;
         }
 

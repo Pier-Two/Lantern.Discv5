@@ -57,15 +57,19 @@ public class OrdinaryPacketHandlerTests
     public async Task Test_HandlePacket_ShouldSendWhoAreYouPacketWithoutEnr_WhenNodeEntryIsNull()
     {
         // Test data
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
 
         // Arrange
         mockPacketBuilder
             .Setup(x => x.BuildWhoAreYouPacketWithoutEnr(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
             .Returns(new PacketResult(new byte[32], staticHeader));
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]));
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
+                return true;
+            });
         mockUdpConnection
             .Setup(x => x.SendAsync(It.IsAny<byte[]>(), It.IsAny<IPEndPoint>()))
             .Returns(Task.CompletedTask);
@@ -82,7 +86,7 @@ public class OrdinaryPacketHandlerTests
         await handler.HandlePacket(fakeResult);
 
         // Assert
-        mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
+        mockPacketProcessor.Verify(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
@@ -97,13 +101,17 @@ public class OrdinaryPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new PacketResult(new byte[32], staticHeader);
 
         // Arrange
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
         mockRoutingTable
             .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
@@ -127,7 +135,7 @@ public class OrdinaryPacketHandlerTests
         await handler.HandlePacket(fakeResult);
 
         // Assert
-        mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
+        mockPacketProcessor.Verify(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
@@ -143,13 +151,17 @@ public class OrdinaryPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new PacketResult(new byte[32], staticHeader);
 
         // Arrange
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
         mockRoutingTable
             .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
@@ -177,7 +189,7 @@ public class OrdinaryPacketHandlerTests
         await handler.HandlePacket(fakeResult);
 
         // Assert
-        mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
+        mockPacketProcessor.Verify(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);
@@ -194,14 +206,18 @@ public class OrdinaryPacketHandlerTests
         // Test data
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var packetTuple = new PacketResult(new byte[32], staticHeader);
         var data = new List<byte[]> { new byte[32] }.ToArray();
 
         // Arrange
         mockPacketProcessor
-            .Setup(x => x.GetStaticHeader(It.IsAny<byte[]>()))
-            .Returns(staticHeader);
+            .Setup(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny))
+            .Returns((byte[] _, out StaticHeader? sh) =>
+            {
+                sh = staticHeader;
+                return true;
+            });
         mockRoutingTable
             .Setup(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()))
             .Returns(new NodeTableEntry(enrRecord, new IdentityVerifierV4()));
@@ -229,7 +245,7 @@ public class OrdinaryPacketHandlerTests
         await handler.HandlePacket(fakeResult);
 
         // Assert
-        mockPacketProcessor.Verify(x => x.GetStaticHeader(It.IsAny<byte[]>()), Times.Once);
+        mockPacketProcessor.Verify(x => x.TryGetStaticHeader(It.IsAny<byte[]>(), out It.Ref<StaticHeader?>.IsAny), Times.Once);
         mockPacketProcessor.Verify(x => x.GetMaskingIv(It.IsAny<byte[]>()), Times.Once);
         mockPacketProcessor.Verify(x => x.GetEncryptedMessage(It.IsAny<byte[]>()), Times.Once);
         mockRoutingTable.Verify(x => x.GetNodeEntryForNodeId(It.IsAny<byte[]>()), Times.Once);

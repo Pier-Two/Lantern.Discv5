@@ -35,7 +35,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
 
         if (!packetProcessor.TryGetStaticHeader(packet, out StaticHeader? staticHeader))
         {
-            _logger.LogDebug("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            _logger.LogDebug("Unable extract header. Ignoring WHOAREYOU request");
             return;
         }
 

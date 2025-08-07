@@ -15,6 +15,7 @@ public class TableManager(IPacketReceiver packetReceiver,
         IEnrFactory enrFactory,
         ILoggerFactory loggerFactory,
         ICancellationTokenSourceWrapper cts,
+        IGracefulTaskRunner taskRunner,
         TableOptions tableOptions)
     : ITableManager
 {
@@ -28,8 +29,8 @@ public class TableManager(IPacketReceiver packetReceiver,
 
         await InitFromBootstrapNodesAsync();
 
-        _refreshTask = RefreshBucketsAsync(default);
-        _pingTask = PingNodeAsync(default);
+        _refreshTask = taskRunner.RunWithGracefulCancellationAsync(RefreshBucketsAsync, "RefreshBuckets", cts.GetToken());
+        _pingTask = taskRunner.RunWithGracefulCancellationAsync(PingNodeAsync, "PingNode", cts.GetToken());
     }
 
     public async Task StopTableManagerAsync()
