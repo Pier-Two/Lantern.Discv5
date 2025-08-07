@@ -94,8 +94,9 @@ public class TableManager(IPacketReceiver packetReceiver,
         {
             await Task.Delay(tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
 
-            if (routingTable.GetNodesCount() <= 0)
+            if (routingTable.GetNodesCount() is 0)
             {
+                await InitFromBootstrapNodesAsync();
                 continue;
             }
 

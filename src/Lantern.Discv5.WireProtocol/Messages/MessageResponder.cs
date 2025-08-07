@@ -41,7 +41,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
     private byte[][] HandlePingMessage(byte[] message, IPEndPoint endPoint)
     {
-        _logger.LogInformation("Received message type => {MessageType}", MessageType.Ping);
+        _logger.LogTrace("Received message type => {MessageType}", MessageType.Ping);
         var decodedMessage = messageDecoder.DecodeMessage(message);
         var localEnrSeq = identityManager.Record.SequenceNumber;
         var pongMessage = new PongMessage(decodedMessage.RequestId, (int)localEnrSeq, endPoint.Address, endPoint.Port);
@@ -52,14 +52,14 @@ public class MessageResponder(IIdentityManager identityManager,
 
     private byte[][]? HandlePongMessage(byte[] message)
     {
-        _logger.LogInformation("Received message type => {MessageType}", MessageType.Pong);
+        _logger.LogTrace("Received message type => {MessageType}", MessageType.Pong);
 
         var decodedMessage = (PongMessage)messageDecoder.DecodeMessage(message);
         var pendingRequest = GetPendingRequest(decodedMessage);
 
         if (pendingRequest == null)
         {
-            _logger.LogWarning("Received PONG message with no pending request. Ignoring message");
+            _logger.LogDebug("Received PONG message with no pending request. Ignoring message");
             return null;
         }
 
@@ -67,7 +67,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
         if (nodeEntry == null)
         {
-            _logger.LogWarning("ENR record is not known. Cannot handle PONG message from node. Node ID: {NodeId}", Convert.ToHexString(pendingRequest.NodeId));
+            _logger.LogDebug("ENR record is not known. Cannot handle PONG message from node. Node ID: {NodeId}", Convert.ToHexString(pendingRequest.NodeId));
             return null;
         }
 
@@ -99,7 +99,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
         if (!result)
         {
-            _logger.LogWarning("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
+            _logger.LogDebug("Failed to add pending request. Request id: {RequestId}", Convert.ToHexString(findNodesMessage.RequestId));
             return null;
         }
 
@@ -110,7 +110,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
     private byte[][] HandleFindNodeMessage(byte[] message)
     {
-        _logger.LogInformation("Received message type => {MessageType}", MessageType.FindNode);
+        _logger.LogTrace("Received message type => {MessageType}", MessageType.FindNode);
         var decodedMessage = (FindNodeMessage)messageDecoder.DecodeMessage(message);
         var closestNodes = routingTable.GetEnrRecordsAtDistances(decodedMessage.Distances)!.Take(RecordLimit).ToArray();
         var chunkedRecords = SplitIntoChunks(closestNodes, MaxRecordsPerMessage);
@@ -123,7 +123,7 @@ public class MessageResponder(IIdentityManager identityManager,
             return new List<byte[]> { response }.ToArray();
         }
 
-        _logger.LogInformation("Sending a total of {EnrRecords} with {Responses} responses", closestNodes.Length, responses.Length);
+        _logger.LogTrace("Sending a total of {EnrRecords} with {Responses} responses", closestNodes.Length, responses.Length);
 
         return responses;
     }
@@ -136,7 +136,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
         if (pendingRequest == null)
         {
-            _logger.LogWarning("Received NODES message with no pending request. Ignoring message");
+            _logger.LogDebug("Received NODES message with no pending request. Ignoring message");
             return null;
         }
 
@@ -144,7 +144,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
         if (pendingRequest.ResponsesCount > decodedMessage.Total)
         {
-            _logger.LogWarning("Expected {ExpectedResponsesCount} from node {NodeId} but received {TotalResponsesCount}. Ignoring response", decodedMessage.Total, Convert.ToHexString(pendingRequest.NodeId), pendingRequest.ResponsesCount);
+            _logger.LogDebug("Expected {ExpectedResponsesCount} from node {NodeId} but received {TotalResponsesCount}. Ignoring response", decodedMessage.Total, Convert.ToHexString(pendingRequest.NodeId), pendingRequest.ResponsesCount);
             return null;
         }
 
@@ -203,7 +203,7 @@ public class MessageResponder(IIdentityManager identityManager,
             return null;
         }
 
-        _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkReq);
+        _logger.LogTrace("Received message type => {MessageType}", MessageType.TalkReq);
         var decodedMessage = (TalkReqMessage)messageDecoder.DecodeMessage(message);
         var responses = talkResponder.HandleRequest(decodedMessage.Protocol, decodedMessage.Request);
 
@@ -231,14 +231,14 @@ public class MessageResponder(IIdentityManager identityManager,
             return null;
         }
 
-        _logger.LogInformation("Received message type => {MessageType}", MessageType.TalkResp);
+        _logger.LogTrace("Received message type => {MessageType}", MessageType.TalkResp);
 
         var decodedMessage = (TalkRespMessage)messageDecoder.DecodeMessage(message);
         var pendingRequest = GetPendingRequest(decodedMessage);
 
         if (pendingRequest == null)
         {
-            _logger.LogWarning("Received TALKRESP message with no pending request. Ignoring message");
+            _logger.LogDebug("Received TALKRESP message with no pending request. Ignoring message");
             return null;
         }
 
@@ -253,7 +253,7 @@ public class MessageResponder(IIdentityManager identityManager,
 
         if (pendingRequest == null)
         {
-            _logger.LogWarning("Received message with unknown request id. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
+            _logger.LogTrace("Received message with unknown request id. Message Type: {MessageType}, Request id: {RequestId}", message.MessageType, Convert.ToHexString(message.RequestId));
             return null;
         }
 

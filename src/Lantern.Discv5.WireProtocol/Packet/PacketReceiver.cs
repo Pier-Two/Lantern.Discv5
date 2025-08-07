@@ -38,7 +38,7 @@ public class PacketReceiver(IPacketManager packetManager,
         if (completedTask != delayTask)
             return await tcs.Task;
 
-        _logger.LogWarning("PING request to {NodeId} timed out", dest.NodeId);
+        _logger.LogDebug("PING request to {NodeId} timed out", dest.NodeId);
         PongResponseReceived -= HandlePongResponse;
         return null;
 
@@ -76,7 +76,7 @@ public class PacketReceiver(IPacketManager packetManager,
         if (completedTask != delayTask)
             return await tcs.Task;
 
-        _logger.LogWarning("FINDNODE request to {NodeId} timed out", Convert.ToHexString(dest.NodeId));
+        _logger.LogDebug("FINDNODE request to {NodeId} timed out", Convert.ToHexString(dest.NodeId));
         NodesResponseReceived -= HandleNodesResponse;
         return null;
 
