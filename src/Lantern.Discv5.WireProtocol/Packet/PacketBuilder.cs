@@ -86,6 +86,6 @@ public class PacketBuilder(IIdentityManager identityManager, IAesCrypto aesCrypt
 
     private static StaticHeader ConstructStaticHeader(PacketType packetType, byte[] authData, byte[] nonce)
     {
-        return new StaticHeader(ProtocolConstants.ProtocolId, ProtocolConstants.Version, authData, (byte)packetType, nonce);
+        return new StaticHeader(ProtocolConstants.Version, authData, (byte)packetType, nonce);
     }
 }

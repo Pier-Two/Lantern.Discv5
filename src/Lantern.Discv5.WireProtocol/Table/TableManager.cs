@@ -38,7 +38,7 @@ public class TableManager(IPacketReceiver packetReceiver,
         _logger.LogInformation("Stopping TableManagerAsync");
         cts.Cancel();
 
-        await Task.WhenAll(_refreshTask, _pingTask).ConfigureAwait(false);
+        await Task.WhenAll(_refreshTask!, _pingTask!).ConfigureAwait(false);
 
         if (cts.IsCancellationRequested())
         {
@@ -93,10 +93,13 @@ public class TableManager(IPacketReceiver packetReceiver,
 
         while (!token.IsCancellationRequested)
         {
-            if (routingTable.GetNodesCount() <= 0)
-                continue;
-
             await Task.Delay(tableOptions.PingIntervalMilliseconds, token).ConfigureAwait(false);
+
+            if (routingTable.GetNodesCount() is 0)
+            {
+                await InitFromBootstrapNodesAsync();
+                continue;
+            }
 
             var targetNodeId = RandomUtility.GenerateRandomData(PacketConstants.NodeIdSize);
             var nodeEntry = routingTable.GetClosestNodes(targetNodeId).FirstOrDefault();

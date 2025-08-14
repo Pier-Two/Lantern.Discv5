@@ -120,7 +120,7 @@ public class KBucket(ILoggerFactory loggerFactory, int replacementCacheSize)
         {
             _logger.LogDebug("Replacement cache full. Removed first node from the bucket's replacement cache");
 
-            var nodeToRemove = _replacementCache.First.Value;
+            var nodeToRemove = _replacementCache.First!.Value;
 
             _replacementCache.RemoveFirst();
             NodeRemovedFromCache.Invoke(nodeToRemove);

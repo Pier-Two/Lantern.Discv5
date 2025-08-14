@@ -7,6 +7,7 @@ using Lantern.Discv5.WireProtocol.Connection;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Packet.Handlers;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -50,7 +51,7 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
 
         if (sessionEstablished)
         {
-            await SendOrdinaryPacketAsync(message, cryptoSession, destEndPoint, destNodeId);
+            await SendOrdinaryPacketAsync(message, cryptoSession!, destEndPoint, destNodeId);
             return message;
         }
 
@@ -78,20 +79,16 @@ public class PacketManager(IPacketHandlerFactory packetHandlerFactory,
         };
     }
 
-    public async Task HandleReceivedPacket(UdpReceiveResult returnedResult)
+    public Task HandleReceivedPacket(UdpReceiveResult returnedResult)
     {
-        try
-        {
-            var packetHandler =
-                packetHandlerFactory.GetPacketHandler(
-                    (PacketType)packetProcessor.GetStaticHeader(returnedResult.Buffer).Flag);
-            await packetHandler.HandlePacket(returnedResult);
-        }
-        catch (Exception e)
+        if (!packetProcessor.TryGetStaticHeader(returnedResult.Buffer, out StaticHeader? staticHeader))
         {
             _logger.LogDebug("Failed to process the packet received from {RemoteEndPoint}", returnedResult.RemoteEndPoint);
-            _logger.LogDebug("Exception: {Exception}", e);
+            return Task.CompletedTask;
         }
+
+        var packetHandler = packetHandlerFactory.GetPacketHandler((PacketType)staticHeader.Flag);
+        return packetHandler.HandlePacket(returnedResult);
     }
 
     private async Task SendOrdinaryPacketAsync(byte[] message, ISessionMain sessionMain, IPEndPoint destEndPoint,

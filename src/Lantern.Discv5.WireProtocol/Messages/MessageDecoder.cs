@@ -29,11 +29,22 @@ public class MessageDecoder(IIdentityManager identityManager, IEnrFactory enrFac
         };
     }
 
-    private static ReadOnlySpan<Rlp.Rlp> GetMessageItems(byte[] message) => RlpDecoder.Decode(RlpDecoder.Decode(message.AsMemory(1))[0]);
+    private static ReadOnlySpan<Rlp.Rlp> GetMessageItems(byte[] message)
+    {
+        var decodedMessage = RlpDecoder.Decode(RlpDecoder.Decode(message.AsMemory(1))[0]);
+
+        if ((decodedMessage[0].Source.Length - decodedMessage[0].PrefixLength) is 0 or > 8)
+        {
+            throw new Exception($"{nameof(Message.RequestId)} length is not within [1..8]");
+        }
+
+        return decodedMessage;
+    }
 
     private static PingMessage DecodePingMessage(byte[] message)
     {
         var decodedMessage = GetMessageItems(message);
+
         return new PingMessage(RlpExtensions.ByteArrayToInt32(decodedMessage[1]))
         {
             RequestId = decodedMessage[0]

@@ -12,7 +12,7 @@ namespace Lantern.Discv5.WireProtocol.Tests;
 public class Discv5ProtocolTests
 {
     private IDiscv5Protocol _discv5Protocol = null!;
-    private ServiceProvider _serviceProvider = null!;
+    private readonly ServiceProvider _serviceProvider = null!;
 
     [SetUp]
     public void Setup()

@@ -29,14 +29,21 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
 
     public override async Task HandlePacket(UdpReceiveResult returnedResult)
     {
-        _logger.LogInformation("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
+        _logger.LogTrace("Received WHOAREYOU packet from {Address}", returnedResult.RemoteEndPoint.Address);
 
         var packet = returnedResult.Buffer;
-        var destNodeId = requestManager.GetCachedHandshakeInteraction(packetProcessor.GetStaticHeader(packet).Nonce);
+
+        if (!packetProcessor.TryGetStaticHeader(packet, out StaticHeader? staticHeader))
+        {
+            _logger.LogDebug("Unable extract header. Ignoring WHOAREYOU request");
+            return;
+        }
+
+        var destNodeId = requestManager.GetCachedHandshakeInteraction(staticHeader.Nonce);
 
         if (destNodeId == null)
         {
-            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            _logger.LogDebug("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
             return;
         }
 
@@ -44,11 +51,11 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
 
         if (nodeEntry == null)
         {
-            _logger.LogWarning("Cannot get node entry from the ENR table at node id: {NodeId}", Convert.ToHexString(destNodeId));
+            _logger.LogDebug("Cannot get node entry from the ENR table at node id: {NodeId}", Convert.ToHexString(destNodeId));
             return;
         }
 
-        var session = GenerateOrUpdateSession(packetProcessor.GetStaticHeader(packet), packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
+        var session = GenerateOrUpdateSession(staticHeader, packetProcessor.GetMaskingIv(packet), destNodeId, returnedResult.RemoteEndPoint);
 
         if (session == null)
         {
@@ -76,14 +83,14 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
 
         if (encryptedMessage == null)
         {
-            _logger.LogWarning("Cannot encrypt message with new keys");
+            _logger.LogDebug("Cannot encrypt message with new keys");
             return;
         }
 
         var finalPacket = ByteArrayUtils.JoinByteArrays(handshakePacket.Packet, encryptedMessage);
 
         await udpConnection.SendAsync(finalPacket, returnedResult.RemoteEndPoint);
-        _logger.LogInformation("Sent HANDSHAKE packet to {RemoteEndPoint}", returnedResult.RemoteEndPoint);
+        _logger.LogTrace("Sent HANDSHAKE packet to {RemoteEndPoint}", returnedResult.RemoteEndPoint);
     }
 
     private ISessionMain? GenerateOrUpdateSession(StaticHeader header, byte[] maskingIv, byte[] destNodeId, IPEndPoint destEndPoint)
@@ -102,7 +109,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
             return session;
         }
 
-        _logger.LogWarning("Failed to create or update session with node: {Node}", destEndPoint);
+        _logger.LogDebug("Failed to create or update session with node: {Node}", destEndPoint);
         return null;
     }
 
@@ -116,7 +123,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
 
             if (existingRequest == null)
             {
-                _logger.LogWarning("No cached or pending request found for node {NodeId}", Convert.ToHexString(destNodeId));
+                _logger.LogDebug("No cached or pending request found for node {NodeId}", Convert.ToHexString(destNodeId));
                 return null;
             }
 
@@ -131,7 +138,7 @@ public class WhoAreYouPacketHandler(IIdentityManager identityManager,
         }
 
         requestManager.MarkCachedRequestAsFulfilled(destNodeId);
-        _logger.LogInformation("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
+        _logger.LogTrace("Creating message from cached request {MessageType}", cachedRequest.Message.MessageType);
 
         var pendingRequest = new PendingRequest(cachedRequest.NodeId, cachedRequest.Message)
         {

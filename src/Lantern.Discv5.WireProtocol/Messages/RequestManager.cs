@@ -101,7 +101,7 @@ public class RequestManager(IRoutingTable routingTable,
 
         if (destNodeId == null)
         {
-            _logger.LogWarning("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
+            _logger.LogDebug("Failed to get dest node id from packet nonce. Ignoring WHOAREYOU request");
             return null;
         }
 
@@ -162,7 +162,7 @@ public class RequestManager(IRoutingTable routingTable,
     // CheckRequests and RemoveFulfilledRequests can likely be merged into one method
     private void CheckRequests()
     {
-        _logger.LogDebug("Checking for pending and cached requests");
+        _logger.LogTrace("Checking for pending and cached requests");
 
         var currentPendingRequests = _pendingRequests.Values.ToList();
         var currentCachedRequests = _cachedRequests.Values.ToList();
@@ -180,11 +180,12 @@ public class RequestManager(IRoutingTable routingTable,
 
     private void RemoveFulfilledRequests()
     {
-        _logger.LogDebug("Removing fulfilled requests");
 
         var completedTasks = _pendingRequests.Values
             .Where(x => x.IsFulfilled)
             .ToList();
+
+        if (completedTasks.Any()) _logger.LogTrace("Removing fulfilled requests");
 
         foreach (var task in completedTasks)
         {

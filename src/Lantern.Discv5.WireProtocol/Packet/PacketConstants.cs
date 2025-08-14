@@ -15,6 +15,8 @@ public static class PacketConstants
     public const int NodeIdSize = 32;
     public const int AuthDataSizeBytesLength = 2;
     public const int ProtocolIdSize = 6;
+    public const int MimimalPacketSize = ProtocolIdSize + VersionSize + 1 + HeaderNonce + AuthDataSizeBytesLength;
+
     public const int VersionSize = 2;
     public const int MaskingIvSize = 16;
     public const int NonceSize = 12;

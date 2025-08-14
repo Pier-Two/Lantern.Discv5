@@ -4,6 +4,7 @@ using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.WireProtocol.Identity;
 using Lantern.Discv5.WireProtocol.Messages;
 using Lantern.Discv5.WireProtocol.Packet;
+using Lantern.Discv5.WireProtocol.Packet.Headers;
 using Lantern.Discv5.WireProtocol.Packet.Types;
 using Lantern.Discv5.WireProtocol.Session;
 using Lantern.Discv5.WireProtocol.Utility;
@@ -53,15 +54,15 @@ public class PacketBuilderTests
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
 
         var result = _packetBuilder.BuildRandomOrdinaryPacket(nodeId);
-        var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
+        var parsed = _packetProcessor.TryGetStaticHeader(result.Packet, out StaticHeader? staticHeader);
         var maskingIv = _packetProcessor.GetMaskingIv(result.Packet);
 
-        Assert.IsNotNull(result);
+        Assert.IsNotNull(parsed);
+        Assert.IsTrue(parsed);
         Assert.IsInstanceOf<PacketResult>(result);
-        Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
+        Assert.IsTrue(result.Header.Flag == staticHeader!.Flag);
         Assert.IsTrue(result.Header.AuthData.SequenceEqual(staticHeader.AuthData));
         Assert.IsTrue(result.Header.Version.SequenceEqual(staticHeader.Version));
-        Assert.IsTrue(result.Header.ProtocolId.SequenceEqual(staticHeader.ProtocolId));
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(maskingIv.SequenceEqual(result.Packet[..16]));
@@ -70,7 +71,6 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.Ordinary);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.Ordinary);
         Assert.IsTrue(result.Header.Version.Length == PacketConstants.VersionSize);
-        Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIv.Length == PacketConstants.MaskingIvSize);
     }
 
@@ -89,15 +89,15 @@ public class PacketBuilderTests
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
 
         var result = _packetBuilder.BuildWhoAreYouPacketWithoutEnr(destNodeId, packetNonce, maskingIv);
-        var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
+        var parsed = _packetProcessor.TryGetStaticHeader(result.Packet, out StaticHeader? staticHeader);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
 
         Assert.IsNotNull(result);
+        Assert.True(parsed);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
         Assert.IsTrue(result.Header.AuthData.SequenceEqual(staticHeader.AuthData));
         Assert.IsTrue(result.Header.Version.SequenceEqual(staticHeader.Version));
-        Assert.IsTrue(result.Header.ProtocolId.SequenceEqual(staticHeader.ProtocolId));
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Packet[..16]));
 
@@ -106,7 +106,6 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.WhoAreYou);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.WhoAreYou);
         Assert.IsTrue(result.Header.Version.Length == PacketConstants.VersionSize);
-        Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);
     }
 
@@ -127,15 +126,15 @@ public class PacketBuilderTests
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
 
         var result = _packetBuilder.BuildWhoAreYouPacket(destNodeId, packetNonce, enrRecord, maskingIv);
-        var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
+        var parsed = _packetProcessor.TryGetStaticHeader(result.Packet, out StaticHeader? staticHeader);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
 
         Assert.IsNotNull(result);
+        Assert.True(parsed);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
         Assert.IsTrue(result.Header.AuthData.SequenceEqual(staticHeader.AuthData));
         Assert.IsTrue(result.Header.Version.SequenceEqual(staticHeader.Version));
-        Assert.IsTrue(result.Header.ProtocolId.SequenceEqual(staticHeader.ProtocolId));
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Packet[..16]));
@@ -144,7 +143,6 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.WhoAreYou);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.WhoAreYou);
         Assert.IsTrue(result.Header.Version.Length == PacketConstants.VersionSize);
-        Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);
     }
 
@@ -174,15 +172,15 @@ public class PacketBuilderTests
         _packetProcessor = new PacketProcessor(_identityManagerMock.Object, new AesCrypto());
 
         var result = _packetBuilder.BuildHandshakePacket(idSignature, ephemeralPubKey, destNodeId, maskingIv, messageCount);
-        var staticHeader = _packetProcessor.GetStaticHeader(result.Packet);
+        var parsed = _packetProcessor.TryGetStaticHeader(result.Packet, out StaticHeader? staticHeader);
         var maskingIvResult = _packetProcessor.GetMaskingIv(result.Packet);
 
         Assert.IsNotNull(result);
+        Assert.True(parsed);
         Assert.IsInstanceOf<PacketResult>(result);
         Assert.IsTrue(result.Header.Flag == staticHeader.Flag);
         Assert.IsTrue(result.Header.AuthData.SequenceEqual(staticHeader.AuthData));
         Assert.IsTrue(result.Header.Version.SequenceEqual(staticHeader.Version));
-        Assert.IsTrue(result.Header.ProtocolId.SequenceEqual(staticHeader.ProtocolId));
         Assert.IsTrue(result.Header.Nonce.SequenceEqual(staticHeader.Nonce));
         Assert.IsTrue(result.Header.AuthDataSize == staticHeader.AuthDataSize);
         Assert.IsTrue(maskingIvResult.SequenceEqual(result.Packet[..16]));
@@ -193,7 +191,6 @@ public class PacketBuilderTests
         Assert.IsTrue(result.Header.AuthData.Length == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeRecord().Length);
         Assert.IsTrue(result.Header.AuthDataSize == PacketConstants.NodeIdSize + PacketConstants.SigSize + PacketConstants.EphemeralKeySize + idSignature.Length + ephemeralPubKey.Length + enrRecord.EncodeRecord().Length);
         Assert.IsTrue(result.Header.Version.Length == PacketConstants.VersionSize);
-        Assert.IsTrue(result.Header.ProtocolId.Length == PacketConstants.ProtocolIdSize);
         Assert.IsTrue(maskingIvResult.Length == PacketConstants.MaskingIvSize);
     }
 }

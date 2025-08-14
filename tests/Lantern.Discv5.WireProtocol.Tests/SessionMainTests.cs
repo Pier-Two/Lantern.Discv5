@@ -87,7 +87,7 @@ public class SessionMainTests
     {
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.EncryptMessageWithNewKeys(enrRecord, staticHeader, null, null, null);
         Assert.IsNull(result);
@@ -106,7 +106,7 @@ public class SessionMainTests
 
         var enrEntryRegistry = new EnrEntryRegistry();
         var enrRecord = new EnrFactory(enrEntryRegistry).CreateFromString("enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8", new IdentityVerifierV4());
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         sessionMain.SetChallengeData(new byte[32], new byte[32]);
         var result = sessionMain.EncryptMessageWithNewKeys(enrRecord, staticHeader, null, null, null);
@@ -117,7 +117,7 @@ public class SessionMainTests
     [Test]
     public void Test_DecryptMessageWithNewKeys_ShouldReturnNull_WhenHandShakeSrcIdIsNull()
     {
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], null, new byte[32]);
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -131,7 +131,7 @@ public class SessionMainTests
     [Test]
     public void Test_DecryptMessageWithNewKeys_ShouldReturnNull_WhenChallengeDataIsNull()
     {
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
         mockSessionCrypto
             .Setup(x => x.GenerateSessionKeys(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
@@ -146,7 +146,7 @@ public class SessionMainTests
     public void Test_DecryptMessageWithNewKeys_ShouldReturnDecryptedMessage_WhenChallengeDataIsSet()
     {
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
 
         mockSessionCrypto
@@ -166,7 +166,7 @@ public class SessionMainTests
     [Test]
     public void Test_EncryptMessage_ShouldReturnNull_WhenSharedKeysAreNotSet()
     {
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.EncryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsNull(result);
@@ -177,7 +177,7 @@ public class SessionMainTests
     {
         var encryptedMessage = RandomUtility.GenerateRandomData(32);
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
 
         mockSessionCrypto
@@ -203,7 +203,7 @@ public class SessionMainTests
     [Test]
     public void Test_DecryptedMessage_ShouldReturnNull_WhenSharedKeysAreNotSet()
     {
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var sessionMain = new SessionMain(mockSessionKeys.Object, mockAesCrypto.Object, mockSessionCrypto.Object, mockLoggerFactory.Object, SessionType.Initiator);
         var result = sessionMain.DecryptMessage(staticHeader, new byte[32], new byte[32]);
         Assert.IsNull(result);
@@ -214,7 +214,7 @@ public class SessionMainTests
     {
         var encryptedMessage = RandomUtility.GenerateRandomData(32);
         var decryptedMessage = RandomUtility.GenerateRandomData(32);
-        var staticHeader = new StaticHeader("test", new byte[32], new byte[32], 0, new byte[32]);
+        var staticHeader = new StaticHeader(new byte[32], new byte[32], 0, new byte[32]);
         var handshakePacket = new HandshakePacketBase(new byte[32], new byte[32], new byte[32], new byte[32]);
 
         mockSessionCrypto

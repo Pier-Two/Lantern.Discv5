@@ -11,7 +11,14 @@ public sealed class SessionCacheKey : IEquatable<SessionCacheKey>
     {
         NodeId = new byte[nodeId.Length];
         Array.Copy(nodeId, NodeId, nodeId.Length);
-        EndPoint = endPoint;
+        if (endPoint.Address.IsIPv4MappedToIPv6)
+        {
+            EndPoint = new IPEndPoint(endPoint.Address.MapToIPv4(), endPoint.Port);
+        }
+        else
+        {
+            EndPoint = endPoint;
+        }
     }
 
     public bool Equals(SessionCacheKey? other)

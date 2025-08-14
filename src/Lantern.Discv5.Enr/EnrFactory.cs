@@ -26,8 +26,6 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
 
     public Enr[] CreateFromMultipleEnrList(ReadOnlySpan<Rlp.Rlp> enrs, IIdentityVerifier verifier)
     {
-        if (enrs == null) throw new ArgumentNullException(nameof(enrs));
-
         Enr[] result = new Enr[enrs.Length];
 
         for (int i = 0; i < enrs.Length; i++)
