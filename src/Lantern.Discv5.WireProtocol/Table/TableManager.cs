@@ -70,7 +70,7 @@ public class TableManager(IPacketReceiver packetReceiver,
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error sending packet to bootstrap ENR: {BootstrapEnr}", bootstrapEnr);
+                    _logger.LogError(ex, "Error sending packet to bootstrap ENR {BootstrapEnr}: {message}", bootstrapEnr, ex.Message);
                 }
             }
         }

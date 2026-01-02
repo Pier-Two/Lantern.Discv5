@@ -1,4 +1,4 @@
-﻿namespace Lantern.Discv5.Rlp;
+namespace Lantern.Discv5.Rlp;
 
 public readonly struct Rlp(ReadOnlyMemory<byte> src, int prefixLength)
 {

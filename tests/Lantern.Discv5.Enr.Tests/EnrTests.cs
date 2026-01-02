@@ -1,8 +1,8 @@
-﻿using System.Net;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using NUnit.Framework;
+using System.Net;
 
 namespace Lantern.Discv5.Enr.Tests;
 
@@ -189,5 +189,19 @@ public class EnrTests
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enr2 = new EnrFactory(enrEntryRegistry2).CreateFromString("enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg", new IdentityVerifierV4());
         Console.WriteLine(enr2.ToPeerId());
+    }
+
+    [Test]
+    public void Test_SameStringEnr_ShouldBeEqual()
+    {
+        var enrString = "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var identityVerifier = new IdentityVerifierV4();
+
+        var enr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, identityVerifier);
+        var theSameEnr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, identityVerifier);
+
+        Assert.That(enr.GetHashCode(), Is.EqualTo(theSameEnr.GetHashCode()));
+        Assert.That(enr, Is.EqualTo(theSameEnr));
     }
 }
