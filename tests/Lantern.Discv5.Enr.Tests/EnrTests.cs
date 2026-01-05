@@ -171,7 +171,7 @@ public class EnrTests
         var enrEntryRegistry = new EnrEntryRegistry();
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-Mq4QLyFLj2R0kwCmxNgO02F2JqHOUAT9CnqK9qHBwJWPlvNR36e9YydkUzFM69E0dzX7hrpOUAJVKsBLb3PysSz-IiGAY7D6Sg4h2F0dG5ldHOIAAAAAAAAAAaEZXRoMpBqlaGpBAAAAP__________gmlkgnY0gmlwhCJkw5SJc2VjcDI1NmsxoQMc6eWKtIsR4Ref474zOEeRKEuHzxrK_jffZrkzzYSuUYhzeW5jbmV0cwCDdGNwgjLIg3VkcILLBIR1ZHA2gi7g", new IdentityVerifierV4());
-        var enode = "enode://bc852e3d91d24c029b13603b4d85d89a87394013f429ea2bda870702563e5bcd477e9ef58c9d914cc533af44d1dcd7ee1ae939400954ab012dbdcfcac4b3f888@34.100.195.148:13000?discport=51972";
+        var enode = "enode://041ce9e58ab48b11e1179fe3be33384791284b87cf1acafe37df66b933cd84ae51d11cf7e3a6b4214609c58ae90049d748eaa778a16477524ec90261b058075c6f@34.100.195.148:13000?discport=51972";
 
         Assert.AreEqual(enode, enr.ToEnode());
     }

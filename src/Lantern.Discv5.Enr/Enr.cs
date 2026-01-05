@@ -1,8 +1,9 @@
-﻿using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
 using Multiformats.Hash;
+using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.Enr;
 
@@ -126,10 +127,11 @@ public class Enr : IEnr, IEquatable<IEnr>
     public string ToEnode()
     {
         var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
+
         if (publicKey == null)
             throw new InvalidOperationException("Public key must be present in ENR for enode format.");
 
-        var publicKeyHex = Convert.ToHexString(publicKey).ToLower();
+        var publicKeyHex = Convert.ToHexString(Context.Instance.CreatePubKey(publicKey).ToBytes(false)).ToLower();
 
         if (!HasKey(EnrEntryKey.Tcp))
             return $"enode://{publicKeyHex}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
