@@ -24,12 +24,12 @@ public class EnrTests
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
             .Build();
 
-        var unsortedEnr = "enr:-IG4QLjQ5iEbWM74FYhmUjqjgY__v5MsK7cdoSItTYIetaaRPIlhNMsSh5OZpkjcdLf5SZvWxqizFRR_gr4webdECsABiG9wdGltaXNtggECgmlkgnY0iXNlY3AyNTZrMaEDymNMrg1JrLQB2KTGtv6MVbcNEVv0AHacwUAPMljNMTg";
+        var sortedEnr = "enr:-IG4QFSUJi7gTL4Y19jLXUzy-R82eEHuH98A0fJNV2Xq87KKUXmCNDzNXdnXCt967wL_L5wtOmTHf_ExPV9-1T2wiuMBgmlkgnY0iG9wdGltaXNtggECiXNlY3AyNTZrMaEDymNMrg1JrLQB2KTGtv6MVbcNEVv0AHacwUAPMljNMTg";
 
         var enrBytes = enr.EncodeRecord();
         var decodedEnr = new EnrFactory(enrEntryRegistry).CreateFromBytes(enrBytes, verifier);
 
-        Assert.That(enr.ToString(), Is.EqualTo(unsortedEnr));
+        Assert.That(enr.ToString(), Is.EqualTo(sortedEnr));
         Assert.That(enr.ToString(), Is.EqualTo(decodedEnr.ToString()));
     }
 
@@ -48,7 +48,7 @@ public class EnrTests
             new EntrySecp256K1(
                 Convert.FromHexString("03ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138"));
         var udp = new EntryUdp(30303);
-        var entries = new Dictionary<string, IEntry>
+        var entries = new SortedDictionary<string, IEntry>
         {
             { EnrEntryKey.Id, id },
             { EnrEntryKey.Ip, ip },

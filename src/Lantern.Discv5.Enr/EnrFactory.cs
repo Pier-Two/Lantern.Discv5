@@ -40,7 +40,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
     {
         var items = RlpDecoder.Decode(enrRlp);
         var signature = items[0];
-        var entries = new Dictionary<string, IEntry>();
+        var entries = new SortedDictionary<string, IEntry>();
 
         for (var i = 2; i < items.Length - 1; i += 2)
         {
@@ -50,7 +50,7 @@ public sealed class EnrFactory(IEnrEntryRegistry entryRegistry) : IEnrFactory
             if (entry == null)
                 continue;
 
-            entries.Add(key, entry);
+            entries.Add(entry.Key, entry);
         }
 
         var enrRecord = new Enr(entries, verifier, null, signature, RlpExtensions.ByteArrayToUInt64(items[1]));

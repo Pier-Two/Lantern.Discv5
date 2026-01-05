@@ -9,14 +9,14 @@ namespace Lantern.Discv5.Enr;
 
 public class Enr : IEnr, IEquatable<IEnr>
 {
-    private readonly Dictionary<string, IEntry> _entries;
+    private readonly SortedDictionary<string, IEntry> _entries;
     private readonly IIdentitySigner? _signer;
     private readonly IIdentityVerifier? _verifier;
     private byte[]? _cachedNodeId;
     private int? _cachedHashCode;
 
     public Enr(
-        Dictionary<string, IEntry> initialEntries,
+        SortedDictionary<string, IEntry> initialEntries,
         IIdentityVerifier verifier,
         IIdentitySigner? signer = null,
         byte[]? signature = null,
