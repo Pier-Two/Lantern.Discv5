@@ -1,8 +1,8 @@
+using System.Net;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
 using NUnit.Framework;
-using System.Net;
 
 namespace Lantern.Discv5.Enr.Tests;
 
