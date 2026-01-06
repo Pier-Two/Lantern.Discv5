@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity.V4;
 using Lantern.Discv5.Rlp;
@@ -24,12 +24,12 @@ public class EnrTests
             .WithEntry(EnrEntryKey.Secp256K1, new EntrySecp256K1(signer.PublicKey))
             .Build();
 
-        var unsortedEnr = "enr:-IG4QLjQ5iEbWM74FYhmUjqjgY__v5MsK7cdoSItTYIetaaRPIlhNMsSh5OZpkjcdLf5SZvWxqizFRR_gr4webdECsABiG9wdGltaXNtggECgmlkgnY0iXNlY3AyNTZrMaEDymNMrg1JrLQB2KTGtv6MVbcNEVv0AHacwUAPMljNMTg";
+        var sortedEnr = "enr:-IG4QFSUJi7gTL4Y19jLXUzy-R82eEHuH98A0fJNV2Xq87KKUXmCNDzNXdnXCt967wL_L5wtOmTHf_ExPV9-1T2wiuMBgmlkgnY0iG9wdGltaXNtggECiXNlY3AyNTZrMaEDymNMrg1JrLQB2KTGtv6MVbcNEVv0AHacwUAPMljNMTg";
 
         var enrBytes = enr.EncodeRecord();
         var decodedEnr = new EnrFactory(enrEntryRegistry).CreateFromBytes(enrBytes, verifier);
 
-        Assert.That(enr.ToString(), Is.EqualTo(unsortedEnr));
+        Assert.That(enr.ToString(), Is.EqualTo(sortedEnr));
         Assert.That(enr.ToString(), Is.EqualTo(decodedEnr.ToString()));
     }
 
@@ -48,7 +48,7 @@ public class EnrTests
             new EntrySecp256K1(
                 Convert.FromHexString("03ca634cae0d49acb401d8a4c6b6fe8c55b70d115bf400769cc1400f3258cd3138"));
         var udp = new EntryUdp(30303);
-        var entries = new Dictionary<string, IEntry>
+        var entries = new SortedDictionary<string, IEntry>
         {
             { EnrEntryKey.Id, id },
             { EnrEntryKey.Ip, ip },
@@ -171,7 +171,7 @@ public class EnrTests
         var enrEntryRegistry = new EnrEntryRegistry();
         var enr = new EnrFactory(enrEntryRegistry).CreateFromString(
             "enr:-Mq4QLyFLj2R0kwCmxNgO02F2JqHOUAT9CnqK9qHBwJWPlvNR36e9YydkUzFM69E0dzX7hrpOUAJVKsBLb3PysSz-IiGAY7D6Sg4h2F0dG5ldHOIAAAAAAAAAAaEZXRoMpBqlaGpBAAAAP__________gmlkgnY0gmlwhCJkw5SJc2VjcDI1NmsxoQMc6eWKtIsR4Ref474zOEeRKEuHzxrK_jffZrkzzYSuUYhzeW5jbmV0cwCDdGNwgjLIg3VkcILLBIR1ZHA2gi7g", new IdentityVerifierV4());
-        var enode = "enode://bc852e3d91d24c029b13603b4d85d89a87394013f429ea2bda870702563e5bcd477e9ef58c9d914cc533af44d1dcd7ee1ae939400954ab012dbdcfcac4b3f888@34.100.195.148:13000?discport=51972";
+        var enode = "enode://041ce9e58ab48b11e1179fe3be33384791284b87cf1acafe37df66b933cd84ae51d11cf7e3a6b4214609c58ae90049d748eaa778a16477524ec90261b058075c6f@34.100.195.148:13000?discport=51972";
 
         Assert.AreEqual(enode, enr.ToEnode());
     }
@@ -189,5 +189,19 @@ public class EnrTests
         var enrEntryRegistry2 = new EnrEntryRegistry();
         var enr2 = new EnrFactory(enrEntryRegistry2).CreateFromString("enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg", new IdentityVerifierV4());
         Console.WriteLine(enr2.ToPeerId());
+    }
+
+    [Test]
+    public void Test_SameStringEnr_ShouldBeEqual()
+    {
+        var enrString = "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8";
+        var enrEntryRegistry = new EnrEntryRegistry();
+        var identityVerifier = new IdentityVerifierV4();
+
+        var enr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, identityVerifier);
+        var theSameEnr = new EnrFactory(enrEntryRegistry).CreateFromString(enrString, identityVerifier);
+
+        Assert.That(enr.GetHashCode(), Is.EqualTo(theSameEnr.GetHashCode()));
+        Assert.That(enr, Is.EqualTo(theSameEnr));
     }
 }

@@ -4,7 +4,7 @@ namespace Lantern.Discv5.Enr;
 
 public class EnrBuilder
 {
-    private readonly Dictionary<string, IEntry> _entries = [];
+    private readonly SortedDictionary<string, IEntry> _entries = [];
     private IIdentityVerifier? _verifier;
     private IIdentitySigner? _signer;
 

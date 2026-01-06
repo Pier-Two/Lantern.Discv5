@@ -65,6 +65,8 @@ public sealed class ConnectionManager(IPacketManager packetManager, IUdpConnecti
                 try
                 {
                     await packetManager.HandleReceivedPacket(packet).ConfigureAwait(false);
+
+
                 }
                 catch (Exception ex)
                 {

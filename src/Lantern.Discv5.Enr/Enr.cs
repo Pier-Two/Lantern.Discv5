@@ -1,20 +1,22 @@
-﻿using Lantern.Discv5.Enr.Entries;
+using Lantern.Discv5.Enr.Entries;
 using Lantern.Discv5.Enr.Identity;
 using Lantern.Discv5.Rlp;
 using Multiformats.Base;
 using Multiformats.Hash;
+using NBitcoin.Secp256k1;
 
 namespace Lantern.Discv5.Enr;
 
 public class Enr : IEnr, IEquatable<IEnr>
 {
-    private readonly IDictionary<string, IEntry> _entries;
+    private readonly SortedDictionary<string, IEntry> _entries;
     private readonly IIdentitySigner? _signer;
     private readonly IIdentityVerifier? _verifier;
     private byte[]? _cachedNodeId;
+    private int? _cachedHashCode;
 
     public Enr(
-        IDictionary<string, IEntry> initialEntries,
+        SortedDictionary<string, IEntry> initialEntries,
         IIdentityVerifier verifier,
         IIdentitySigner? signer = null,
         byte[]? signature = null,
@@ -51,19 +53,10 @@ public class Enr : IEnr, IEquatable<IEnr>
     }
 
     public T GetEntry<T>(string key, T defaultValue = default!) where T : IEntry
-    {
-        var entry = _entries.Values.FirstOrDefault(e => e.Key == key);
-
-        return entry is T result ? result : defaultValue;
-    }
+        => _entries.TryGetValue(key, out var entry) && entry is T result ? result : defaultValue;
 
     public void UpdateEntry<T>(T value) where T : class, IEntry
     {
-        foreach (var existingKey in _entries.Where(entry => entry.Value.Key.Equals(value.Key)).ToList())
-        {
-            _entries.Remove(existingKey.Key);
-        }
-
         _entries[value.Key] = value;
         IncrementSequenceNumber();
     }
@@ -104,6 +97,28 @@ public class Enr : IEnr, IEquatable<IEnr>
         return other != null && NodeId.AsSpan().SequenceEqual(other.NodeId.AsSpan());
     }
 
+    public override bool Equals(object? obj)
+    {
+        return obj is IEnr other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        if (_cachedHashCode.HasValue)
+            return _cachedHashCode.Value;
+
+        var nodeId = NodeId;
+        var hash = new HashCode();
+
+        foreach (var b in nodeId)
+        {
+            hash.Add(b);
+        }
+
+        _cachedHashCode = hash.ToHashCode();
+        return _cachedHashCode.Value;
+    }
+
     public override string ToString()
     {
         return $"enr:{Base64Url.ToString(EncodeRecord())}";
@@ -111,13 +126,17 @@ public class Enr : IEnr, IEquatable<IEnr>
 
     public string ToEnode()
     {
-        if (Signature == null)
-            throw new InvalidOperationException("Signature must be set before encoding.");
+        var publicKey = GetEntry<EntrySecp256K1>(EnrEntryKey.Secp256K1).Value;
+
+        if (publicKey == null)
+            throw new InvalidOperationException("Public key must be present in ENR for enode format.");
+
+        var publicKeyHex = Convert.ToHexString(Context.Instance.CreatePubKey(publicKey).ToBytes(false)).ToLower();
 
         if (!HasKey(EnrEntryKey.Tcp))
-            return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+            return $"enode://{publicKeyHex}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
 
-        return $"enode://{Convert.ToHexString(Signature).ToLower()}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}:{GetEntry<EntryTcp>(EnrEntryKey.Tcp).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
+        return $"enode://{publicKeyHex}@{GetEntry<EntryIp>(EnrEntryKey.Ip).Value}:{GetEntry<EntryTcp>(EnrEntryKey.Tcp).Value}?discport={GetEntry<EntryUdp>(EnrEntryKey.Udp).Value}";
     }
 
     public string ToPeerId()
