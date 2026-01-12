@@ -38,7 +38,7 @@ public class TableManager(IPacketReceiver packetReceiver,
         _logger.LogInformation("Stopping TableManagerAsync");
         cts.Cancel();
 
-        await Task.WhenAll(_refreshTask!, _pingTask!).ConfigureAwait(false);
+        await Task.WhenAll(_refreshTask ?? Task.CompletedTask, _pingTask ?? Task.CompletedTask).ConfigureAwait(false);
 
         if (cts.IsCancellationRequested())
         {
